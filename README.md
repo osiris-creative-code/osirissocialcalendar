@@ -64,14 +64,31 @@ Dış servisler arayüz arkasında; Phase 1'de `Mock*` implementasyonları:
 - `lib/sources/` — `Source` arayüzü + `MockDriveSource`
 - `lib/storage/` — `MediaStore` arayüzü (yerel)
 
+## AI özellikleri
+
+`lib/ai/` üç iş yapar: `captions` (üretim), `rewriteCaption` (editörde satır bazında "↻ Yeniden yaz"),
+`analyzeFeed` (Instagram panelinde "Feed'i analiz et" → çıkan notlar sonraki üretimde caption'lara katılır).
+
+- `ANTHROPIC_API_KEY` **tanımlıysa** → gerçek Claude (`AnthropicAI`); değilse → deterministik `MockAI`.
+- Model: `RITIM_AI_MODEL` (varsayılan `claude-sonnet-5`).
+- Editördeki **"Görselleri AI'ya göster"** kutusu açıkken görsel URL'leri modele vision olarak gider
+  (Phase 1'de görseller yerel placeholder olduğu için etkisiz).
+
+```bash
+# canlı AI için:
+export ANTHROPIC_API_KEY=sk-ant-...
+export RITIM_AI_MODEL=claude-haiku-4-5   # opsiyonel; daha ucuz
+```
+
+Tahmini maliyet (gerçek API): normal bir ajansta **aylık $1–8** — plan başına birkaç kuruş.
+
 ## Phase 2 (sıradaki)
 
 Aynı arayüzlerin arkasına gerçek implementasyonlar takılır — UI ve route kodu değişmez:
 
 - `JsonStore` → **Supabase** (Postgres + Auth)
-- `MockAI` → **Anthropic API** (kullandıkça öde)
 - `MockDriveSource` → **Google Drive API + OAuth**
 - yerel medya → **Cloudflare R2** (10 GB bedava, egress ücretsiz)
-- **Instagram Graph API** ile canlı feed (şu an `InstagramReference` sahte ızgara)
+- **Instagram Graph API** ile canlı feed (şu an `InstagramPanel` sahte ızgara + `analyzeFeed` demo görseller)
 - Vercel cron ile Supabase bedava katman uyku önleme
 - Özel alan adı

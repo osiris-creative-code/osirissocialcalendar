@@ -6,7 +6,7 @@ import { trRange } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/plan-stages";
 import { PlanEditor } from "@/components/team/PlanEditor";
 import { FeedbackInbox } from "@/components/team/FeedbackInbox";
-import { InstagramReference } from "@/components/team/InstagramReference";
+import { InstagramPanel } from "@/components/team/InstagramPanel";
 import { GapModal } from "@/components/team/GapModal";
 import { StageBadge } from "@/components/team/StageBadge";
 import { Toast } from "@/components/ui/Toast";
@@ -77,6 +77,29 @@ export function EditorClient({
   const onEditorChange = (next: PlanItem[]) => {
     setItems(next);
     persist(next);
+  };
+
+  const onRewrite = async (itemId: string, instruction: string) => {
+    const res = await fetch(`/api/plans/${plan.id}/rewrite`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ itemId, instruction }),
+    });
+    if (!res.ok) {
+      Toast.show("Yeniden yazılamadı");
+      return;
+    }
+    const updated = (await res.json()) as PlanItem;
+    setItems((list) => list.map((it) => (it.id === itemId ? updated : it)));
+  };
+
+  const onVisionChange = (enabled: boolean) => {
+    setPlan((p) => ({ ...p, visionEnabled: enabled }));
+    fetch(`/api/plans/${plan.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ visionEnabled: enabled }),
+    });
   };
 
   const sendToInternal = async () => {
@@ -172,11 +195,17 @@ export function EditorClient({
             setPlan((p) => ({ ...p, theme }));
             persist(undefined, theme);
           }}
+          onRewrite={onRewrite}
+          onVisionChange={onVisionChange}
         />
       </div>
 
       <aside className="flex flex-col gap-4">
-        <InstagramReference handle={brand.instagramHandle} />
+        <InstagramPanel
+          planId={plan.id}
+          handle={brand.instagramHandle}
+          initialInsights={plan.feedInsights}
+        />
         <FeedbackInbox comments={comments} annotations={annotations} items={items} />
       </aside>
 

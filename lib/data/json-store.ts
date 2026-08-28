@@ -116,6 +116,8 @@ export class JsonStore implements DataStore {
       version: 1,
       lastActorName: null,
       createdAt: new Date().toISOString(),
+      visionEnabled: input.visionEnabled ?? true,
+      feedInsights: null,
     };
     this.mutate((db) => db.plans.push(plan));
     return plan;

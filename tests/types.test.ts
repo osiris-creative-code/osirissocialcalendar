@@ -50,6 +50,8 @@ describe("zPlan", () => {
       version: 1,
       lastActorName: null,
       createdAt: "2026-08-28T00:00:00Z",
+      visionEnabled: true,
+      feedInsights: null,
     };
     expect(zPlan.safeParse(ok).success).toBe(true);
   });

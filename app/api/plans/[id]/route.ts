@@ -24,7 +24,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (!plan) return json({ error: "plan not found" }, 404);
 
   const body = (await req.json().catch(() => null)) as
-    | { title?: string; theme?: PlanTheme; items?: NewItem[] }
+    | { title?: string; theme?: PlanTheme; items?: NewItem[]; visionEnabled?: boolean }
     | null;
   if (!body) return json({ error: "body required" }, 400);
 
@@ -34,6 +34,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const patch: Record<string, unknown> = { version: plan.version + 1 };
   if (body.title?.trim()) patch.title = body.title.trim();
   if (body.theme) patch.theme = body.theme;
+  if (typeof body.visionEnabled === "boolean") patch.visionEnabled = body.visionEnabled;
   const updated = await store.updatePlan(id, patch);
 
   await store.logActivity({

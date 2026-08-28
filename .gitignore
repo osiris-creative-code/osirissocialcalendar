@@ -46,3 +46,6 @@ next-env.d.ts
 test-results/
 playwright-report/
 .claude/settings.local.json
+
+ANTHROPIC_API_KEY
+RITIM_AI_MODEL

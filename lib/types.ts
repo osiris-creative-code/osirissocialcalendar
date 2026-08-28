@@ -66,6 +66,10 @@ export type Plan = {
   version: number;
   lastActorName: string | null;
   createdAt: string;
+  /** Send images to the model when generating/rewriting captions. */
+  visionEnabled: boolean;
+  /** Bullet insights from analysing the brand's current feed. */
+  feedInsights: string[] | null;
 };
 
 export type PlanItem = {
@@ -155,6 +159,8 @@ export const zPlan = z.object({
   version: z.number(),
   lastActorName: z.string().nullable(),
   createdAt: z.string(),
+  visionEnabled: z.boolean(),
+  feedInsights: z.array(z.string()).nullable(),
 });
 
 export const zPlanItem = z.object({

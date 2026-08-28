@@ -15,14 +15,28 @@ export function PlanEditor({
   items,
   onChange,
   onThemeChange,
+  onRewrite,
+  onVisionChange,
 }: {
   plan: Plan;
   items: PlanItem[];
   onChange: (items: PlanItem[]) => void;
   onThemeChange?: (theme: PlanTheme) => void;
+  onRewrite?: (itemId: string, instruction: string) => Promise<void> | void;
+  onVisionChange?: (enabled: boolean) => void;
 }) {
   const [rows, setRows] = useState<PlanItem[]>(items);
   const [theme, setTheme] = useState<PlanTheme>(plan.theme);
+  const [steer, setSteer] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [vision, setVision] = useState(plan.visionEnabled);
+
+  const rewrite = async (id: string) => {
+    if (!onRewrite) return;
+    setBusyId(id);
+    await onRewrite(id, steer[id] ?? "");
+    setBusyId(null);
+  };
 
   useEffect(() => {
     setRows(items);
@@ -76,12 +90,13 @@ export function PlanEditor({
         {rows.map((row, i) => (
           <li
             key={row.id}
-            className={`grid grid-cols-[22px_58px_auto_1fr_auto] items-center gap-3 rounded-[10px] border px-3 py-2.5 ${
+            className={`flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 ${
               row.isGap
                 ? "border-l-[3px] border-[color-mix(in_srgb,var(--gold)_45%,transparent)] border-l-[var(--warn)] bg-[var(--warn-soft)]"
                 : "border-[var(--border)] bg-[var(--bg)]"
             }`}
           >
+           <div className="grid grid-cols-[22px_58px_auto_1fr_auto] items-center gap-3">
             <span className="text-center text-[13px] text-[var(--text-mute)]">⠿</span>
             <span className="text-center font-mono text-[11px] leading-tight text-[var(--text-dim)]">
               {row.date.slice(5)}
@@ -136,6 +151,27 @@ export function PlanEditor({
                 ×
               </button>
             </span>
+           </div>
+
+           {onRewrite && !row.isGap && row.type !== "story" && (
+             <div className="flex items-center gap-2 pl-[80px]">
+               <input
+                 aria-label="Yeniden yaz yönergesi"
+                 value={steer[row.id] ?? ""}
+                 onChange={(e) => setSteer((s) => ({ ...s, [row.id]: e.target.value }))}
+                 placeholder="yönerge (ops.): kısalt, daha eğlenceli…"
+                 className="min-w-0 flex-1 rounded border border-[var(--border)] bg-[var(--surface)] px-2 py-1 text-[11.5px]"
+               />
+               <button
+                 type="button"
+                 onClick={() => rewrite(row.id)}
+                 disabled={busyId === row.id}
+                 className="whitespace-nowrap rounded-[7px] border border-[var(--border-strong)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--brand)] disabled:opacity-60"
+               >
+                 {busyId === row.id ? "…" : "↻ Yeniden yaz"}
+               </button>
+             </div>
+           )}
           </li>
         ))}
         {rows.length === 0 && (
@@ -175,6 +211,20 @@ export function PlanEditor({
           Önizleme
         </span>
       </div>
+
+      {onVisionChange && (
+        <label className="flex items-center gap-2 text-[12.5px] text-[var(--text-dim)]">
+          <input
+            type="checkbox"
+            checked={vision}
+            onChange={(e) => {
+              setVision(e.target.checked);
+              onVisionChange(e.target.checked);
+            }}
+          />
+          Görselleri AI&apos;ya göster — daha isabetli caption, biraz daha maliyet
+        </label>
+      )}
     </div>
   );
 }

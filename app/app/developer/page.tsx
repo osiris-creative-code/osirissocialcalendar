@@ -34,7 +34,12 @@ export default async function DeveloperPage() {
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">Ayarlar</h2>
         <p>Ekip kodu: <code className="font-mono">RITIM_TEAM_TOKEN</code> (env)</p>
         <p>Developer şifresi: <code className="font-mono">RITIM_DEV_PASSWORD</code> (env)</p>
-        <p>AI modeli: MockAI (Phase 1) — Phase 2&apos;de Anthropic</p>
+        <p>
+          AI: {process.env.ANTHROPIC_API_KEY ? "canlı (Anthropic)" : "MockAI (anahtar yok)"} · model{" "}
+          <code className="font-mono">{process.env.RITIM_AI_MODEL ?? "claude-sonnet-5"}</code> —{" "}
+          <code className="font-mono">ANTHROPIC_API_KEY</code> +{" "}
+          <code className="font-mono">RITIM_AI_MODEL</code> ile ayarlanır
+        </p>
       </section>
 
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">

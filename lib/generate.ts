@@ -1,4 +1,4 @@
-import { MockAI } from "@/lib/ai/mock";
+import { getAI } from "@/lib/ai";
 import { planFromPrompt, type DraftItem } from "@/lib/planner";
 import { MockDriveSource } from "@/lib/sources/mock-drive";
 import type { Brand, Plan } from "@/lib/types";
@@ -23,13 +23,20 @@ export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOut
     assets,
   );
   const assetById = new Map(assets.map((a) => [a.id, a]));
-  const ai = new MockAI();
+  const ai = getAI();
 
   const toItems = async (drafts: DraftItem[]): Promise<NewItem[]> => {
     const { captions } = await ai.captions({
       brandName: brand.name,
       tone: "sıcak",
-      items: drafts.map((d) => ({ date: d.date, type: d.type, specialLabel: d.specialLabel })),
+      feedInsights: plan.feedInsights,
+      vision: plan.visionEnabled,
+      items: drafts.map((d) => ({
+        date: d.date,
+        type: d.type,
+        specialLabel: d.specialLabel,
+        imageUrl: assetById.get(d.assetIds[0] ?? "")?.url ?? null,
+      })),
     });
     return drafts.map((d, idx) => ({
       date: d.date,

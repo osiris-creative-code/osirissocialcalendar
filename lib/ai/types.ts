@@ -1,9 +1,21 @@
 import type { ItemType } from "@/lib/types";
 
+export type CaptionItem = {
+  date: string;
+  type: ItemType;
+  specialLabel: string | null;
+  /** http(s) URL of the item's first image — used for vision when available. */
+  imageUrl?: string | null;
+};
+
 export type CaptionRequest = {
   brandName: string;
   tone: string;
-  items: { date: string; type: ItemType; specialLabel: string | null }[];
+  items: CaptionItem[];
+  /** Short bullet insights about the brand's current feed, folded into the prompt. */
+  feedInsights?: string[] | null;
+  /** When true, image URLs are sent to the model as vision input. */
+  vision?: boolean;
 };
 
 export type CaptionResult = {
@@ -11,6 +23,31 @@ export type CaptionResult = {
   captions: (string | null)[];
 };
 
+export type RewriteRequest = {
+  brandName: string;
+  tone: string;
+  type: ItemType;
+  current: string;
+  /** Optional short steer, e.g. "kısalt", "daha eğlenceli". */
+  instruction?: string;
+  imageUrl?: string | null;
+  vision?: boolean;
+  feedInsights?: string[] | null;
+};
+
+export type AnalyzeFeedRequest = {
+  brandName: string;
+  handle: string | null;
+  imageUrls: string[];
+};
+
+export type AnalyzeFeedResult = {
+  /** 3–6 short Turkish bullets: palette, tone, recurring themes, gaps. */
+  insights: string[];
+};
+
 export interface AIClient {
   captions(req: CaptionRequest): Promise<CaptionResult>;
+  rewriteCaption(req: RewriteRequest): Promise<{ caption: string }>;
+  analyzeFeed(req: AnalyzeFeedRequest): Promise<AnalyzeFeedResult>;
 }

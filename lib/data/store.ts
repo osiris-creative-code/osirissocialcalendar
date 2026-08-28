@@ -38,6 +38,7 @@ export type CreatePlanInput = {
   rangeEnd: string;
   prompt: string;
   theme: PlanTheme;
+  visionEnabled?: boolean;
 };
 
 export type NewItem = Omit<PlanItem, "id" | "planId">;
