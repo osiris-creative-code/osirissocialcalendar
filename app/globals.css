@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Ritim design tokens — warm "bakery / crust" neutral + jam accent.
+ * Full light palette on :root; dark redefines tokens only, guarded so
+ * an explicit light choice always beats a dark OS setting.
+ * ------------------------------------------------------------------ */
+:root {
+  --bg: #fcfaf7;
+  --surface: #ffffff;
+  --surface-2: #f4eee6;
+  --border: #e7dfd2;
+  --border-strong: #d8ccba;
+  --text: #241e1a;
+  --text-dim: #6e645a;
+  --text-mute: #978c7e;
+
+  --brand: #7a4a2b;
+  --brand-soft: #f0e4d8;
+  --brand-ink: #ffffff;
+
+  --accent: #b23048;
+  --accent-soft: #f7e1e4;
+  --gold: #d9982f;
+
+  --ok: #3c8b57;
+  --ok-soft: #e4f0e7;
+  --warn: #bc6a24;
+  --warn-soft: #f7e7d4;
+
+  --ring: #7a4a2b;
+  --shadow: 0 1px 2px rgba(40, 28, 18, 0.04), 0 8px 24px -12px rgba(40, 28, 18, 0.18);
+  --shadow-lg: 0 20px 60px -20px rgba(40, 28, 18, 0.34);
+
+  --r-sm: 7px;
+  --r-md: 12px;
+  --r-lg: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1714;
+    --surface: #251f19;
+    --surface-2: #2e271f;
+    --border: #3a3128;
+    --border-strong: #4a3f32;
+    --text: #f3ece2;
+    --text-dim: #b4a797;
+    --text-mute: #897d6f;
+
+    --brand: #ce9067;
+    --brand-soft: #3a2a1f;
+    --brand-ink: #211913;
+
+    --accent: #e27189;
+    --accent-soft: #3b2229;
+    --gold: #e3a94a;
+
+    --ok: #6bbe8a;
+    --ok-soft: #213629;
+    --warn: #e0954e;
+    --warn-soft: #3a2a1b;
+
+    --ring: #ce9067;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 24px 70px -24px rgba(0, 0, 0, 0.7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1b1714;
+  --surface: #251f19;
+  --surface-2: #2e271f;
+  --border: #3a3128;
+  --border-strong: #4a3f32;
+  --text: #f3ece2;
+  --text-dim: #b4a797;
+  --text-mute: #897d6f;
+
+  --brand: #ce9067;
+  --brand-soft: #3a2a1f;
+  --brand-ink: #211913;
+
+  --accent: #e27189;
+  --accent-soft: #3b2229;
+  --gold: #e3a94a;
+
+  --ok: #6bbe8a;
+  --ok-soft: #213629;
+  --warn: #e0954e;
+  --warn-soft: #3a2a1b;
+
+  --ring: #ce9067;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 70px -24px rgba(0, 0, 0, 0.7);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-dim: var(--text-dim);
+  --color-text-mute: var(--text-mute);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001s !important;
+    transition-duration: 0.001s !important;
+  }
+}
