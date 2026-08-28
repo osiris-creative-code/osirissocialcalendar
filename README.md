@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ritim — Sosyal Medya Paylaşım Takvimi
 
-## Getting Started
+Drive linklerinden ve bir metin promptundan; akışkan, videoların oynatılabildiği,
+markanın **hiçbir uygulama indirmeden** bir web linkiyle açıp üzerine revize
+yazabildiği bir sosyal medya paylaşım takvimi üretir.
 
-First, run the development server:
+Bu depo **Phase 1**'dir: tüm iş akışı uçtan uca çalışır, ama Drive / AI / veritabanı /
+dosya deposu **sahte (mock) adaptörlerle** ve dosya tabanlı bir JSON store ile
+çalışır. Hiçbir dış servise bağlanmaz, hiçbir ücret çıkmaz.
+
+## Çalıştırma
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+İlk açılışta `/app` seni ekip kapısına götürür:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Ekip kodu:** `ritim-dev`  (env: `RITIM_TEAM_TOKEN`)
+- Ardından **isim + rol** seç (Yönetici / In-house onaylayan / Developer)
+- **Developer şifresi:** `dev`  (env: `RITIM_DEV_PASSWORD`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Test
 
-## Learn More
+```bash
+npm test          # Vitest — birim + API + bileşen (66 test)
+npm run test:e2e  # Playwright — tam iş akışı (dev sunucusunu kendi başlatır)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Yüzeyler
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| URL | Kim | Ne |
+|---|---|---|
+| `/app/brands` | Ekip | Marka kartları, marka ekle, ayarlar |
+| `/app/brands/[id]/plans/new` | Ekip | Prompt + tarih aralığı → yeni plan |
+| `/app/plans/[id]` | Yönetici / Onaylayan | Editör: üret, sürükle-sırala, caption, tema, iç onaya gönder |
+| `/app/queue` | Ekip | Aşamasına göre tüm planlar |
+| `/app/developer` | Developer | Arşiv, ayarlar, işlem kaydı |
+| `/i/[token]` | İç onaylayan | Takvim + "İÇ ONAY" bandı + Onayla / Geri gönder |
+| `/c/[token]` | Marka | Splash → ızgara/zaman çizelgesi → yorum + iğne → Revizeleri gönder |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## İş akışı
 
-## Deploy on Vercel
+```
+Taslak → İç onayda → Markaya hazır → Markada → (Revize istendi ↔ Onaylandı)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`public_token` (marka linki) yalnızca "Markaya hazır → Markada" geçişinde üretilir.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Mimari
+
+Saf mantık modülleri framework'ten bağımsız ve tam test kapsamlı:
+
+- `lib/planner/` — Türkçe kural ayrıştırıcı (`2 günde bir`, `her gün`, `hafta içi`,
+  `haftada 1`, `güne özel`, tarih aralıkları) + slot üretimi + varlık dağıtımı + boşluk tespiti
+- `lib/plan-stages.ts` — aşama geçiş makinesi
+- `lib/access/` — rol çözümleme, izinler, ekip/developer kapısı
+
+Dış servisler arayüz arkasında; Phase 1'de `Mock*` implementasyonları:
+
+- `lib/data/` — `DataStore` arayüzü + `JsonStore` (`.data/db.json`)
+- `lib/ai/` — `AIClient` arayüzü + `MockAI` (deterministik Türkçe caption)
+- `lib/sources/` — `Source` arayüzü + `MockDriveSource`
+- `lib/storage/` — `MediaStore` arayüzü (yerel)
+
+## Phase 2 (sıradaki)
+
+Aynı arayüzlerin arkasına gerçek implementasyonlar takılır — UI ve route kodu değişmez:
+
+- `JsonStore` → **Supabase** (Postgres + Auth)
+- `MockAI` → **Anthropic API** (kullandıkça öde)
+- `MockDriveSource` → **Google Drive API + OAuth**
+- yerel medya → **Cloudflare R2** (10 GB bedava, egress ücretsiz)
+- **Instagram Graph API** ile canlı feed (şu an `InstagramReference` sahte ızgara)
+- Vercel cron ile Supabase bedava katman uyku önleme
+- Özel alan adı

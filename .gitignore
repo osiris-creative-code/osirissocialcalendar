@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Ritim local datastore
 .data/
+
+test-results/
+playwright-report/

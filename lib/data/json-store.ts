@@ -25,81 +25,80 @@ import type {
   NewItem,
 } from "./store";
 
+/**
+ * Dev datastore backed by a JSON file. Read-modify-write on every operation so
+ * separate module instances / requests always see the latest committed state.
+ */
 export class JsonStore implements DataStore {
-  private db: DbShape;
-
   constructor(private path: string) {
-    if (existsSync(path)) {
-      this.db = JSON.parse(readFileSync(path, "utf8")) as DbShape;
-    } else {
-      this.db = seedData();
-      this.flush();
+    if (!existsSync(path)) this.write(seedData());
+  }
+
+  private read(): DbShape {
+    if (!existsSync(this.path)) {
+      const seeded = seedData();
+      this.write(seeded);
+      return seeded;
     }
+    return JSON.parse(readFileSync(this.path, "utf8")) as DbShape;
   }
 
-  private flush() {
+  private write(db: DbShape) {
     mkdirSync(dirname(this.path), { recursive: true });
-    writeFileSync(this.path, JSON.stringify(this.db, null, 2));
+    writeFileSync(this.path, JSON.stringify(db, null, 2));
   }
 
-  private clone<T>(v: T): T {
-    return JSON.parse(JSON.stringify(v)) as T;
+  private mutate<T>(fn: (db: DbShape) => T): T {
+    const db = this.read();
+    const result = fn(db);
+    this.write(db);
+    return result;
   }
 
   /* ---------- brands ---------- */
   async listBrands(opts: { includeArchived?: boolean } = {}) {
-    return this.clone(
-      this.db.brands.filter((b) => opts.includeArchived || b.status === "active"),
-    );
+    return this.read().brands.filter((b) => opts.includeArchived || b.status === "active");
   }
   async getBrand(id: string) {
-    return this.clone(this.db.brands.find((b) => b.id === id) ?? null);
+    return this.read().brands.find((b) => b.id === id) ?? null;
   }
   async createBrand(input: CreateBrandInput): Promise<Brand> {
-    const brand: Brand = {
-      id: newId(),
-      status: "active",
-      createdAt: new Date().toISOString(),
-      ...input,
-    };
-    this.db.brands.push(brand);
-    this.flush();
-    return this.clone(brand);
+    const brand: Brand = { id: newId(), status: "active", createdAt: new Date().toISOString(), ...input };
+    this.mutate((db) => db.brands.push(brand));
+    return brand;
   }
   async updateBrand(id: string, patch: Partial<Brand>): Promise<Brand> {
-    const brand = this.db.brands.find((b) => b.id === id);
-    if (!brand) throw new Error(`brand ${id} not found`);
-    Object.assign(brand, patch, { id: brand.id });
-    this.flush();
-    return this.clone(brand);
+    return this.mutate((db) => {
+      const brand = db.brands.find((b) => b.id === id);
+      if (!brand) throw new Error(`brand ${id} not found`);
+      Object.assign(brand, patch, { id: brand.id });
+      return { ...brand };
+    });
   }
 
   /* ---------- sources ---------- */
   async listSources(brandId: string) {
-    return this.clone(this.db.sources.filter((s) => s.brandId === brandId));
+    return this.read().sources.filter((s) => s.brandId === brandId);
   }
   async createSource(input: CreateSourceInput): Promise<BrandSource> {
     const source: BrandSource = { id: newId(), ...input };
-    this.db.sources.push(source);
-    this.flush();
-    return this.clone(source);
+    this.mutate((db) => db.sources.push(source));
+    return source;
   }
 
   /* ---------- plans ---------- */
   async getPlan(id: string) {
-    return this.clone(this.db.plans.find((p) => p.id === id) ?? null);
+    return this.read().plans.find((p) => p.id === id) ?? null;
   }
   async getPlanByToken(kind: "internal" | "public", token: string) {
     const key = kind === "internal" ? "internalToken" : "publicToken";
-    return this.clone(this.db.plans.find((p) => p[key] === token) ?? null);
+    return this.read().plans.find((p) => p[key] === token) ?? null;
   }
   async listPlans(opts: { brandId?: string; stages?: Stage[] } = {}) {
-    return this.clone(
-      this.db.plans.filter(
-        (p) =>
-          (!opts.brandId || p.brandId === opts.brandId) &&
-          (!opts.stages || opts.stages.includes(p.stage)),
-      ),
+    return this.read().plans.filter(
+      (p) =>
+        (!opts.brandId || p.brandId === opts.brandId) &&
+        (!opts.stages || opts.stages.includes(p.stage)),
     );
   }
   async createPlan(input: CreatePlanInput): Promise<Plan> {
@@ -118,79 +117,78 @@ export class JsonStore implements DataStore {
       lastActorName: null,
       createdAt: new Date().toISOString(),
     };
-    this.db.plans.push(plan);
-    this.flush();
-    return this.clone(plan);
+    this.mutate((db) => db.plans.push(plan));
+    return plan;
   }
   async updatePlan(id: string, patch: Partial<Plan>): Promise<Plan> {
-    const plan = this.db.plans.find((p) => p.id === id);
-    if (!plan) throw new Error(`plan ${id} not found`);
-    Object.assign(plan, patch, { id: plan.id });
-    this.flush();
-    return this.clone(plan);
+    return this.mutate((db) => {
+      const plan = db.plans.find((p) => p.id === id);
+      if (!plan) throw new Error(`plan ${id} not found`);
+      Object.assign(plan, patch, { id: plan.id });
+      return { ...plan };
+    });
   }
 
   /* ---------- items ---------- */
   async listItems(planId: string) {
-    return this.clone(
-      this.db.items.filter((i) => i.planId === planId).sort((a, b) => a.sort - b.sort),
-    );
+    return this.read()
+      .items.filter((i) => i.planId === planId)
+      .sort((a, b) => a.sort - b.sort);
   }
   async replaceItems(planId: string, items: NewItem[]): Promise<PlanItem[]> {
-    this.db.items = this.db.items.filter((i) => i.planId !== planId);
     const created: PlanItem[] = items.map((it) => ({ id: newId(), planId, ...it }));
-    this.db.items.push(...created);
-    this.flush();
-    return this.clone(created);
+    this.mutate((db) => {
+      db.items = db.items.filter((i) => i.planId !== planId).concat(created);
+    });
+    return created;
   }
   async updateItem(id: string, patch: Partial<PlanItem>): Promise<PlanItem> {
-    const item = this.db.items.find((i) => i.id === id);
-    if (!item) throw new Error(`item ${id} not found`);
-    Object.assign(item, patch, { id: item.id });
-    this.flush();
-    return this.clone(item);
+    return this.mutate((db) => {
+      const item = db.items.find((i) => i.id === id);
+      if (!item) throw new Error(`item ${id} not found`);
+      Object.assign(item, patch, { id: item.id });
+      return { ...item };
+    });
   }
 
   /* ---------- comments ---------- */
   async listComments(planId: string) {
-    const itemIds = new Set(this.db.items.filter((i) => i.planId === planId).map((i) => i.id));
-    return this.clone(this.db.comments.filter((c) => itemIds.has(c.planItemId)));
+    const db = this.read();
+    const itemIds = new Set(db.items.filter((i) => i.planId === planId).map((i) => i.id));
+    return db.comments.filter((c) => itemIds.has(c.planItemId));
   }
   async addComment(input: AddCommentInput): Promise<Comment> {
     const comment: Comment = { id: newId(), createdAt: new Date().toISOString(), ...input };
-    this.db.comments.push(comment);
-    this.flush();
-    return this.clone(comment);
+    this.mutate((db) => db.comments.push(comment));
+    return comment;
   }
 
   /* ---------- annotations ---------- */
   async listAnnotations(planId: string) {
-    const itemIds = new Set(this.db.items.filter((i) => i.planId === planId).map((i) => i.id));
-    return this.clone(this.db.annotations.filter((a) => itemIds.has(a.planItemId)));
+    const db = this.read();
+    const itemIds = new Set(db.items.filter((i) => i.planId === planId).map((i) => i.id));
+    return db.annotations.filter((a) => itemIds.has(a.planItemId));
   }
   async addAnnotation(input: AddAnnotationInput): Promise<Annotation> {
     const annotation: Annotation = { id: newId(), createdAt: new Date().toISOString(), ...input };
-    this.db.annotations.push(annotation);
-    this.flush();
-    return this.clone(annotation);
+    this.mutate((db) => db.annotations.push(annotation));
+    return annotation;
   }
   async deleteAnnotation(id: string): Promise<void> {
-    this.db.annotations = this.db.annotations.filter((a) => a.id !== id);
-    this.flush();
+    this.mutate((db) => {
+      db.annotations = db.annotations.filter((a) => a.id !== id);
+    });
   }
 
   /* ---------- activity ---------- */
   async listActivity(planId: string) {
-    return this.clone(
-      this.db.activity
-        .filter((a) => a.planId === planId)
-        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
-    );
+    return this.read()
+      .activity.filter((a) => a.planId === planId)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   }
   async logActivity(input: LogActivityInput): Promise<ActivityEntry> {
     const entry: ActivityEntry = { id: newId(), createdAt: new Date().toISOString(), ...input };
-    this.db.activity.push(entry);
-    this.flush();
-    return this.clone(entry);
+    this.mutate((db) => db.activity.push(entry));
+    return entry;
   }
 }
