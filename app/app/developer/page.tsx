@@ -35,9 +35,20 @@ export default async function DeveloperPage() {
         <p>Ekip kodu: <code className="font-mono">OSIRIS_TEAM_TOKEN</code> (env)</p>
         <p>Developer şifresi: <code className="font-mono">OSIRIS_DEV_PASSWORD</code> (env)</p>
         <p>
-          AI: {process.env.ANTHROPIC_API_KEY ? "canlı (Anthropic)" : "MockAI (anahtar yok)"} · model{" "}
-          <code className="font-mono">{process.env.OSIRIS_AI_MODEL ?? "claude-sonnet-5"}</code> —{" "}
-          <code className="font-mono">ANTHROPIC_API_KEY</code> +{" "}
+          AI:{" "}
+          {process.env.OPENAI_API_KEY
+            ? "canlı (OpenAI)"
+            : process.env.ANTHROPIC_API_KEY
+              ? "canlı (Anthropic)"
+              : "MockAI (anahtar yok)"}{" "}
+          · model{" "}
+          <code className="font-mono">
+            {process.env.OSIRIS_AI_MODEL ??
+              (process.env.OPENAI_API_KEY ? "gpt-4o-mini" : "claude-sonnet-5")}
+          </code>
+          <br />
+          <code className="font-mono">OPENAI_API_KEY</code> veya{" "}
+          <code className="font-mono">ANTHROPIC_API_KEY</code> + opsiyonel{" "}
           <code className="font-mono">OSIRIS_AI_MODEL</code> ile ayarlanır
         </p>
       </section>
