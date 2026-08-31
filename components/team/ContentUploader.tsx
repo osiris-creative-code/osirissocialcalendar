@@ -39,14 +39,14 @@ export function ContentUploader({
 }) {
   const [assets, setAssets] = useState<PlanAsset[]>(initialAssets);
   const [progress, setProgress] = useState<Partial<Record<ItemType, Progress>>>({});
+  const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
 
-  const busyType = (Object.keys(progress) as ItemType[])[0] ?? null;
-
   const upload = async (type: ItemType, files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || working) return;
     const list = Array.from(files);
     setError("");
+    setWorking(true);
     setProgress({ [type]: { done: 0, total: list.length, pct: 0 } });
 
     try {
@@ -104,28 +104,43 @@ export function ContentUploader({
       }
     } finally {
       setProgress({});
+      setWorking(false);
     }
   };
 
   const addReelPlaceholder = async () => {
-    const res = await fetch(`/api/plans/${planId}/assets`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        items: [
-          { type: "reel", kind: "video", url: "", name: "Reels placeholder", placeholder: true },
-        ],
-      }),
-    });
-    if (res.ok) {
-      const added = (await res.json()) as PlanAsset[];
-      setAssets((a) => [...a, ...added]);
+    if (working) return;
+    setWorking(true);
+    try {
+      const res = await fetch(`/api/plans/${planId}/assets`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          items: [
+            { type: "reel", kind: "video", url: "", name: "Reels placeholder", placeholder: true },
+          ],
+        }),
+      });
+      if (res.ok) {
+        const added = (await res.json()) as PlanAsset[];
+        setAssets((a) => [...a, ...added]);
+      } else {
+        setError("Placeholder eklenemedi.");
+      }
+    } finally {
+      setWorking(false);
     }
   };
 
   const remove = async (id: string) => {
-    await fetch(`/api/plans/${planId}/assets?assetId=${id}`, { method: "DELETE" });
-    setAssets((a) => a.filter((x) => x.id !== id));
+    if (working) return;
+    setWorking(true);
+    try {
+      await fetch(`/api/plans/${planId}/assets?assetId=${id}`, { method: "DELETE" });
+      setAssets((a) => a.filter((x) => x.id !== id));
+    } finally {
+      setWorking(false);
+    }
   };
 
   return (
@@ -169,7 +184,7 @@ export function ContentUploader({
                   type="file"
                   multiple
                   accept={g.accept}
-                  disabled={!!busyType}
+                  disabled={working}
                   className="hidden"
                   onChange={(e) => upload(g.type, e.target.files)}
                 />
@@ -178,7 +193,8 @@ export function ContentUploader({
                 <button
                   type="button"
                   onClick={addReelPlaceholder}
-                  className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] font-semibold text-[var(--text-dim)] hover:border-[var(--brand-strong,var(--border-strong))]"
+                  disabled={working}
+                  className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] font-semibold text-[var(--text-dim)] hover:border-[var(--border-strong)] disabled:opacity-50"
                 >
                   ＋ Placeholder (video sonra gelecek)
                 </button>

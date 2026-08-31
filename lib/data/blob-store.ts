@@ -26,53 +26,34 @@ import type {
   NewItem,
 } from "./store";
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /**
- * Whole-database-as-one-blob store. Every op is read-modify-write of the full
- * `DbShape`, so any backend that can load/save a JSON blob works. Concurrency is
- * last-write-wins on the whole blob — fine for a small team.
+ * Whole-database-as-one-blob store. Every write is read-modify-write of the full
+ * `DbShape` under an optimistic version check: if another request wrote in
+ * between, `saveBlob` returns `ok:false` and `mutate` re-reads and retries — so
+ * concurrent writes serialize instead of clobbering each other.
  *
- * Subclasses implement `load()` / `persist()`.
+ * Reads use a short per-instance cache to collapse the many loads a single page
+ * render does into one round-trip.
+ *
+ * Subclasses implement `fetchBlob()` / `saveBlob()`.
  */
 export abstract class BlobStore implements DataStore {
-  protected abstract fetchBlob(): Promise<DbShape>;
-  protected abstract saveBlob(db: DbShape): Promise<void>;
+  /** Returns the blob plus an opaque version token for optimistic locking. */
+  protected abstract fetchBlob(): Promise<{ db: DbShape; version: number }>;
+  /** Writes only if the stored version still equals `version`. */
+  protected abstract saveBlob(
+    db: DbShape,
+    version: number,
+  ): Promise<{ ok: boolean; version: number }>;
 
-  // Per-instance cache: collapses the many reads a single page render does into
-  // one network round-trip. Short TTL keeps cross-request staleness tiny; the
-  // store is already last-write-wins so a slightly stale read is consistent.
   private cache: DbShape | null = null;
   private cacheAt = 0;
   private static readonly TTL_MS = 1500;
 
-  /** Cached read — used by list/get methods where a ~1.5s stale view is fine. */
-  private async load(): Promise<DbShape> {
-    if (this.cache && Date.now() - this.cacheAt < BlobStore.TTL_MS) {
-      return structuredClone(this.cache);
-    }
-    const db = await this.fetchBlob();
-    this.cache = db;
-    this.cacheAt = Date.now();
-    return structuredClone(db);
-  }
-
-  /** Uncached read — used only inside mutate() so writes never race on stale data. */
-  private async loadFresh(): Promise<DbShape> {
-    const db = await this.fetchBlob();
-    this.cache = db;
-    this.cacheAt = Date.now();
-    return structuredClone(db);
-  }
-
-  private async persist(db: DbShape): Promise<void> {
-    await this.saveBlob(db);
-    this.cache = structuredClone(db);
-    this.cacheAt = Date.now();
-  }
-
-  /** Fill in any fields added after a blob was first written. */
   protected static normalize(db: Partial<DbShape> | null): DbShape {
-    const base = seedData();
-    if (!db) return base;
+    if (!db) return seedData();
     return {
       brands: db.brands ?? [],
       sources: db.sources ?? [],
@@ -91,11 +72,32 @@ export abstract class BlobStore implements DataStore {
     };
   }
 
+  /** Cached read — list/get methods tolerate a ~1.5s stale view. */
+  private async load(): Promise<DbShape> {
+    if (this.cache && Date.now() - this.cacheAt < BlobStore.TTL_MS) {
+      return structuredClone(this.cache);
+    }
+    const { db } = await this.fetchBlob();
+    this.cache = db;
+    this.cacheAt = Date.now();
+    return structuredClone(db);
+  }
+
+  /** Read-modify-write with retry on version conflict. */
   private async mutate<T>(fn: (db: DbShape) => T): Promise<T> {
-    const db = await this.loadFresh();
-    const result = fn(db);
-    await this.persist(db);
-    return result;
+    let lastResult: T;
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const { db, version } = await this.fetchBlob();
+      lastResult = fn(db);
+      const res = await this.saveBlob(db, version);
+      if (res.ok) {
+        this.cache = structuredClone(db);
+        this.cacheAt = Date.now();
+        return lastResult;
+      }
+      await sleep(40 + attempt * 60);
+    }
+    throw new Error("yazma çakışması: çok fazla eşzamanlı değişiklik, tekrar deneyin");
   }
 
   /* ---------- brands ---------- */
@@ -216,14 +218,10 @@ export abstract class BlobStore implements DataStore {
       .sort((a, b) => a.sort - b.sort);
   }
   async addAssets(planId: string, assets: NewAsset[]): Promise<PlanAsset[]> {
-    const existing = (await this.load()).assets.filter((a) => a.planId === planId).length;
-    const created: PlanAsset[] = assets.map((a, i) => ({
-      id: newId(),
-      planId,
-      sort: existing + i,
-      ...a,
-    }));
+    let created: PlanAsset[] = [];
     await this.mutate((db) => {
+      const base = db.assets.filter((a) => a.planId === planId).length;
+      created = assets.map((a, i) => ({ id: newId(), planId, sort: base + i, ...a }));
       db.assets.push(...created);
     });
     return created;
@@ -241,11 +239,12 @@ export abstract class BlobStore implements DataStore {
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   }
   async snapshotPlan(planId: string, label: string, actorName: string): Promise<PlanVersion> {
+    let version: PlanVersion;
     return this.mutate((db) => {
       const items = db.items
         .filter((i) => i.planId === planId)
         .sort((a, b) => a.sort - b.sort);
-      const version: PlanVersion = {
+      version = {
         id: newId(),
         planId,
         version: db.versions.filter((v) => v.planId === planId).length + 1,
@@ -255,8 +254,9 @@ export abstract class BlobStore implements DataStore {
         createdAt: new Date().toISOString(),
       };
       db.versions.push(version);
-      // keep the last 12 per plan
-      const mine = db.versions.filter((v) => v.planId === planId).sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+      const mine = db.versions
+        .filter((v) => v.planId === planId)
+        .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
       if (mine.length > 12) {
         const drop = new Set(mine.slice(0, mine.length - 12).map((v) => v.id));
         db.versions = db.versions.filter((v) => !drop.has(v.id));

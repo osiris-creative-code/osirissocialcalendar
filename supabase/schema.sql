@@ -1,11 +1,16 @@
 -- Ritim — Supabase setup. Paste into the Supabase SQL Editor and run once.
 
 -- 1. Single-row blob store (the whole app database lives in `data`).
+--    `version` is an optimistic lock: writes only land if it hasn't moved.
 create table if not exists public.app_state (
-  id   text primary key,
-  data jsonb not null default '{}'::jsonb,
+  id      text primary key,
+  data    jsonb  not null default '{}'::jsonb,
+  version bigint not null default 0,
   updated_at timestamptz not null default now()
 );
+
+-- If the table already existed without `version`, add it:
+alter table public.app_state add column if not exists version bigint not null default 0;
 
 -- Lock the table: with RLS on and no policies, only the service/secret key
 -- (which bypasses RLS) can read or write it. The anon/publishable key cannot.
