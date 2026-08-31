@@ -251,7 +251,9 @@ export function EditorClient({
       <aside className="flex flex-col gap-4">
         <InstagramPanel
           planId={plan.id}
+          brandId={brand.id}
           handle={brand.instagramHandle}
+          initialScreenshot={brand.feedScreenshotUrl}
           initialInsights={plan.feedInsights}
         />
         <VersionHistory planId={plan.id} currentItems={items} />

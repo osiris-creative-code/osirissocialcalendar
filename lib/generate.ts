@@ -9,15 +9,20 @@ import type { NewItem } from "@/lib/data/store";
 /** Fixed demo asset counts, used only when a plan has no uploaded content. */
 export const DEMO_SOURCE_CONFIG = { postCount: 5, storyCount: 8, reelCount: 2 };
 
-export type GenerateOutput = {
+export type GeneratePreview = {
   ruleCount: number;
   gap: boolean;
   usingRealAssets: boolean;
-  extendItems: NewItem[];
-  stopItems: NewItem[];
+  extendCount: number;
+  stopCount: number;
 };
 
-export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOutput> {
+export type GenerateResult = {
+  gap: boolean;
+  items: NewItem[];
+};
+
+async function buildDrafts(plan: Plan) {
   const uploaded = await getStore().listAssets(plan.id);
   const assets: Asset[] = uploaded.length
     ? uploaded.map((a) => ({
@@ -31,53 +36,60 @@ export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOut
       }))
     : await new MockDriveSource(DEMO_SOURCE_CONFIG).list();
 
-  const { rules, extend, stopAtAssets, gap } = planFromPrompt(
-    plan.prompt,
-    plan.rangeStart,
-    plan.rangeEnd,
-    assets,
-  );
+  const parsed = planFromPrompt(plan.prompt, plan.rangeStart, plan.rangeEnd, assets);
   const assetById = new Map(assets.map((a) => [a.id, a]));
   const placeholderIds = new Set(uploaded.filter((a) => a.placeholder).map((a) => a.id));
-  const ai = getAI();
+  return { ...parsed, assetById, placeholderIds, usingRealAssets: uploaded.length > 0 };
+}
 
-  const toItems = async (drafts: DraftItem[]): Promise<NewItem[]> => {
-    const { captions } = await ai.captions({
-      brandName: brand.name,
-      tone: "sıcak",
-      feedInsights: plan.feedInsights,
-      vision: plan.visionEnabled,
-      items: drafts.map((d) => ({
-        date: d.date,
-        type: d.type,
-        specialLabel: d.specialLabel,
-        imageUrl: assetById.get(d.assetIds[0] ?? "")?.url ?? null,
-      })),
-    });
-    return drafts.map((d, idx) => {
-      const isPlaceholder = d.assetIds.some((id) => placeholderIds.has(id));
-      return {
-        date: d.date,
-        type: d.type,
-        sort: idx,
-        caption: d.type === "story" || d.isGap ? null : captions[idx],
-        specialLabel: d.specialLabel,
-        media: d.assetIds.map((id) => {
-          const a = assetById.get(id)!;
-          return { url: a.url, kind: a.kind, slideOrder: a.slideOrder };
-        }),
-        isGap: d.isGap,
-        hidden: false,
-        placeholder: isPlaceholder,
-      };
-    });
-  };
-
+/** Counts only — no AI call. */
+export async function previewGenerate(plan: Plan): Promise<GeneratePreview> {
+  const d = await buildDrafts(plan);
   return {
-    ruleCount: rules.length,
-    gap,
-    usingRealAssets: uploaded.length > 0,
-    extendItems: await toItems(extend),
-    stopItems: await toItems(stopAtAssets),
+    ruleCount: d.rules.length,
+    gap: d.gap,
+    usingRealAssets: d.usingRealAssets,
+    extendCount: d.extend.length,
+    stopCount: d.stopAtAssets.length,
   };
+}
+
+/** Builds the chosen item set and writes captions — one AI call. */
+export async function runGenerate(
+  plan: Plan,
+  brand: Brand,
+  mode: "extend" | "stopAtAssets",
+): Promise<GenerateResult> {
+  const d = await buildDrafts(plan);
+  const drafts: DraftItem[] = mode === "stopAtAssets" ? d.stopAtAssets : d.extend;
+
+  const { captions } = await getAI().captions({
+    brandName: brand.name,
+    tone: "sıcak",
+    feedInsights: plan.feedInsights,
+    vision: plan.visionEnabled,
+    items: drafts.map((x) => ({
+      date: x.date,
+      type: x.type,
+      specialLabel: x.specialLabel,
+      imageUrl: d.assetById.get(x.assetIds[0] ?? "")?.url ?? null,
+    })),
+  });
+
+  const items: NewItem[] = drafts.map((x, idx) => ({
+    date: x.date,
+    type: x.type,
+    sort: idx,
+    caption: x.type === "story" || x.isGap ? null : captions[idx],
+    specialLabel: x.specialLabel,
+    media: x.assetIds.map((id) => {
+      const a = d.assetById.get(id)!;
+      return { url: a.url, kind: a.kind, slideOrder: a.slideOrder };
+    }),
+    isGap: x.isGap,
+    hidden: false,
+    placeholder: x.assetIds.some((id) => d.placeholderIds.has(id)),
+  }));
+
+  return { gap: d.gap, items };
 }

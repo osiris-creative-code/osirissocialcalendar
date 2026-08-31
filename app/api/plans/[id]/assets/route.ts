@@ -1,5 +1,6 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
+import { deleteUploads } from "@/lib/uploads";
 import { slideOrderFromName } from "@/lib/sources/slide-order";
 import { ITEM_TYPES, type ItemType } from "@/lib/types";
 import type { NewAsset } from "@/lib/data/store";
@@ -60,9 +61,13 @@ export async function POST(req: Request, ctx: Ctx) {
   return json(created);
 }
 
-export async function DELETE(req: Request, _ctx: Ctx) {
+export async function DELETE(req: Request, ctx: Ctx) {
   const assetId = new URL(req.url).searchParams.get("assetId");
   if (!assetId) return json({ error: "assetId required" }, 400);
-  await getStore().deleteAsset(assetId);
+  const { id } = await ctx.params;
+  const store = getStore();
+  const asset = (await store.listAssets(id)).find((a) => a.id === assetId);
+  await store.deleteAsset(assetId);
+  if (asset?.url) await deleteUploads([asset.url]);
   return new Response(null, { status: 204 });
 }

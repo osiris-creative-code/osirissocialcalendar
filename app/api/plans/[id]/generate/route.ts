@@ -1,6 +1,6 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
-import { runGenerate } from "@/lib/generate";
+import { previewGenerate, runGenerate } from "@/lib/generate";
 
 export const maxDuration = 30;
 
@@ -18,19 +18,21 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!brand) return json({ error: "brand not found" }, 404);
 
   const body = (await req.json().catch(() => ({}))) as { mode?: "extend" | "stopAtAssets" };
-  const out = await runGenerate(plan, brand);
 
+  // No mode = cheap preview (counts + gap), zero AI calls.
   if (!body.mode) {
+    const p = await previewGenerate(plan);
     return json({
-      ruleCount: out.ruleCount,
-      gap: out.gap,
-      usingRealAssets: out.usingRealAssets,
-      preview: { extendCount: out.extendItems.length, stopCount: out.stopItems.length },
+      ruleCount: p.ruleCount,
+      gap: p.gap,
+      usingRealAssets: p.usingRealAssets,
+      preview: { extendCount: p.extendCount, stopCount: p.stopCount },
     });
   }
 
-  const chosen = body.mode === "stopAtAssets" ? out.stopItems : out.extendItems;
-  await store.replaceItems(id, chosen);
+  // With mode = build the chosen set (one AI call) and persist.
+  const { items, gap } = await runGenerate(plan, brand, body.mode);
+  await store.replaceItems(id, items);
   await store.updatePlan(id, { version: plan.version + 1 });
   await store.snapshotPlan(id, "AI üretimi", actor.name);
   await store.logActivity({
@@ -38,9 +40,8 @@ export async function POST(req: Request, ctx: Ctx) {
     actorName: actor.name,
     actorRole: actor.role,
     action: "takvim_uretildi",
-    meta: { mode: body.mode, count: chosen.length, gap: out.gap },
+    meta: { mode: body.mode, count: items.length, gap },
   });
 
-  const items = await store.listItems(id);
-  return json({ items, gap: out.gap });
+  return json({ items: await store.listItems(id), gap });
 }

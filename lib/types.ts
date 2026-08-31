@@ -37,6 +37,8 @@ export type Brand = {
   colorPrimary: string;
   colorAccent: string;
   instagramHandle: string | null;
+  /** Uploaded screenshot of the brand's current feed, for AI feed analysis. */
+  feedScreenshotUrl: string | null;
   status: "active" | "archived";
   createdByName: string;
   createdAt: string;
@@ -166,6 +168,7 @@ export const zBrand = z.object({
   colorPrimary: z.string(),
   colorAccent: z.string(),
   instagramHandle: z.string().nullable(),
+  feedScreenshotUrl: z.string().nullable(),
   status: z.enum(["active", "archived"]),
   createdByName: z.string(),
   createdAt: z.string(),

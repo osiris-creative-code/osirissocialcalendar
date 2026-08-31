@@ -1,5 +1,6 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
+import { deleteUploads } from "@/lib/uploads";
 import type { NewItem } from "@/lib/data/store";
 import type { PlanTheme } from "@/lib/types";
 
@@ -65,6 +66,11 @@ export async function DELETE(req: Request, ctx: Ctx) {
   const plan = await store.getPlan(id);
   if (!plan) return json({ error: "plan not found" }, 404);
 
+  const [assets, items] = await Promise.all([store.listAssets(id), store.listItems(id)]);
   await store.deletePlan(id);
+  await deleteUploads([
+    ...assets.map((a) => a.url),
+    ...items.flatMap((i) => i.media.map((m) => m.url)),
+  ]);
   return new Response(null, { status: 204 });
 }

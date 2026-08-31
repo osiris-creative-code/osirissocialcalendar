@@ -87,3 +87,24 @@ export async function writeLocalUpload(key: string, bytes: Buffer): Promise<void
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, key.replace(/[^a-zA-Z0-9._-]/g, "_")), bytes);
 }
+
+/** Best-effort removal of uploaded files by their public URL. Never throws. */
+export async function deleteUploads(urls: (string | null | undefined)[]): Promise<void> {
+  const clean = [...new Set(urls.filter((u): u is string => !!u))];
+  if (clean.length === 0) return;
+  const sb = supabase();
+
+  if (sb) {
+    const keys = clean
+      .map((u) => u.split(`/object/public/${BUCKET}/`)[1] ?? u.split(`/${BUCKET}/`).pop())
+      .filter((k): k is string => !!k && !k.startsWith("http"));
+    if (keys.length) await sb.storage.from(BUCKET).remove(keys).catch(() => undefined);
+    return;
+  }
+
+  const { unlink } = await import("node:fs/promises");
+  for (const u of clean) {
+    if (!u.startsWith("/uploads/")) continue;
+    await unlink(join(process.cwd(), "public", u.replace(/^\//, ""))).catch(() => undefined);
+  }
+}

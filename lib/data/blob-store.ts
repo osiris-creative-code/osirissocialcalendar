@@ -34,8 +34,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * between, `saveBlob` returns `ok:false` and `mutate` re-reads and retries — so
  * concurrent writes serialize instead of clobbering each other.
  *
- * Reads use a short per-instance cache to collapse the many loads a single page
- * render does into one round-trip.
+ * Reads go straight to `fetchBlob()` every time. There is no cross-request read
+ * cache: a stale one made a write in one request invisible to the `router.refresh()`
+ * that immediately followed it in another. Speed comes from co-locating the
+ * function with the database (see `vercel.json` regions), not from caching.
  *
  * Subclasses implement `fetchBlob()` / `saveBlob()`.
  */
@@ -48,14 +50,10 @@ export abstract class BlobStore implements DataStore {
     version: number,
   ): Promise<{ ok: boolean; version: number }>;
 
-  private cache: DbShape | null = null;
-  private cacheAt = 0;
-  private static readonly TTL_MS = 1500;
-
   protected static normalize(db: Partial<DbShape> | null): DbShape {
     if (!db) return seedData();
     return {
-      brands: db.brands ?? [],
+      brands: (db.brands ?? []).map((b) => ({ ...b, feedScreenshotUrl: b.feedScreenshotUrl ?? null })),
       sources: db.sources ?? [],
       plans: (db.plans ?? []).map((p) => ({
         ...p,
@@ -72,15 +70,10 @@ export abstract class BlobStore implements DataStore {
     };
   }
 
-  /** Cached read — list/get methods tolerate a ~1.5s stale view. */
+  /** Fresh read on every call. */
   private async load(): Promise<DbShape> {
-    if (this.cache && Date.now() - this.cacheAt < BlobStore.TTL_MS) {
-      return structuredClone(this.cache);
-    }
     const { db } = await this.fetchBlob();
-    this.cache = db;
-    this.cacheAt = Date.now();
-    return structuredClone(db);
+    return db;
   }
 
   /** Read-modify-write with retry on version conflict. */
@@ -90,11 +83,7 @@ export abstract class BlobStore implements DataStore {
       const { db, version } = await this.fetchBlob();
       lastResult = fn(db);
       const res = await this.saveBlob(db, version);
-      if (res.ok) {
-        this.cache = structuredClone(db);
-        this.cacheAt = Date.now();
-        return lastResult;
-      }
+      if (res.ok) return lastResult;
       await sleep(40 + attempt * 60);
     }
     throw new Error("yazma çakışması: çok fazla eşzamanlı değişiklik, tekrar deneyin");
@@ -108,7 +97,13 @@ export abstract class BlobStore implements DataStore {
     return (await this.load()).brands.find((b) => b.id === id) ?? null;
   }
   async createBrand(input: CreateBrandInput): Promise<Brand> {
-    const brand: Brand = { id: newId(), status: "active", createdAt: new Date().toISOString(), ...input };
+    const brand: Brand = {
+      id: newId(),
+      status: "active",
+      createdAt: new Date().toISOString(),
+      feedScreenshotUrl: null,
+      ...input,
+    };
     await this.mutate((db) => db.brands.push(brand));
     return brand;
   }

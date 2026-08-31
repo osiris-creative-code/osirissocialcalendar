@@ -5,6 +5,7 @@ import { GET as getPlan } from "@/app/api/plans/[id]/route";
 import { POST as rewrite } from "@/app/api/plans/[id]/rewrite/route";
 import { POST as analyzeFeed } from "@/app/api/plans/[id]/analyze-feed/route";
 import { GET as listBrands } from "@/app/api/brands/route";
+import { PATCH as patchBrand } from "@/app/api/brands/[id]/route";
 
 const AUTH = "ritim_team=1; ritim_actor=Derya|yonetici";
 const j = (u: string, m: string, b?: unknown) =>
@@ -69,12 +70,25 @@ describe("rewrite caption", () => {
 });
 
 describe("analyze feed", () => {
-  it("stores insights on the plan", async () => {
+  it("asks for a screenshot when the brand has none", async () => {
     const { plan } = await seededPlanWithItems();
+    const res = await analyzeFeed(j(`/api/plans/${plan.id}/analyze-feed`, "POST"), ctx(plan.id));
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data.needsScreenshot).toBe(true);
+  });
+
+  it("stores insights once a feed screenshot is set", async () => {
+    const brandId = (await (await listBrands(j("/api/brands", "GET"))).json())[0].id;
+    await patchBrand(
+      j(`/api/brands/${brandId}`, "PATCH", { feedScreenshotUrl: "https://cdn/x/feed.jpg" }),
+      { params: Promise.resolve({ id: brandId }) },
+    );
+    const { plan } = await seededPlanWithItems();
+
     const res = await analyzeFeed(j(`/api/plans/${plan.id}/analyze-feed`, "POST"), ctx(plan.id));
     expect(res.status).toBe(200);
     const { insights } = await res.json();
-    expect(Array.isArray(insights)).toBe(true);
     expect(insights.length).toBeGreaterThanOrEqual(3);
 
     const full = await (await getPlan(j(`/api/plans/${plan.id}`, "GET"), ctx(plan.id))).json();

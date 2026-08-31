@@ -2,10 +2,9 @@ import { getStore } from "@/lib/db";
 import { getAI } from "@/lib/ai";
 import { json, requireEditor } from "@/lib/api/session";
 
-type Ctx = { params: Promise<{ id: string }> };
+export const maxDuration = 30;
 
-// Phase 1: no real feed images. Phase 2 swaps this for the brand's fetched media.
-const DEMO_FEED = Array.from({ length: 9 }, (_, i) => `/demo/ph-${(i % 5) + 1}.svg`);
+type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: Ctx) {
   const actor = requireEditor(req);
@@ -18,10 +17,20 @@ export async function POST(req: Request, ctx: Ctx) {
   const brand = await store.getBrand(plan.brandId);
   if (!brand) return json({ error: "brand not found" }, 404);
 
+  if (!brand.feedScreenshotUrl) {
+    return json({
+      insights: [
+        "Analiz için önce markanın güncel Instagram feed'inin bir ekran görüntüsünü yükleyin.",
+        "(Instagram'ın kendi bağlantısı Phase 2'de gelecek.)",
+      ],
+      needsScreenshot: true,
+    });
+  }
+
   const { insights } = await getAI().analyzeFeed({
     brandName: brand.name,
     handle: brand.instagramHandle,
-    imageUrls: DEMO_FEED,
+    imageUrls: [brand.feedScreenshotUrl],
   });
 
   await store.updatePlan(id, { feedInsights: insights });

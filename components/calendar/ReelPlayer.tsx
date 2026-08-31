@@ -5,15 +5,29 @@ import type { Media } from "@/lib/types";
 
 export function ReelPlayer({ media }: { media: Media }) {
   const [playing, setPlaying] = useState(false);
+  const isVideo = media.kind === "video" && !!media.url;
 
+  // Real uploaded video → a proper player.
+  if (isVideo) {
+    return (
+      <video
+        src={media.url}
+        controls
+        playsInline
+        preload="metadata"
+        className="h-full w-full bg-black object-contain"
+      />
+    );
+  }
+
+  // Demo / poster-only fallback (no real video file).
   return (
     <div className="relative h-full w-full overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={media.url} alt="Reel önizleme" className="h-full w-full object-cover" />
       <span className="absolute left-3 top-3 rounded bg-black/40 px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-white/85">
-        Drive oynatıcı
+        Reel
       </span>
-
       {!playing ? (
         <button
           type="button"
@@ -30,10 +44,7 @@ export function ReelPlayer({ media }: { media: Media }) {
         </button>
       ) : (
         <div className="absolute inset-0 grid place-items-center bg-black/35 text-center text-[12px] text-white">
-          <div>
-            <div className="mb-1 font-mono">0:03 / 0:09</div>
-            <div className="opacity-80">Gerçek sürümde Drive videosu burada oynar</div>
-          </div>
+          Örnek kare — gerçek video yüklendiğinde burada oynar
         </div>
       )}
     </div>
