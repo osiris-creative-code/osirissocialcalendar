@@ -7,6 +7,10 @@ create table if not exists public.app_state (
   updated_at timestamptz not null default now()
 );
 
+-- Lock the table: with RLS on and no policies, only the service/secret key
+-- (which bypasses RLS) can read or write it. The anon/publishable key cannot.
+alter table public.app_state enable row level security;
+
 create or replace function public.app_state_touch()
 returns trigger language plpgsql as $$
 begin
