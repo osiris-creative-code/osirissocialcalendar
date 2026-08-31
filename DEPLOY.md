@@ -39,6 +39,7 @@ git push -u origin main
    | `OSIRIS_DEV_PASSWORD` | Developer sekmesi şifresi |
    | `SUPABASE_URL` | 1. adımdaki Project URL |
    | `SUPABASE_SERVICE_ROLE_KEY` | 1. adımdaki service_role secret |
+   | `CRON_SECRET` | uzun rastgele metin — günlük dosya temizliği bunsuz çalışmaz |
    | `ANTHROPIC_API_KEY` | *(opsiyonel — yoksa AI sahte çıktı verir)* |
    | `OSIRIS_AI_MODEL` | *(opsiyonel — varsayılan `claude-sonnet-5`; `claude-haiku-4-5` daha ucuz)* |
 
@@ -65,6 +66,10 @@ Adresin: `https://<proje-adı>.vercel.app` — kendi alan adı **gerekmez**.
   Dolarsa Supabase Pro 25 $/ay. Görsel/video Supabase Storage'da; büyük dosyalar tarayıcıdan
   doğrudan Storage'a gider (Vercel fonksiyon limitine takılmaz).
 - **AI maliyeti:** `ANTHROPIC_API_KEY` koyarsan plan başına birkaç kuruş; normal kullanımda aylık $1–8.
+- **Otomatik temizlik:** Vercel Cron her gün 03:00 UTC'de `/api/cron/cleanup` çağırır; takvim
+  bitiş tarihinden (rangeEnd) 14 gün geçmiş planların yüklenen görsel/videolarını Storage'dan
+  siler. Plan, caption ve yorumlar kalır — sadece dosyalar gider. `CRON_SECRET` tanımlı olmalı.
+  Elle tetiklemek: `curl -H "Authorization: Bearer $CRON_SECRET" https://<proje>.vercel.app/api/cron/cleanup`.
 - **Yerel çalıştırma:** Supabase env'leri olmadan `npm run dev` → `.data/db.json` + `public/uploads`
   kullanır (tek makinede sorunsuz; Vercel'de kalıcı değil, o yüzden Supabase şart).
 - Ekip kodunu ve Developer şifresini kimseyle gereksiz paylaşma; `/app` adresi de gizli kalsın.

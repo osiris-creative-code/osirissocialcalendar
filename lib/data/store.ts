@@ -69,6 +69,7 @@ export interface DataStore {
   createPlan(input: CreatePlanInput): Promise<Plan>;
   updatePlan(id: string, patch: Partial<Plan>): Promise<Plan>;
   deletePlan(id: string): Promise<void>;
+  purgePlanMedia(id: string): Promise<{ urls: string[] }>;
 
   listItems(planId: string): Promise<PlanItem[]>;
   replaceItems(planId: string, items: NewItem[]): Promise<PlanItem[]>;

@@ -74,6 +74,8 @@ export type Plan = {
   feedInsights: string[] | null;
   /** Date (YYYY-MM-DD) the brand's review is due; null = none. */
   reviseDeadline: string | null;
+  /** ISO timestamp the uploaded files were swept from Storage; null = still kept. */
+  mediaPurgedAt: string | null;
 };
 
 export type PlanVersion = {
@@ -193,6 +195,7 @@ export const zPlan = z.object({
   visionEnabled: z.boolean(),
   feedInsights: z.array(z.string()).nullable(),
   reviseDeadline: z.string().nullable(),
+  mediaPurgedAt: z.string().nullable(),
 });
 
 export const zPlanItem = z.object({

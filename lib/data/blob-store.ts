@@ -60,6 +60,7 @@ export abstract class BlobStore implements DataStore {
         visionEnabled: p.visionEnabled ?? true,
         feedInsights: p.feedInsights ?? null,
         reviseDeadline: p.reviseDeadline ?? null,
+        mediaPurgedAt: p.mediaPurgedAt ?? null,
       })),
       items: db.items ?? [],
       assets: db.assets ?? [],
@@ -159,6 +160,7 @@ export abstract class BlobStore implements DataStore {
       visionEnabled: input.visionEnabled ?? true,
       feedInsights: null,
       reviseDeadline: null,
+      mediaPurgedAt: null,
     };
     await this.mutate((db) => db.plans.push(plan));
     return plan;
@@ -181,6 +183,23 @@ export abstract class BlobStore implements DataStore {
       db.comments = db.comments.filter((c) => !itemIds.has(c.planItemId));
       db.annotations = db.annotations.filter((a) => !itemIds.has(a.planItemId));
       db.activity = db.activity.filter((a) => a.planId !== id);
+    });
+  }
+  /** Strip a plan's uploaded files from the DB (the Storage delete happens in the route). */
+  async purgePlanMedia(id: string): Promise<{ urls: string[] }> {
+    return this.mutate((db) => {
+      const itemIds = new Set(db.items.filter((i) => i.planId === id).map((i) => i.id));
+      const urls = [
+        ...db.assets.filter((a) => a.planId === id).map((a) => a.url),
+        ...db.items.filter((i) => i.planId === id).flatMap((i) => i.media.map((m) => m.url)),
+      ].filter((u): u is string => !!u);
+      db.assets = db.assets.filter((a) => a.planId !== id);
+      for (const item of db.items) {
+        if (itemIds.has(item.id)) item.media = [];
+      }
+      const plan = db.plans.find((p) => p.id === id);
+      if (plan) plan.mediaPurgedAt = new Date().toISOString();
+      return { urls: [...new Set(urls)] };
     });
   }
 

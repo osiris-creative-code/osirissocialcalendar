@@ -53,6 +53,7 @@ describe("zPlan", () => {
       visionEnabled: true,
       feedInsights: null,
       reviseDeadline: null,
+      mediaPurgedAt: null,
     };
     expect(zPlan.safeParse(ok).success).toBe(true);
   });
