@@ -24,7 +24,7 @@ create trigger app_state_touch before update on public.app_state
 
 -- 2. Public storage bucket for uploaded images/videos.
 insert into storage.buckets (id, name, public)
-values ('ritim', 'ritim', true)
+values ('osiris', 'osiris', true)
 on conflict (id) do update set public = true;
 
 -- Public buckets are world-readable by URL. Uploads go through short-lived signed

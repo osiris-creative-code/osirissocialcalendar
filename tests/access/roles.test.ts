@@ -44,7 +44,7 @@ describe("permissions", () => {
 
 describe("gates", () => {
   it("accept the dev defaults", () => {
-    expect(checkTeamToken("ritim-dev")).toBe(true);
+    expect(checkTeamToken("osiris-dev")).toBe(true);
     expect(checkTeamToken("nope")).toBe(false);
     expect(checkDeveloperPassword("dev")).toBe(true);
     expect(checkDeveloperPassword("nope")).toBe(false);

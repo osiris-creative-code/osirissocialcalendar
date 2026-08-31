@@ -8,7 +8,7 @@ import type {
   RewriteRequest,
 } from "./types";
 
-const MODEL = process.env.RITIM_AI_MODEL ?? "claude-sonnet-5";
+const MODEL = process.env.OSIRIS_AI_MODEL ?? "claude-sonnet-5";
 
 function isRemote(url?: string | null): url is string {
   return !!url && /^https?:\/\//.test(url);

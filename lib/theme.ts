@@ -1,4 +1,4 @@
-/** CSS custom-property names that make up the Ritim palette (see app/globals.css). */
+/** CSS custom-property names that make up the Osiris palette (see app/globals.css). */
 export const PALETTE_KEYS = [
   "--bg",
   "--surface",

@@ -17,9 +17,9 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      RITIM_TEAM_TOKEN: "ritim-dev",
-      RITIM_DEV_PASSWORD: "dev",
-      RITIM_DB_PATH: DB_PATH,
+      OSIRIS_TEAM_TOKEN: "osiris-dev",
+      OSIRIS_DEV_PASSWORD: "dev",
+      OSIRIS_DB_PATH: DB_PATH,
     },
   },
 });

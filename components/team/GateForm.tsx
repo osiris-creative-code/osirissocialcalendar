@@ -54,7 +54,7 @@ export function GateForm({ step }: { step: "team" | "role" }) {
   return (
     <main className="grid min-h-screen place-items-center px-6">
       <div className="w-[min(360px,100%)] rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-6" style={{ boxShadow: "var(--shadow)" }}>
-        <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">Ritim</h1>
+        <h1 className="font-[family-name:var(--font-display)] text-xl font-semibold">Osiris Social Calendar</h1>
 
         {step === "team" ? (
           <form className="mt-4 flex flex-col gap-3" onSubmit={submitTeam}>

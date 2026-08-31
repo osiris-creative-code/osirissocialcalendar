@@ -1,4 +1,4 @@
-# Ritim — Sosyal Medya Paylaşım Takvimi
+# Osiris Social Calendar — Sosyal Medya Paylaşım Takvimi
 
 Drive linklerinden ve bir metin promptundan; akışkan, videoların oynatılabildiği,
 markanın **hiçbir uygulama indirmeden** bir web linkiyle açıp üzerine revize
@@ -17,14 +17,14 @@ npm run dev            # http://localhost:3000
 
 İlk açılışta `/app` seni ekip kapısına götürür:
 
-- **Ekip kodu:** `ritim-dev`  (env: `RITIM_TEAM_TOKEN`)
+- **Ekip kodu:** `osiris-dev`  (env: `OSIRIS_TEAM_TOKEN`)
 - Ardından **isim + rol** seç (Yönetici / In-house onaylayan / Developer)
-- **Developer şifresi:** `dev`  (env: `RITIM_DEV_PASSWORD`)
+- **Developer şifresi:** `dev`  (env: `OSIRIS_DEV_PASSWORD`)
 
 ## Test
 
 ```bash
-npm test          # Vitest — birim + API + bileşen (66 test)
+npm test          # Vitest — birim + API + bileşen (83+ test)
 npm run test:e2e  # Playwright — tam iş akışı (dev sunucusunu kendi başlatır)
 ```
 
@@ -82,14 +82,14 @@ Dış servisler arayüz arkasında; Phase 1'de `Mock*` implementasyonları:
 `analyzeFeed` (Instagram panelinde "Feed'i analiz et" → çıkan notlar sonraki üretimde caption'lara katılır).
 
 - `ANTHROPIC_API_KEY` **tanımlıysa** → gerçek Claude (`AnthropicAI`); değilse → deterministik `MockAI`.
-- Model: `RITIM_AI_MODEL` (varsayılan `claude-sonnet-5`).
+- Model: `OSIRIS_AI_MODEL` (varsayılan `claude-sonnet-5`).
 - Editördeki **"Görselleri AI'ya göster"** kutusu açıkken görsel URL'leri modele vision olarak gider
   (Phase 1'de görseller yerel placeholder olduğu için etkisiz).
 
 ```bash
 # canlı AI için:
 export ANTHROPIC_API_KEY=sk-ant-...
-export RITIM_AI_MODEL=claude-haiku-4-5   # opsiyonel; daha ucuz
+export OSIRIS_AI_MODEL=claude-haiku-4-5   # opsiyonel; daha ucuz
 ```
 
 Tahmini maliyet (gerçek API): normal bir ajansta **aylık $1–8** — plan başına birkaç kuruş.

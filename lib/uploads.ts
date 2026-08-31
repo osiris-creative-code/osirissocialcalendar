@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { newId } from "@/lib/ids";
 
-const BUCKET = process.env.SUPABASE_BUCKET ?? "ritim";
+const BUCKET = process.env.SUPABASE_BUCKET ?? "osiris";
 
 function supabase() {
   const url = process.env.SUPABASE_URL;

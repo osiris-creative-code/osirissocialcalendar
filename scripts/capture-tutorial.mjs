@@ -25,7 +25,7 @@ const shot = async (name, p = page) => {
 await page.goto(`${BASE}/app`);
 await page.waitForSelector("text=Ekip kodu");
 await shot("gate-team");
-await page.getByLabel("Ekip kodu").fill("ritim-dev");
+await page.getByLabel("Ekip kodu").fill("osiris-dev");
 await page.getByRole("button", { name: "Devam" }).click();
 await page.waitForSelector("text=Adınız");
 await page.getByLabel("Adınız").fill("Derya");

@@ -19,7 +19,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ritim — Sosyal Medya Paylaşım Takvimi",
+  title: "Osiris Social Calendar",
   description: "Drive linklerinden ve bir promptdan akışkan, paylaşılabilir bir sosyal medya takvimi üretir.",
 };
 

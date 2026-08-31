@@ -1,4 +1,4 @@
-# Ritim'i bugün yayına alma (Vercel + Supabase)
+# Osiris Social Calendar'i bugün yayına alma (Vercel + Supabase)
 
 Süre: ~15 dakika. Hepsi bedava katman.
 
@@ -6,7 +6,7 @@ Süre: ~15 dakika. Hepsi bedava katman.
 
 ## 1. Supabase (kalıcı veri + dosya)
 
-1. https://supabase.com → **New project** (bölge: sana yakın olan, örn. Frankfurt).
+1. https://supabase.com → **New project** (bölge: sana yakın olan, örn. Frankfurt ya da Mumbai).
 2. Proje açılınca → sol menü **SQL Editor** → **New query** → bu depodaki
    [`supabase/schema.sql`](supabase/schema.sql) dosyasının tamamını yapıştır → **Run**.
    (Bir tablo + bir depolama kovası oluşturur.)
@@ -35,12 +35,12 @@ git push -u origin main
 
    | Key | Değer |
    |---|---|
-   | `RITIM_TEAM_TOKEN` | ekibin gireceği kod (kendin belirle) |
-   | `RITIM_DEV_PASSWORD` | Developer sekmesi şifresi |
+   | `OSIRIS_TEAM_TOKEN` | ekibin gireceği kod (kendin belirle) |
+   | `OSIRIS_DEV_PASSWORD` | Developer sekmesi şifresi |
    | `SUPABASE_URL` | 1. adımdaki Project URL |
    | `SUPABASE_SERVICE_ROLE_KEY` | 1. adımdaki service_role secret |
    | `ANTHROPIC_API_KEY` | *(opsiyonel — yoksa AI sahte çıktı verir)* |
-   | `RITIM_AI_MODEL` | *(opsiyonel — varsayılan `claude-sonnet-5`; `claude-haiku-4-5` daha ucuz)* |
+   | `OSIRIS_AI_MODEL` | *(opsiyonel — varsayılan `claude-sonnet-5`; `claude-haiku-4-5` daha ucuz)* |
 
 4. **Deploy**. 1-2 dakikada biter.
 

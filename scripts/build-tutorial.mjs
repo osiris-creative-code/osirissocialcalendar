@@ -13,7 +13,7 @@ const tracks = [
     blurb: "Planı kuran ve düzenleyen kişi. Drive linklerinden + bir promptdan takvimi üretir, düzenler, iç onaya yollar.",
     steps: [
       ["Ekip kapısı", "01-gate-team",
-        "Uygulama tek bir ekip adresinin arkasında. İlk açılışta ekip kodu istenir — takımın paylaştığı gizli kod (<code>ritim-dev</code>). Kişisel şifre yok."],
+        "Uygulama tek bir ekip adresinin arkasında. İlk açılışta ekip kodu istenir — takımın paylaştığı gizli kod (<code>osiris-dev</code>). Kişisel şifre yok."],
       ["İsim ve rol", "02-gate-role",
         "Adını yaz, rolünü seç: <b>Yönetici</b> ya da <b>In-house onaylayan</b>. Yönetici ve onaylayan şifre girmez — kim ne yaptı, bıraktığı isimle iz kaydına yazılır. Developer ayrıca şifreyle girer."],
       ["Markalar", "03-brands",

@@ -31,11 +31,11 @@ export function resolveActor(cookieValue: string | undefined): { name: string; r
 }
 
 export function checkTeamToken(input: string): boolean {
-  return input === (process.env.RITIM_TEAM_TOKEN ?? "ritim-dev");
+  return input === (process.env.OSIRIS_TEAM_TOKEN ?? "osiris-dev");
 }
 
 export function checkDeveloperPassword(input: string): boolean {
-  return input === (process.env.RITIM_DEV_PASSWORD ?? "dev");
+  return input === (process.env.OSIRIS_DEV_PASSWORD ?? "dev");
 }
 
 export function canEditPlans(role: Role): boolean {

@@ -32,7 +32,7 @@ export function TopBar({
   return (
     <header className="sticky top-0 z-40 flex flex-wrap items-center gap-4 border-b border-[var(--border)] bg-[var(--bg)]/85 px-5 py-3 backdrop-blur">
       <Link href="/app/brands" className="font-[family-name:var(--font-display)] text-xl font-semibold">
-        Ritim
+        Osiris
       </Link>
 
       <nav className="flex items-center gap-1 text-[13px]">

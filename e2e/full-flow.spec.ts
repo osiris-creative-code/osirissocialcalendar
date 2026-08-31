@@ -6,7 +6,7 @@ test("full workflow: create -> generate -> internal approve -> brand view -> rev
 }) => {
   // --- team gate ---
   await page.goto("/app");
-  await page.getByLabel("Ekip kodu").fill("ritim-dev");
+  await page.getByLabel("Ekip kodu").fill("osiris-dev");
   await page.getByRole("button", { name: "Devam" }).click();
 
   // --- role pick ---

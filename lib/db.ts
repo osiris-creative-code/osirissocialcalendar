@@ -12,7 +12,7 @@ export function getStore(): DataStore {
     if (url && key) {
       instance = new SupabaseStore(url, key);
     } else {
-      const path = process.env.RITIM_DB_PATH ?? join(process.cwd(), ".data", "db.json");
+      const path = process.env.OSIRIS_DB_PATH ?? join(process.cwd(), ".data", "db.json");
       instance = new JsonStore(path);
     }
   }
