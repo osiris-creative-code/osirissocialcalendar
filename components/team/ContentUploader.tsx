@@ -18,29 +18,37 @@ export function ContentUploader({
 }) {
   const [assets, setAssets] = useState<PlanAsset[]>(initialAssets);
   const [busy, setBusy] = useState<ItemType | null>(null);
+  const [error, setError] = useState("");
 
   const upload = async (type: ItemType, files: FileList | null) => {
     if (!files || files.length === 0) return;
     setBusy(type);
+    setError("");
     try {
       const recorded: { type: ItemType; kind: "image" | "video"; url: string; name: string }[] = [];
       for (const file of Array.from(files)) {
-        const target = await (
-          await fetch(`/api/plans/${planId}/assets/sign`, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ name: file.name }),
-          })
-        ).json();
+        const signRes = await fetch(`/api/plans/${planId}/assets/sign`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ name: file.name }),
+        });
+        const target = await signRes.json().catch(() => ({}));
+        if (!signRes.ok || !target.mode) {
+          setError(target.error || "Yükleme hazırlanamadı.");
+          return;
+        }
 
-        if (target.mode === "supabase") {
-          await fetch(target.signedUrl, {
-            method: "PUT",
-            headers: { "content-type": file.type || "application/octet-stream", "x-upsert": "true" },
-            body: file,
-          });
-        } else {
-          await fetch(target.uploadPath, { method: "PUT", body: file });
+        const put =
+          target.mode === "supabase"
+            ? await fetch(target.signedUrl, {
+                method: "PUT",
+                headers: { "content-type": file.type || "application/octet-stream" },
+                body: file,
+              })
+            : await fetch(target.uploadPath, { method: "PUT", body: file });
+        if (!put.ok) {
+          setError(`Depoya yüklenemedi (${put.status}).`);
+          return;
         }
 
         recorded.push({
@@ -59,6 +67,8 @@ export function ContentUploader({
       if (res.ok) {
         const added = (await res.json()) as PlanAsset[];
         setAssets((a) => [...a, ...added]);
+      } else {
+        setError("Kayıt başarısız.");
       }
     } finally {
       setBusy(null);
@@ -79,6 +89,8 @@ export function ContentUploader({
         Drive&apos;dan indirdiğin görselleri/videoları buraya yükle. Yüklemezsen örnek içerikle üretilir.
         “kaydırmalı 1 / 2” isimli dosyalar tek bir carousel olur.
       </p>
+
+      {error && <p className="mb-3 text-[12px] text-[var(--accent)]">{error}</p>}
 
       <div className="grid gap-2 sm:grid-cols-3">
         {GROUPS.map((g) => {

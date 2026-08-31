@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 
-/** Logo picker: preview + file upload (straight to storage) + URL fallback. */
+/** Logo picker: preview + file upload (server-side) + URL fallback. */
 export function LogoUpload({
   value,
   color,
@@ -13,30 +13,25 @@ export function LogoUpload({
   onChange: (url: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
     setBusy(true);
+    setError("");
     try {
-      const target = await (
-        await fetch("/api/uploads/sign", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ name: file.name }),
-        })
-      ).json();
-
-      if (target.mode === "supabase") {
-        await fetch(target.signedUrl, {
-          method: "PUT",
-          headers: { "content-type": file.type || "application/octet-stream", "x-upsert": "true" },
-          body: file,
-        });
+      const form = new FormData();
+      form.set("file", file);
+      const res = await fetch("/api/uploads", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        onChange(data.url as string);
       } else {
-        await fetch(target.uploadPath, { method: "PUT", body: file });
+        setError(data.error || "Yükleme başarısız.");
       }
-      onChange(target.publicUrl);
+    } catch {
+      setError("Yükleme başarısız (bağlantı).");
     } finally {
       setBusy(false);
     }
@@ -73,6 +68,7 @@ export function LogoUpload({
           placeholder="veya URL yapıştır"
           className="mt-1.5 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[12px]"
         />
+        {error && <p className="mt-1 text-[11.5px] text-[var(--accent)]">{error}</p>}
       </div>
     </div>
   );
