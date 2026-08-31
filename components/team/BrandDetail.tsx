@@ -17,6 +17,7 @@ export function BrandDetail({
   plans: Plan[];
 }) {
   const router = useRouter();
+  const [name, setName] = useState(brand.name);
   const [logoUrl, setLogoUrl] = useState(brand.logoUrl);
   const [colorPrimary, setColorPrimary] = useState(brand.colorPrimary);
   const [colorAccent, setColorAccent] = useState(brand.colorAccent);
@@ -29,7 +30,13 @@ export function BrandDetail({
     const res = await fetch(`/api/brands/${brand.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ logoUrl, colorPrimary, colorAccent, instagramHandle: handle }),
+      body: JSON.stringify({
+        name: name.trim() || brand.name,
+        logoUrl,
+        colorPrimary,
+        colorAccent,
+        instagramHandle: handle,
+      }),
     });
     setBusy(false);
     setSaved(res.ok);
@@ -56,6 +63,10 @@ export function BrandDetail({
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">Ayarlar</h2>
         <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-[13px] text-[var(--text-dim)]">
+            Marka adı
+            <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />
+          </label>
           <label className="text-[13px] text-[var(--text-dim)]">
             Logo URL
             <input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />
