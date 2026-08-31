@@ -5,6 +5,7 @@ import type {
   BrandSource,
   Comment,
   Plan,
+  PlanAsset,
   PlanItem,
   PlanTheme,
   Stage,
@@ -15,6 +16,7 @@ export type DbShape = {
   sources: BrandSource[];
   plans: Plan[];
   items: PlanItem[];
+  assets: PlanAsset[];
   comments: Comment[];
   annotations: Annotation[];
   activity: ActivityEntry[];
@@ -42,6 +44,7 @@ export type CreatePlanInput = {
 };
 
 export type NewItem = Omit<PlanItem, "id" | "planId">;
+export type NewAsset = Omit<PlanAsset, "id" | "planId" | "sort">;
 
 export type AddCommentInput = Omit<Comment, "id" | "createdAt">;
 export type AddAnnotationInput = Omit<Annotation, "id" | "createdAt">;
@@ -65,6 +68,10 @@ export interface DataStore {
   listItems(planId: string): Promise<PlanItem[]>;
   replaceItems(planId: string, items: NewItem[]): Promise<PlanItem[]>;
   updateItem(id: string, patch: Partial<PlanItem>): Promise<PlanItem>;
+
+  listAssets(planId: string): Promise<PlanAsset[]>;
+  addAssets(planId: string, assets: NewAsset[]): Promise<PlanAsset[]>;
+  deleteAsset(id: string): Promise<void>;
 
   listComments(planId: string): Promise<Comment[]>;
   addComment(input: AddCommentInput): Promise<Comment>;

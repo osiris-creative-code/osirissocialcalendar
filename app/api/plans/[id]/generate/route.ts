@@ -22,6 +22,7 @@ export async function POST(req: Request, ctx: Ctx) {
     return json({
       ruleCount: out.ruleCount,
       gap: out.gap,
+      usingRealAssets: out.usingRealAssets,
       preview: { extendCount: out.extendItems.length, stopCount: out.stopItems.length },
     });
   }

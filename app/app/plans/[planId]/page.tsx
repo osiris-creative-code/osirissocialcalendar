@@ -14,9 +14,10 @@ export default async function PlanEditorPage({
   const plan = await store.getPlan(planId);
   if (!plan) notFound();
 
-  const [brand, items, comments, annotations] = await Promise.all([
+  const [brand, items, assets, comments, annotations] = await Promise.all([
     store.getBrand(plan.brandId),
     store.listItems(planId),
+    store.listAssets(planId),
     store.listComments(planId),
     store.listAnnotations(planId),
   ]);
@@ -30,6 +31,7 @@ export default async function PlanEditorPage({
       plan={plan}
       brand={brand}
       items={items}
+      assets={assets}
       comments={comments}
       annotations={annotations}
       actorName={actor.name}

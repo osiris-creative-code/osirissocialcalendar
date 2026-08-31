@@ -1,21 +1,36 @@
 import { getAI } from "@/lib/ai";
+import { getStore } from "@/lib/db";
 import { planFromPrompt, type DraftItem } from "@/lib/planner";
 import { MockDriveSource } from "@/lib/sources/mock-drive";
+import type { Asset } from "@/lib/sources/types";
 import type { Brand, Plan } from "@/lib/types";
 import type { NewItem } from "@/lib/data/store";
 
-/** Fixed demo asset counts used while Drive is mocked (Phase 1). */
+/** Fixed demo asset counts, used only when a plan has no uploaded content. */
 export const DEMO_SOURCE_CONFIG = { postCount: 5, storyCount: 8, reelCount: 2 };
 
 export type GenerateOutput = {
   ruleCount: number;
   gap: boolean;
+  usingRealAssets: boolean;
   extendItems: NewItem[];
   stopItems: NewItem[];
 };
 
 export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOutput> {
-  const assets = await new MockDriveSource(DEMO_SOURCE_CONFIG).list();
+  const uploaded = await getStore().listAssets(plan.id);
+  const assets: Asset[] = uploaded.length
+    ? uploaded.map((a) => ({
+        id: a.id,
+        name: a.name,
+        type: a.type,
+        kind: a.kind,
+        url: a.url,
+        slideGroup: a.slideGroup ?? undefined,
+        slideOrder: a.slideOrder,
+      }))
+    : await new MockDriveSource(DEMO_SOURCE_CONFIG).list();
+
   const { rules, extend, stopAtAssets, gap } = planFromPrompt(
     plan.prompt,
     plan.rangeStart,
@@ -56,6 +71,7 @@ export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOut
   return {
     ruleCount: rules.length,
     gap,
+    usingRealAssets: uploaded.length > 0,
     extendItems: await toItems(extend),
     stopItems: await toItems(stopAtAssets),
   };

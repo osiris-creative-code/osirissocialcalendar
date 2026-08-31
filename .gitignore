@@ -49,3 +49,6 @@ playwright-report/
 
 ANTHROPIC_API_KEY
 RITIM_AI_MODEL
+
+# uploads (local dev)
+/public/uploads/

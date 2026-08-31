@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { Annotation, Brand, Comment, Plan, PlanItem, PlanTheme, Role } from "@/lib/types";
+import type { Annotation, Brand, Comment, Plan, PlanAsset, PlanItem, PlanTheme, Role } from "@/lib/types";
 import { trRange } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/plan-stages";
 import { PlanEditor } from "@/components/team/PlanEditor";
+import { ContentUploader } from "@/components/team/ContentUploader";
 import { FeedbackInbox } from "@/components/team/FeedbackInbox";
 import { InstagramPanel } from "@/components/team/InstagramPanel";
 import { GapModal } from "@/components/team/GapModal";
@@ -15,6 +16,7 @@ export function EditorClient({
   plan: initialPlan,
   brand,
   items: initialItems,
+  assets,
   comments,
   annotations,
   actorName,
@@ -23,6 +25,7 @@ export function EditorClient({
   plan: Plan;
   brand: Brand;
   items: PlanItem[];
+  assets: PlanAsset[];
   comments: Comment[];
   annotations: Annotation[];
   actorName: string;
@@ -138,6 +141,10 @@ export function EditorClient({
           </div>
           <StageBadge stage={plan.stage} />
         </div>
+
+        {plan.stage === "taslak" && (
+          <ContentUploader planId={plan.id} initialAssets={assets} />
+        )}
 
         <div className="flex flex-wrap items-center gap-3">
           <button

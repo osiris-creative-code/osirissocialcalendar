@@ -85,6 +85,18 @@ export type PlanItem = {
   hidden: boolean;
 };
 
+export type PlanAsset = {
+  id: string;
+  planId: string;
+  type: ItemType;
+  kind: "image" | "video";
+  url: string;
+  name: string;
+  slideGroup: string | null;
+  slideOrder: number;
+  sort: number;
+};
+
 export type Comment = {
   id: string;
   planItemId: string;
