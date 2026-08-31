@@ -17,18 +17,18 @@ export class SupabaseStore extends BlobStore {
     this.sb = createClient(url, serviceKey, { auth: { persistSession: false } });
   }
 
-  protected async load(): Promise<DbShape> {
+  protected async fetchBlob(): Promise<DbShape> {
     const { data, error } = await this.sb.from(TABLE).select("data").eq("id", ROW_ID).maybeSingle();
     if (error) throw new Error(`supabase load: ${error.message}`);
     if (!data) {
       const seeded = BlobStore.normalize(null);
-      await this.persist(seeded);
+      await this.saveBlob(seeded);
       return seeded;
     }
     return BlobStore.normalize(data.data as Partial<DbShape>);
   }
 
-  protected async persist(db: DbShape): Promise<void> {
+  protected async saveBlob(db: DbShape): Promise<void> {
     const { error } = await this.sb.from(TABLE).upsert({ id: ROW_ID, data: db });
     if (error) throw new Error(`supabase persist: ${error.message}`);
   }

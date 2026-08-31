@@ -7,19 +7,19 @@ import type { DbShape } from "./store";
 export class JsonStore extends BlobStore {
   constructor(private path: string) {
     super();
-    if (!existsSync(path)) this.persist(BlobStore.normalize(null));
+    if (!existsSync(path)) this.saveBlob(BlobStore.normalize(null));
   }
 
-  protected async load(): Promise<DbShape> {
+  protected async fetchBlob(): Promise<DbShape> {
     if (!existsSync(this.path)) {
       const seeded = BlobStore.normalize(null);
-      await this.persist(seeded);
+      await this.saveBlob(seeded);
       return seeded;
     }
     return BlobStore.normalize(JSON.parse(readFileSync(this.path, "utf8")));
   }
 
-  protected async persist(db: DbShape): Promise<void> {
+  protected async saveBlob(db: DbShape): Promise<void> {
     mkdirSync(dirname(this.path), { recursive: true });
     writeFileSync(this.path, JSON.stringify(db, null, 2));
   }

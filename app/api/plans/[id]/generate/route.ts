@@ -2,6 +2,8 @@ import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
 import { runGenerate } from "@/lib/generate";
 
+export const maxDuration = 30;
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: Ctx) {

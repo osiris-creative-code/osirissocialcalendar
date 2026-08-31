@@ -34,8 +34,40 @@ import type {
  * Subclasses implement `load()` / `persist()`.
  */
 export abstract class BlobStore implements DataStore {
-  protected abstract load(): Promise<DbShape>;
-  protected abstract persist(db: DbShape): Promise<void>;
+  protected abstract fetchBlob(): Promise<DbShape>;
+  protected abstract saveBlob(db: DbShape): Promise<void>;
+
+  // Per-instance cache: collapses the many reads a single page render does into
+  // one network round-trip. Short TTL keeps cross-request staleness tiny; the
+  // store is already last-write-wins so a slightly stale read is consistent.
+  private cache: DbShape | null = null;
+  private cacheAt = 0;
+  private static readonly TTL_MS = 1500;
+
+  /** Cached read — used by list/get methods where a ~1.5s stale view is fine. */
+  private async load(): Promise<DbShape> {
+    if (this.cache && Date.now() - this.cacheAt < BlobStore.TTL_MS) {
+      return structuredClone(this.cache);
+    }
+    const db = await this.fetchBlob();
+    this.cache = db;
+    this.cacheAt = Date.now();
+    return structuredClone(db);
+  }
+
+  /** Uncached read — used only inside mutate() so writes never race on stale data. */
+  private async loadFresh(): Promise<DbShape> {
+    const db = await this.fetchBlob();
+    this.cache = db;
+    this.cacheAt = Date.now();
+    return structuredClone(db);
+  }
+
+  private async persist(db: DbShape): Promise<void> {
+    await this.saveBlob(db);
+    this.cache = structuredClone(db);
+    this.cacheAt = Date.now();
+  }
 
   /** Fill in any fields added after a blob was first written. */
   protected static normalize(db: Partial<DbShape> | null): DbShape {
@@ -60,7 +92,7 @@ export abstract class BlobStore implements DataStore {
   }
 
   private async mutate<T>(fn: (db: DbShape) => T): Promise<T> {
-    const db = await this.load();
+    const db = await this.loadFresh();
     const result = fn(db);
     await this.persist(db);
     return result;
