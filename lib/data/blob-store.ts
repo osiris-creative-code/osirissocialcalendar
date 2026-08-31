@@ -9,6 +9,7 @@ import type {
   Plan,
   PlanAsset,
   PlanItem,
+  PlanVersion,
   Stage,
 } from "@/lib/types";
 import { seedData } from "./seed";
@@ -47,9 +48,11 @@ export abstract class BlobStore implements DataStore {
         ...p,
         visionEnabled: p.visionEnabled ?? true,
         feedInsights: p.feedInsights ?? null,
+        reviseDeadline: p.reviseDeadline ?? null,
       })),
       items: db.items ?? [],
       assets: db.assets ?? [],
+      versions: db.versions ?? [],
       comments: db.comments ?? [],
       annotations: db.annotations ?? [],
       activity: db.activity ?? [],
@@ -126,6 +129,7 @@ export abstract class BlobStore implements DataStore {
       createdAt: new Date().toISOString(),
       visionEnabled: input.visionEnabled ?? true,
       feedInsights: null,
+      reviseDeadline: null,
     };
     await this.mutate((db) => db.plans.push(plan));
     return plan;
@@ -183,6 +187,37 @@ export abstract class BlobStore implements DataStore {
   async deleteAsset(id: string): Promise<void> {
     await this.mutate((db) => {
       db.assets = db.assets.filter((a) => a.id !== id);
+    });
+  }
+
+  /* ---------- versions ---------- */
+  async listVersions(planId: string) {
+    return (await this.load()).versions
+      .filter((v) => v.planId === planId)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+  async snapshotPlan(planId: string, label: string, actorName: string): Promise<PlanVersion> {
+    return this.mutate((db) => {
+      const items = db.items
+        .filter((i) => i.planId === planId)
+        .sort((a, b) => a.sort - b.sort);
+      const version: PlanVersion = {
+        id: newId(),
+        planId,
+        version: db.versions.filter((v) => v.planId === planId).length + 1,
+        label,
+        actorName,
+        items: JSON.parse(JSON.stringify(items)) as PlanItem[],
+        createdAt: new Date().toISOString(),
+      };
+      db.versions.push(version);
+      // keep the last 12 per plan
+      const mine = db.versions.filter((v) => v.planId === planId).sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+      if (mine.length > 12) {
+        const drop = new Set(mine.slice(0, mine.length - 12).map((v) => v.id));
+        db.versions = db.versions.filter((v) => !drop.has(v.id));
+      }
+      return version;
     });
   }
 

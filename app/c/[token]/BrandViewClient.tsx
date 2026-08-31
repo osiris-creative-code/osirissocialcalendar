@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Annotation, Comment, Plan, PlanItem, Brand } from "@/lib/types";
+import type { Annotation, Comment, Plan, PlanItem, PlanVersion, Brand } from "@/lib/types";
+import { deadlineLabel } from "@/lib/format";
+import { diffPlanItems } from "@/lib/diff";
 import { Splash } from "@/components/Splash";
+import { DiffList } from "@/components/DiffList";
 import { FeedbackCalendar } from "@/components/calendar/FeedbackCalendar";
 import type { ItemStatus } from "@/components/calendar/ItemCard";
 
@@ -16,6 +19,7 @@ export function BrandViewClient({
   comments,
   annotations,
   splashTitle,
+  publishedVersions = [],
 }: {
   plan: Plan;
   brand: Brand;
@@ -23,11 +27,19 @@ export function BrandViewClient({
   comments: Comment[];
   annotations: Annotation[];
   splashTitle: string;
+  publishedVersions?: PlanVersion[];
 }) {
   const [showSplash, setShowSplash] = useState(true);
   const [statuses, setStatuses] = useState<Record<string, ItemStatus>>({});
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
+
+  const deadline = plan.reviseDeadline ? deadlineLabel(plan.reviseDeadline) : null;
+  const changes =
+    publishedVersions.length >= 2
+      ? diffPlanItems(publishedVersions[1].items, publishedVersions[0].items)
+      : [];
 
   const visible = useMemo(
     () => items.filter((i) => !i.hidden && !i.isGap),
@@ -118,9 +130,38 @@ export function BrandViewClient({
                   Güncellendi
                 </span>
               )}
+              {deadline && (
+                <span
+                  className={`rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${
+                    deadline.overdue
+                      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "bg-[var(--surface-2)] text-[var(--text-dim)]"
+                  }`}
+                >
+                  ⏰ {deadline.text}
+                </span>
+              )}
+              {changes.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowChanges((s) => !s)}
+                  className="rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--brand)]"
+                >
+                  {showChanges ? "Değişiklikleri gizle" : `Neler değişti? (${changes.length})`}
+                </button>
+              )}
             </div>
           </div>
         </div>
+
+        {showChanges && changes.length > 0 && (
+          <div className="mx-auto mt-3 max-w-[760px] rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
+              Son revizyonda değişenler
+            </p>
+            <DiffList diff={changes} />
+          </div>
+        )}
       </header>
 
       <div className="mx-auto max-w-[760px] px-5 pt-4">

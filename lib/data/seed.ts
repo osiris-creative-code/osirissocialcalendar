@@ -51,6 +51,7 @@ export function seedData(): DbShape {
     plans: [],
     items: [],
     assets: [],
+    versions: [],
     comments: [],
     annotations: [],
     activity: [],

@@ -70,6 +70,18 @@ export type Plan = {
   visionEnabled: boolean;
   /** Bullet insights from analysing the brand's current feed. */
   feedInsights: string[] | null;
+  /** Date (YYYY-MM-DD) the brand's review is due; null = none. */
+  reviseDeadline: string | null;
+};
+
+export type PlanVersion = {
+  id: string;
+  planId: string;
+  version: number;
+  label: string;
+  actorName: string;
+  items: PlanItem[];
+  createdAt: string;
 };
 
 export type PlanItem = {
@@ -173,6 +185,7 @@ export const zPlan = z.object({
   createdAt: z.string(),
   visionEnabled: z.boolean(),
   feedInsights: z.array(z.string()).nullable(),
+  reviseDeadline: z.string().nullable(),
 });
 
 export const zPlanItem = z.object({

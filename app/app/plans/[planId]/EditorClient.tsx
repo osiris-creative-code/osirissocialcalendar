@@ -8,6 +8,7 @@ import { PlanEditor } from "@/components/team/PlanEditor";
 import { ContentUploader } from "@/components/team/ContentUploader";
 import { FeedbackInbox } from "@/components/team/FeedbackInbox";
 import { InstagramPanel } from "@/components/team/InstagramPanel";
+import { VersionHistory } from "@/components/team/VersionHistory";
 import { GapModal } from "@/components/team/GapModal";
 import { StageBadge } from "@/components/team/StageBadge";
 import { Toast } from "@/components/ui/Toast";
@@ -105,6 +106,15 @@ export function EditorClient({
     });
   };
 
+  const onDeadlineChange = (value: string) => {
+    setPlan((p) => ({ ...p, reviseDeadline: value || null }));
+    fetch(`/api/plans/${plan.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reviseDeadline: value || null }),
+    });
+  };
+
   const sendToInternal = async () => {
     setBusy(true);
     const res = await fetch(`/api/plans/${plan.id}/stage`, {
@@ -191,6 +201,20 @@ export function EditorClient({
                 </button>
               </span>
             )}
+            <label className="flex items-center gap-2 text-[var(--text-dim)]">
+              Marka için revize son tarihi:
+              <input
+                type="date"
+                value={plan.reviseDeadline ?? ""}
+                onChange={(e) => onDeadlineChange(e.target.value)}
+                className="rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[12px]"
+              />
+              {plan.reviseDeadline && (
+                <button type="button" onClick={() => onDeadlineChange("")} className="text-[var(--text-mute)]">
+                  temizle
+                </button>
+              )}
+            </label>
           </div>
         )}
 
@@ -213,6 +237,7 @@ export function EditorClient({
           handle={brand.instagramHandle}
           initialInsights={plan.feedInsights}
         />
+        <VersionHistory planId={plan.id} currentItems={items} />
         <FeedbackInbox comments={comments} annotations={annotations} items={items} />
       </aside>
 

@@ -30,6 +30,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const chosen = body.mode === "stopAtAssets" ? out.stopItems : out.extendItems;
   await store.replaceItems(id, chosen);
   await store.updatePlan(id, { version: plan.version + 1 });
+  await store.snapshotPlan(id, "AI üretimi", actor.name);
   await store.logActivity({
     planId: id,
     actorName: actor.name,

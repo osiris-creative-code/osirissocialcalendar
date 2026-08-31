@@ -42,6 +42,13 @@ export default async function QueuePage() {
                     <span className="font-mono text-[12px] text-[var(--text-mute)]">
                       {trRange(p.rangeStart, p.rangeEnd)}
                     </span>
+                    {p.reviseDeadline &&
+                      p.stage === "markada" &&
+                      p.reviseDeadline < new Date().toISOString().slice(0, 10) && (
+                        <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">
+                          ⏰ süre doldu
+                        </span>
+                      )}
                   </span>
                   <span className="text-[12px] text-[var(--text-mute)]">{STAGE_LABELS[stage]}</span>
                 </Link>

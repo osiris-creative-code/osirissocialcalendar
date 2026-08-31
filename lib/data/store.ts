@@ -8,8 +8,11 @@ import type {
   PlanAsset,
   PlanItem,
   PlanTheme,
+  PlanVersion,
   Stage,
 } from "@/lib/types";
+
+export type { PlanVersion } from "@/lib/types";
 
 export type DbShape = {
   brands: Brand[];
@@ -17,6 +20,7 @@ export type DbShape = {
   plans: Plan[];
   items: PlanItem[];
   assets: PlanAsset[];
+  versions: PlanVersion[];
   comments: Comment[];
   annotations: Annotation[];
   activity: ActivityEntry[];
@@ -72,6 +76,9 @@ export interface DataStore {
   listAssets(planId: string): Promise<PlanAsset[]>;
   addAssets(planId: string, assets: NewAsset[]): Promise<PlanAsset[]>;
   deleteAsset(id: string): Promise<void>;
+
+  listVersions(planId: string): Promise<PlanVersion[]>;
+  snapshotPlan(planId: string, label: string, actorName: string): Promise<PlanVersion>;
 
   listComments(planId: string): Promise<Comment[]>;
   addComment(input: AddCommentInput): Promise<Comment>;

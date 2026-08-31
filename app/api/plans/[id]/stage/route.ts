@@ -33,6 +33,15 @@ export async function POST(req: Request, ctx: Ctx) {
   if (mintsPublicToken(plan.stage, to)) patch.publicToken = newToken("c");
 
   const updated = await store.updatePlan(id, patch);
+
+  if (to === "markada") {
+    await store.snapshotPlan(
+      id,
+      plan.stage === "revize_istendi" ? "Revizyon yayını" : "İlk yayın",
+      actorName,
+    );
+  }
+
   await store.logActivity({
     planId: id,
     actorName,

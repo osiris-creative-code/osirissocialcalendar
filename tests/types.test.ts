@@ -52,6 +52,7 @@ describe("zPlan", () => {
       createdAt: "2026-08-28T00:00:00Z",
       visionEnabled: true,
       feedInsights: null,
+      reviseDeadline: null,
     };
     expect(zPlan.safeParse(ok).success).toBe(true);
   });

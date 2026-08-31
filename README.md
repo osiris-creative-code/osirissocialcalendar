@@ -64,6 +64,18 @@ Dış servisler arayüz arkasında; Phase 1'de `Mock*` implementasyonları:
 - `lib/sources/` — `Source` arayüzü + `MockDriveSource`
 - `lib/storage/` — `MediaStore` arayüzü (yerel)
 
+## Sürüm geçmişi & revize deadline
+
+- Her **AI üretimi** ve **markaya her yayında** (ilk yayın / revizyon yayını) öğe seti
+  otomatik anlık kaydedilir; editörde **Sürüm geçmişi** panelinden "Sürümü kaydet" ile elle de
+  alınabilir (plan başına son 12 sürüm tutulur).
+- Bir sürüme tıklayınca **şu anki taslakla farkı** listelenir (eklenen / çıkarılan / taşınan /
+  açıklama değişikliği / görsel değişikliği).
+- Marka görünümünde son iki yayın arasındaki fark **"Neler değişti?"** ile açılır.
+- Editörde **"Marka için revize son tarihi"** verilebilir → marka görünümünde geri sayım rozeti,
+  süre dolunca kırmızı; onay kuyruğunda "⏰ süre doldu" işareti. (WhatsApp push yok — resmi API
+  gerektirir; uygulama içi uyarı olarak.)
+
 ## AI özellikleri
 
 `lib/ai/` üç iş yapar: `captions` (üretim), `rewriteCaption` (editörde satır bazında "↻ Yeniden yaz"),

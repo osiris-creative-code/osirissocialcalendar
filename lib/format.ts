@@ -24,3 +24,17 @@ export function trDateParts(iso: string): { day: string; month: string; weekday:
 export function trRange(start: string, end: string): string {
   return `${trDayMonth(start)} – ${trDayMonth(end)}`;
 }
+
+/** Days-left label for a revise deadline. `now` defaults to today (test seam). */
+export function deadlineLabel(
+  iso: string,
+  now: Date = new Date(),
+): { text: string; overdue: boolean } {
+  const due = atUtc(iso).getTime();
+  const midnight = atUtc(now.toISOString().slice(0, 10)).getTime();
+  const days = Math.round((due - midnight) / 86_400_000);
+  if (days < 0) return { text: `Süre doldu · ${trDayMonth(iso)}`, overdue: true };
+  if (days === 0) return { text: `Son gün: bugün (${trDayMonth(iso)})`, overdue: false };
+  if (days === 1) return { text: `Son gün: yarın (${trDayMonth(iso)})`, overdue: false };
+  return { text: `Son gün: ${trDayMonth(iso)} · ${days} gün kaldı`, overdue: false };
+}
