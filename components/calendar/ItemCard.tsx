@@ -52,7 +52,15 @@ export function ItemCard({
   );
   const itemComments = comments.filter((c) => c.planItemId === item.id);
 
-  const media = item.media.length ? (
+  const noFile = item.placeholder || (item.media[0]?.kind === "video" && !item.media[0].url);
+
+  const media = noFile ? (
+    <div className="grid h-full w-full place-items-center gap-1 bg-[var(--surface-2)] px-4 text-center text-[var(--text-dim)]">
+      <span className="text-2xl">🎬</span>
+      <span className="text-[12.5px] font-semibold">Video hazırlanıyor</span>
+      <span className="text-[11px] text-[var(--text-mute)]">yakında bu slota eklenecek</span>
+    </div>
+  ) : item.media.length ? (
     item.type === "reel" ? (
       <ReelPlayer media={item.media[0]} />
     ) : item.media.length > 1 ? (

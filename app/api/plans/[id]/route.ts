@@ -55,3 +55,16 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const items = await store.listItems(id);
   return json({ plan: updated, items });
 }
+
+export async function DELETE(req: Request, ctx: Ctx) {
+  const actor = requireEditor(req);
+  if (actor instanceof Response) return actor;
+
+  const { id } = await ctx.params;
+  const store = getStore();
+  const plan = await store.getPlan(id);
+  if (!plan) return json({ error: "plan not found" }, 404);
+
+  await store.deletePlan(id);
+  return new Response(null, { status: 204 });
+}

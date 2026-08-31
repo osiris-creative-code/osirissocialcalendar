@@ -13,6 +13,7 @@ const CLASS: Record<Stage, string> = {
 export function StageBadge({ stage }: { stage: Stage }) {
   return (
     <span className={`rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${CLASS[stage]}`}>
+      {stage === "onaylandi" ? "✓ " : ""}
       {STAGE_LABELS[stage]}
     </span>
   );

@@ -142,6 +142,18 @@ export abstract class BlobStore implements DataStore {
       return { ...plan };
     });
   }
+  async deletePlan(id: string): Promise<void> {
+    await this.mutate((db) => {
+      const itemIds = new Set(db.items.filter((i) => i.planId === id).map((i) => i.id));
+      db.plans = db.plans.filter((p) => p.id !== id);
+      db.items = db.items.filter((i) => i.planId !== id);
+      db.assets = db.assets.filter((a) => a.planId !== id);
+      db.versions = db.versions.filter((v) => v.planId !== id);
+      db.comments = db.comments.filter((c) => !itemIds.has(c.planItemId));
+      db.annotations = db.annotations.filter((a) => !itemIds.has(a.planItemId));
+      db.activity = db.activity.filter((a) => a.planId !== id);
+    });
+  }
 
   /* ---------- items ---------- */
   async listItems(planId: string) {

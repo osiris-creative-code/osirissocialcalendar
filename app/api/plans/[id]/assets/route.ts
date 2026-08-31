@@ -6,7 +6,13 @@ import type { NewAsset } from "@/lib/data/store";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-type IncomingAsset = { type: ItemType; kind: "image" | "video"; url: string; name: string };
+type IncomingAsset = {
+  type: ItemType;
+  kind: "image" | "video";
+  url: string;
+  name: string;
+  placeholder?: boolean;
+};
 
 export async function GET(_req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
@@ -39,6 +45,7 @@ export async function POST(req: Request, ctx: Ctx) {
         ? a.name.replace(/[_\s-]?\d+\s*\.[a-z0-9]+$/i, "").trim() || "grup"
         : null,
       slideOrder: order ?? 1,
+      placeholder: a.placeholder === true,
     };
   });
 

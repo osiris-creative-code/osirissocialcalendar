@@ -95,6 +95,8 @@ export type PlanItem = {
   media: Media[];
   isGap: boolean;
   hidden: boolean;
+  /** Shown to the brand as "hazırlanıyor" — a real slot whose file isn't ready. */
+  placeholder?: boolean;
 };
 
 export type PlanAsset = {
@@ -107,6 +109,8 @@ export type PlanAsset = {
   slideGroup: string | null;
   slideOrder: number;
   sort: number;
+  /** A reserved slot with no file yet (e.g. a reel still being edited). */
+  placeholder?: boolean;
 };
 
 export type Comment = {
@@ -199,6 +203,7 @@ export const zPlanItem = z.object({
   media: z.array(zMedia),
   isGap: z.boolean(),
   hidden: z.boolean(),
+  placeholder: z.boolean().optional(),
 });
 
 export const zComment = z.object({

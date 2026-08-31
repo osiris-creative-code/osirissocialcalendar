@@ -9,6 +9,27 @@ const GROUPS: { type: ItemType; label: string; accept: string }[] = [
   { type: "reel", label: "Reels videoları", accept: "video/*" },
 ];
 
+type Progress = { done: number; total: number; pct: number };
+
+function xhrPut(
+  url: string,
+  file: File,
+  headers: Record<string, string>,
+  onProgress: (pct: number) => void,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
+    xhr.onerror = () => resolve(false);
+    xhr.send(file);
+  });
+}
+
 export function ContentUploader({
   planId,
   initialAssets,
@@ -17,16 +38,21 @@ export function ContentUploader({
   initialAssets: PlanAsset[];
 }) {
   const [assets, setAssets] = useState<PlanAsset[]>(initialAssets);
-  const [busy, setBusy] = useState<ItemType | null>(null);
+  const [progress, setProgress] = useState<Partial<Record<ItemType, Progress>>>({});
   const [error, setError] = useState("");
+
+  const busyType = (Object.keys(progress) as ItemType[])[0] ?? null;
 
   const upload = async (type: ItemType, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    setBusy(type);
+    const list = Array.from(files);
     setError("");
+    setProgress({ [type]: { done: 0, total: list.length, pct: 0 } });
+
     try {
       const recorded: { type: ItemType; kind: "image" | "video"; url: string; name: string }[] = [];
-      for (const file of Array.from(files)) {
+      for (let i = 0; i < list.length; i++) {
+        const file = list[i];
         const signRes = await fetch(`/api/plans/${planId}/assets/sign`, {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -38,16 +64,19 @@ export function ContentUploader({
           return;
         }
 
-        const put =
+        const ok = await xhrPut(
+          target.mode === "supabase" ? target.signedUrl : target.uploadPath,
+          file,
           target.mode === "supabase"
-            ? await fetch(target.signedUrl, {
-                method: "PUT",
-                headers: { "content-type": file.type || "application/octet-stream" },
-                body: file,
-              })
-            : await fetch(target.uploadPath, { method: "PUT", body: file });
-        if (!put.ok) {
-          setError(`Depoya yüklenemedi (${put.status}).`);
+            ? { "content-type": file.type || "application/octet-stream" }
+            : {},
+          (pct) =>
+            setProgress({
+              [type]: { done: i, total: list.length, pct: Math.round((i * 100 + pct) / list.length) },
+            }),
+        );
+        if (!ok) {
+          setError("Depoya yüklenemedi.");
           return;
         }
 
@@ -56,6 +85,9 @@ export function ContentUploader({
           kind: file.type.startsWith("video") ? "video" : "image",
           url: target.publicUrl,
           name: file.name,
+        });
+        setProgress({
+          [type]: { done: i + 1, total: list.length, pct: Math.round(((i + 1) * 100) / list.length) },
         });
       }
 
@@ -71,7 +103,23 @@ export function ContentUploader({
         setError("Kayıt başarısız.");
       }
     } finally {
-      setBusy(null);
+      setProgress({});
+    }
+  };
+
+  const addReelPlaceholder = async () => {
+    const res = await fetch(`/api/plans/${planId}/assets`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        items: [
+          { type: "reel", kind: "video", url: "", name: "Reels placeholder", placeholder: true },
+        ],
+      }),
+    });
+    if (res.ok) {
+      const added = (await res.json()) as PlanAsset[];
+      setAssets((a) => [...a, ...added]);
     }
   };
 
@@ -95,23 +143,47 @@ export function ContentUploader({
       <div className="grid gap-2 sm:grid-cols-3">
         {GROUPS.map((g) => {
           const count = assets.filter((a) => a.type === g.type).length;
+          const p = progress[g.type];
           return (
-            <label
-              key={g.type}
-              className="flex cursor-pointer flex-col gap-1 rounded-[10px] border border-dashed border-[var(--border-strong)] bg-[var(--bg)] p-3 text-center text-[12px] text-[var(--text-dim)] hover:border-[var(--brand)]"
-            >
-              <span className="font-semibold text-[var(--text)]">{g.label}</span>
-              <span className="text-[var(--text-mute)]">
-                {busy === g.type ? "yükleniyor…" : count > 0 ? `${count} dosya` : "seç"}
-              </span>
-              <input
-                type="file"
-                multiple
-                accept={g.accept}
-                className="hidden"
-                onChange={(e) => upload(g.type, e.target.files)}
-              />
-            </label>
+            <div key={g.type} className="flex flex-col gap-1.5">
+              <label className="flex cursor-pointer flex-col gap-1 rounded-[10px] border border-dashed border-[var(--border-strong)] bg-[var(--bg)] p-3 text-center text-[12px] text-[var(--text-dim)] hover:border-[var(--brand)]">
+                <span className="font-semibold text-[var(--text)]">{g.label}</span>
+                {p ? (
+                  <span className="text-[var(--brand)]">
+                    %{p.pct} · {p.done}/{p.total}
+                  </span>
+                ) : count > 0 ? (
+                  <span className="text-[var(--ok)]">✓ {count} yüklendi</span>
+                ) : (
+                  <span className="text-[var(--text-mute)]">seç</span>
+                )}
+                {p && (
+                  <span className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
+                    <span
+                      className="block h-full rounded-full bg-[var(--brand)] transition-[width] duration-200"
+                      style={{ width: `${p.pct}%` }}
+                    />
+                  </span>
+                )}
+                <input
+                  type="file"
+                  multiple
+                  accept={g.accept}
+                  disabled={!!busyType}
+                  className="hidden"
+                  onChange={(e) => upload(g.type, e.target.files)}
+                />
+              </label>
+              {g.type === "reel" && (
+                <button
+                  type="button"
+                  onClick={addReelPlaceholder}
+                  className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] font-semibold text-[var(--text-dim)] hover:border-[var(--brand-strong,var(--border-strong))]"
+                >
+                  ＋ Placeholder (video sonra gelecek)
+                </button>
+              )}
+            </div>
           );
         })}
       </div>
@@ -121,15 +193,25 @@ export function ContentUploader({
           {assets.map((a) => (
             <li
               key={a.id}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--bg)] py-1 pl-1 pr-2 text-[11.5px]"
+              className={`flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2 text-[11.5px] ${
+                a.placeholder
+                  ? "border-[color-mix(in_srgb,var(--gold)_45%,transparent)] bg-[var(--warn-soft)]"
+                  : "border-[var(--border)] bg-[var(--bg)]"
+              }`}
             >
-              {a.kind === "image" ? (
+              {a.placeholder ? (
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--warn)]">
+                  ▹
+                </span>
+              ) : a.kind === "image" ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={a.url} alt="" className="h-5 w-5 rounded-full object-cover" />
               ) : (
                 <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--surface-2)]">▶</span>
               )}
-              <span className="max-w-[140px] truncate text-[var(--text-dim)]">{a.name}</span>
+              <span className="max-w-[150px] truncate text-[var(--text-dim)]">
+                {a.placeholder ? "Reels — video bekleniyor" : a.name}
+              </span>
               <button
                 type="button"
                 onClick={() => remove(a.id)}

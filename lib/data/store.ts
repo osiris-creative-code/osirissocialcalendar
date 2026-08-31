@@ -68,6 +68,7 @@ export interface DataStore {
   listPlans(opts?: { brandId?: string; stages?: Stage[] }): Promise<Plan[]>;
   createPlan(input: CreatePlanInput): Promise<Plan>;
   updatePlan(id: string, patch: Partial<Plan>): Promise<Plan>;
+  deletePlan(id: string): Promise<void>;
 
   listItems(planId: string): Promise<PlanItem[]>;
   replaceItems(planId: string, items: NewItem[]): Promise<PlanItem[]>;

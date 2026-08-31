@@ -38,6 +38,7 @@ export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOut
     assets,
   );
   const assetById = new Map(assets.map((a) => [a.id, a]));
+  const placeholderIds = new Set(uploaded.filter((a) => a.placeholder).map((a) => a.id));
   const ai = getAI();
 
   const toItems = async (drafts: DraftItem[]): Promise<NewItem[]> => {
@@ -53,19 +54,23 @@ export async function runGenerate(plan: Plan, brand: Brand): Promise<GenerateOut
         imageUrl: assetById.get(d.assetIds[0] ?? "")?.url ?? null,
       })),
     });
-    return drafts.map((d, idx) => ({
-      date: d.date,
-      type: d.type,
-      sort: idx,
-      caption: d.type === "story" || d.isGap ? null : captions[idx],
-      specialLabel: d.specialLabel,
-      media: d.assetIds.map((id) => {
-        const a = assetById.get(id)!;
-        return { url: a.url, kind: a.kind, slideOrder: a.slideOrder };
-      }),
-      isGap: d.isGap,
-      hidden: false,
-    }));
+    return drafts.map((d, idx) => {
+      const isPlaceholder = d.assetIds.some((id) => placeholderIds.has(id));
+      return {
+        date: d.date,
+        type: d.type,
+        sort: idx,
+        caption: d.type === "story" || d.isGap ? null : captions[idx],
+        specialLabel: d.specialLabel,
+        media: d.assetIds.map((id) => {
+          const a = assetById.get(id)!;
+          return { url: a.url, kind: a.kind, slideOrder: a.slideOrder };
+        }),
+        isGap: d.isGap,
+        hidden: false,
+        placeholder: isPlaceholder,
+      };
+    });
   };
 
   return {

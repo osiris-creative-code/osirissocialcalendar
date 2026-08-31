@@ -1,13 +1,20 @@
-import Link from "next/link";
+import { cookies } from "next/headers";
+import { resolveActor } from "@/lib/access/roles";
 import { getStore } from "@/lib/db";
-import { STAGE_LABELS, STAGE_ORDER } from "@/lib/plan-stages";
-import { trRange } from "@/lib/format";
+import { STAGE_ORDER } from "@/lib/plan-stages";
 import { StageBadge } from "@/components/team/StageBadge";
+import { QueueRow } from "@/components/team/QueueRow";
 
 export default async function QueuePage() {
   const store = getStore();
-  const [plans, brands] = await Promise.all([store.listPlans(), store.listBrands({ includeArchived: true })]);
+  const [plans, brands] = await Promise.all([
+    store.listPlans(),
+    store.listBrands({ includeArchived: true }),
+  ]);
   const brandName = new Map(brands.map((b) => [b.id, b.name]));
+
+  const jar = await cookies();
+  const actor = resolveActor(jar.get("ritim_actor")?.value) ?? { name: "Ekip", role: "yonetici" as const };
 
   return (
     <div className="flex flex-col gap-8">
@@ -31,27 +38,12 @@ export default async function QueuePage() {
             </h2>
             <div className="flex flex-col gap-2">
               {group.map((p) => (
-                <Link
+                <QueueRow
                   key={p.id}
-                  href={`/app/plans/${p.id}`}
-                  className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--bg)] px-4 py-3 hover:border-[var(--border-strong)]"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="font-medium">{brandName.get(p.brandId) ?? "—"}</span>
-                    <span className="text-[var(--text-dim)]">{p.title}</span>
-                    <span className="font-mono text-[12px] text-[var(--text-mute)]">
-                      {trRange(p.rangeStart, p.rangeEnd)}
-                    </span>
-                    {p.reviseDeadline &&
-                      p.stage === "markada" &&
-                      p.reviseDeadline < new Date().toISOString().slice(0, 10) && (
-                        <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">
-                          ⏰ süre doldu
-                        </span>
-                      )}
-                  </span>
-                  <span className="text-[12px] text-[var(--text-mute)]">{STAGE_LABELS[stage]}</span>
-                </Link>
+                  plan={p}
+                  brandName={brandName.get(p.brandId) ?? "—"}
+                  actor={actor}
+                />
               ))}
             </div>
           </section>

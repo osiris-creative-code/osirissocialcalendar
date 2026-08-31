@@ -36,10 +36,12 @@ export function EditorClient({
   const [items, setItems] = useState(initialItems);
   const [gap, setGap] = useState<{ extendCount: number; stopCount: number } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const generate = async () => {
     setBusy(true);
+    setGenerating(true);
     const res = await fetch(`/api/plans/${plan.id}/generate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -48,6 +50,7 @@ export function EditorClient({
     const preview = await res.json();
     setBusy(false);
     if (preview.gap) {
+      setGenerating(false);
       setGap(preview.preview);
     } else {
       await applyGenerate("extend");
@@ -56,6 +59,7 @@ export function EditorClient({
 
   const applyGenerate = async (mode: "extend" | "stopAtAssets") => {
     setBusy(true);
+    setGenerating(true);
     const res = await fetch(`/api/plans/${plan.id}/generate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -63,6 +67,7 @@ export function EditorClient({
     });
     const data = await res.json();
     setBusy(false);
+    setGenerating(false);
     setGap(null);
     if (data.items) setItems(data.items);
   };
@@ -163,7 +168,7 @@ export function EditorClient({
             disabled={busy}
             className="rounded-[10px] bg-[var(--brand)] px-4 py-2 text-[13px] font-semibold text-[var(--brand-ink)] disabled:opacity-60"
           >
-            {items.length ? "Yeniden üret" : "Takvimi üret"}
+            {generating ? "Üretiliyor…" : items.length ? "Yeniden üret" : "Takvimi üret"}
           </button>
 
           {plan.stage === "taslak" && (
@@ -177,6 +182,18 @@ export function EditorClient({
             </button>
           )}
         </div>
+
+        {generating && (
+          <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3">
+            <div className="mb-2 flex items-center gap-2 text-[12.5px] text-[var(--text-dim)]">
+              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+              Takvim üretiliyor — kurallar çözülüyor, görseller dağıtılıyor, açıklamalar yazılıyor…
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <div className="h-full w-1/3 animate-[osiris-slide_1.2s_ease-in-out_infinite] rounded-full bg-[var(--brand)]" />
+            </div>
+          </div>
+        )}
 
         {plan.stage !== "taslak" && (
           <div className="flex flex-col gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3 text-[12.5px]">
