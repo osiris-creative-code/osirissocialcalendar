@@ -12,7 +12,13 @@ export async function POST(req: Request) {
   if (actor instanceof Response) return actor;
 
   const body = (await req.json().catch(() => null)) as
-    | { name?: string; colorPrimary?: string; colorAccent?: string; instagramHandle?: string | null }
+    | {
+        name?: string;
+        logoUrl?: string;
+        colorPrimary?: string;
+        colorAccent?: string;
+        instagramHandle?: string | null;
+      }
     | null;
   if (!body?.name?.trim() || !body.colorPrimary || !body.colorAccent) {
     return json({ error: "name, colorPrimary, colorAccent required" }, 400);
@@ -20,7 +26,7 @@ export async function POST(req: Request) {
 
   const brand = await getStore().createBrand({
     name: body.name.trim(),
-    logoUrl: "/demo/ph-2.svg",
+    logoUrl: body.logoUrl?.trim() || "/demo/ph-2.svg",
     colorPrimary: body.colorPrimary,
     colorAccent: body.colorAccent,
     instagramHandle: body.instagramHandle?.trim() || null,

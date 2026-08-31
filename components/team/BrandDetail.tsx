@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Brand, BrandSource, Plan } from "@/lib/types";
 import { trRange } from "@/lib/format";
 import { StageBadge } from "./StageBadge";
+import { LogoUpload } from "./LogoUpload";
 
 export function BrandDetail({
   brand,
@@ -67,10 +68,12 @@ export function BrandDetail({
             Marka adı
             <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />
           </label>
-          <label className="text-[13px] text-[var(--text-dim)]">
-            Logo URL
-            <input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />
-          </label>
+          <div className="text-[13px] text-[var(--text-dim)] sm:col-span-2">
+            Logo
+            <div className="mt-1">
+              <LogoUpload value={logoUrl} color={colorPrimary} onChange={setLogoUrl} />
+            </div>
+          </div>
           <label className="text-[13px] text-[var(--text-dim)]">
             Instagram kullanıcı adı
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />

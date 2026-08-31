@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import { LogoUpload } from "./LogoUpload";
 
 export function NewBrandModal({
   open,
@@ -13,6 +14,7 @@ export function NewBrandModal({
   onCreated: () => void;
 }) {
   const [name, setName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [colorPrimary, setColorPrimary] = useState("#7A4A2B");
   const [colorAccent, setColorAccent] = useState("#D9982F");
   const [instagramHandle, setInstagramHandle] = useState("");
@@ -27,11 +29,12 @@ export function NewBrandModal({
     const res = await fetch("/api/brands", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, colorPrimary, colorAccent, instagramHandle }),
+      body: JSON.stringify({ name, logoUrl, colorPrimary, colorAccent, instagramHandle }),
     });
     setBusy(false);
     if (res.ok) {
       setName("");
+      setLogoUrl("");
       setInstagramHandle("");
       onCreated();
       onClose();
@@ -55,6 +58,12 @@ export function NewBrandModal({
             className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[14px]"
           />
         </label>
+        <div className="text-[13px] text-[var(--text-dim)]">
+          Logo (opsiyonel)
+          <div className="mt-1">
+            <LogoUpload value={logoUrl} color={colorPrimary} onChange={setLogoUrl} />
+          </div>
+        </div>
         <label className="text-[13px] text-[var(--text-dim)]">
           Instagram kullanıcı adı (opsiyonel)
           <input
