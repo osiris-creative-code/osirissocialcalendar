@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { resolveActor } from "@/lib/access/roles";
 import { getStore } from "@/lib/db";
 import { STAGE_ORDER } from "@/lib/plan-stages";
+import { publishStats } from "@/lib/publish";
 import { StageBadge } from "@/components/team/StageBadge";
 import { QueueRow } from "@/components/team/QueueRow";
 
@@ -12,6 +13,15 @@ export default async function QueuePage() {
     store.listBrands({ includeArchived: true }),
   ]);
   const brandName = new Map(brands.map((b) => [b.id, b.name]));
+
+  const liveStages = new Set(["yayinda", "tamamlandi"]);
+  const statsByPlan = new Map(
+    await Promise.all(
+      plans
+        .filter((p) => liveStages.has(p.stage))
+        .map(async (p) => [p.id, publishStats(await store.listItems(p.id))] as const),
+    ),
+  );
 
   const jar = await cookies();
   const actor = resolveActor(jar.get("ritim_actor")?.value) ?? { name: "Ekip", role: "yonetici" as const };
@@ -43,6 +53,7 @@ export default async function QueuePage() {
                   plan={p}
                   brandName={brandName.get(p.brandId) ?? "—"}
                   actor={actor}
+                  stats={statsByPlan.get(p.id)}
                 />
               ))}
             </div>

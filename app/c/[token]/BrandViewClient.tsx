@@ -5,6 +5,8 @@ import type { Annotation, Comment, Plan, PlanItem, PlanVersion, Brand } from "@/
 import { deadlineLabel } from "@/lib/format";
 import { diffPlanItems } from "@/lib/diff";
 import { waLink } from "@/lib/whatsapp";
+import { publishStats } from "@/lib/publish";
+import { PublishProgress } from "@/components/team/PublishProgress";
 import { Splash } from "@/components/Splash";
 import { DiffList } from "@/components/DiffList";
 import { FeedbackCalendar } from "@/components/calendar/FeedbackCalendar";
@@ -47,6 +49,8 @@ export function BrandViewClient({
     [items],
   );
   const updated = plan.version > 1 && (plan.stage === "markada" || plan.stage === "revize_istendi");
+  const live = plan.stage === "yayinda" || plan.stage === "tamamlandi";
+  const pub = publishStats(items);
 
   const submit = async () => {
     setSending(true);
@@ -166,6 +170,15 @@ export function BrandViewClient({
             </div>
           </div>
         </div>
+
+        {live && (
+          <div className="mx-auto mt-3 max-w-[760px] rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] p-3">
+            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
+              {plan.stage === "tamamlandi" ? "Yayın tamamlandı" : "Yayın durumu"}
+            </p>
+            <PublishProgress published={pub.published} total={pub.total} color={brand.colorPrimary} />
+          </div>
+        )}
 
         {showChanges && changes.length > 0 && (
           <div className="mx-auto mt-3 max-w-[760px] rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--surface)] p-3">

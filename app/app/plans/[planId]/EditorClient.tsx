@@ -12,6 +12,7 @@ import { InstagramPanel } from "@/components/team/InstagramPanel";
 import { VersionHistory } from "@/components/team/VersionHistory";
 import { GapModal } from "@/components/team/GapModal";
 import { StageBadge } from "@/components/team/StageBadge";
+import { PublishPanel } from "@/components/team/PublishPanel";
 import { Toast } from "@/components/ui/Toast";
 
 export function EditorClient({
@@ -71,6 +72,21 @@ export function EditorClient({
     setGenerating(false);
     setGap(null);
     if (data.items) setItems(data.items);
+  };
+
+  const publishAction = async (action: "start" | "revert") => {
+    setBusy(true);
+    const res = await fetch(`/api/plans/${plan.id}/publish`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      const data = await res.json();
+      setPlan(data.plan);
+      setItems(data.items);
+    }
   };
 
   const persist = (nextItems?: PlanItem[], theme?: PlanTheme) => {
@@ -185,7 +201,40 @@ export function EditorClient({
               İç onaya gönder
             </button>
           )}
+
+          {plan.stage === "onaylandi" && (
+            <button
+              type="button"
+              onClick={() => publishAction("start")}
+              disabled={busy}
+              className="rounded-[10px] bg-[var(--ok)] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-60"
+            >
+              Yayına al
+            </button>
+          )}
+          {(plan.stage === "yayinda" || plan.stage === "tamamlandi") && (
+            <button
+              type="button"
+              onClick={() => publishAction("revert")}
+              disabled={busy}
+              className="rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-2 text-[13px] font-semibold text-[var(--text-dim)] disabled:opacity-60"
+            >
+              Yayını geri al
+            </button>
+          )}
         </div>
+
+        {(plan.stage === "yayinda" || plan.stage === "tamamlandi") && (
+          <PublishPanel
+            planId={plan.id}
+            items={items}
+            color={plan.theme.primary}
+            onChanged={(d) => {
+              setPlan(d.plan);
+              setItems(d.items);
+            }}
+          />
+        )}
 
         {generating && (
           <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3">

@@ -5,15 +5,18 @@ import { useState } from "react";
 import type { Plan, Role } from "@/lib/types";
 import { trRange } from "@/lib/format";
 import { StageBadge } from "./StageBadge";
+import { PublishProgress } from "./PublishProgress";
 
 export function QueueRow({
   plan,
   brandName,
   actor,
+  stats,
 }: {
   plan: Plan;
   brandName: string;
   actor: { name: string; role: Role };
+  stats?: { published: number; total: number };
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -43,7 +46,8 @@ export function QueueRow({
   };
 
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-4 py-3">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-4 py-3">
+    <div className="flex items-center justify-between gap-3">
       <button
         type="button"
         onClick={() => router.push(`/app/plans/${plan.id}`)}
@@ -83,6 +87,12 @@ export function QueueRow({
           Sil
         </button>
       </div>
+    </div>
+    {stats && (plan.stage === "yayinda" || plan.stage === "tamamlandi") && (
+      <div className="mt-2">
+        <PublishProgress published={stats.published} total={stats.total} />
+      </div>
+    )}
     </div>
   );
 }

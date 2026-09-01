@@ -3,16 +3,10 @@
 import { useMemo, useState } from "react";
 import type { Annotation, Comment, ItemType, PlanItem } from "@/lib/types";
 import { trDayMonth } from "@/lib/format";
+import { ITEM_TYPE_LABELS as CHIP_LABEL } from "@/lib/labels";
 import { Carousel } from "./Carousel";
 import { ReelPlayer } from "./ReelPlayer";
 import { PinLayer } from "./PinLayer";
-
-const CHIP_LABEL: Record<ItemType, string> = {
-  post: "Post",
-  story: "Story",
-  reel: "Reel",
-  special: "Güne Özel",
-};
 
 const CHIP_CLASS: Record<ItemType, string> = {
   post: "bg-[var(--brand-soft)] text-[var(--brand)]",
