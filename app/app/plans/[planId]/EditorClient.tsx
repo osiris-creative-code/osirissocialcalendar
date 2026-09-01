@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Annotation, Brand, Comment, Plan, PlanAsset, PlanItem, PlanTheme, Role } from "@/lib/types";
 import { trRange } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/plan-stages";
@@ -162,7 +162,8 @@ export function EditorClient({
 
   const internalUrl = `/i/${plan.internalToken}`;
   const publicUrl = plan.publicToken ? `/c/${plan.publicToken}` : null;
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
   const waBtn =
     "rounded border border-[var(--ok)] px-2 py-0.5 text-[11.5px] font-semibold text-[var(--ok)]";
 

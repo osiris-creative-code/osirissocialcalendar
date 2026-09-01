@@ -18,19 +18,20 @@ export function PublishPanel({
   color?: string;
   onChanged: (data: { plan: Plan; items: PlanItem[] }) => void;
 }) {
-  const [busy, setBusy] = useState<string | null>(null);
-  const real = items.filter((i) => !i.isGap && !i.hidden);
-  const { published, total } = publishStats(items);
+  // Own the list after mount so racing PATCH responses can't roll a checkbox back.
+  const [local, setLocal] = useState(items);
+
+  const real = local.filter((i) => !i.isGap && !i.hidden);
+  const { published, total } = publishStats(local);
 
   const toggle = async (item: PlanItem) => {
-    if (busy) return;
-    setBusy(item.id);
+    const next = item.publishedAt ? null : new Date().toISOString();
+    setLocal((list) => list.map((i) => (i.id === item.id ? { ...i, publishedAt: next } : i)));
     const res = await fetch(`/api/plans/${planId}/publish`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ itemId: item.id, published: !item.publishedAt }),
     });
-    setBusy(null);
     if (res.ok) onChanged(await res.json());
   };
 
@@ -47,7 +48,6 @@ export function PublishPanel({
               <input
                 type="checkbox"
                 checked={!!item.publishedAt}
-                disabled={busy === item.id}
                 onChange={() => toggle(item)}
               />
               <span className="font-mono text-[12px] text-[var(--text-mute)]">

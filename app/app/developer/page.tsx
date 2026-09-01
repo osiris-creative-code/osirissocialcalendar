@@ -51,6 +51,15 @@ export default async function DeveloperPage() {
           <code className="font-mono">ANTHROPIC_API_KEY</code> + opsiyonel{" "}
           <code className="font-mono">OSIRIS_AI_MODEL</code> ile ayarlanır
         </p>
+        <p className="mt-2">
+          Drive&apos;dan içe aktarma:{" "}
+          {process.env.GOOGLE_API_KEY ? "açık" : "kapalı"} (
+          <code className="font-mono">GOOGLE_API_KEY</code>)
+        </p>
+        <p>
+          Otomatik dosya temizliği:{" "}
+          {process.env.CRON_SECRET ? "açık" : "kapalı — CRON_SECRET yok"}
+        </p>
       </section>
 
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
