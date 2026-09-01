@@ -62,6 +62,8 @@ export interface DataStore {
 
   listSources(brandId: string): Promise<BrandSource[]>;
   createSource(input: CreateSourceInput): Promise<BrandSource>;
+  updateSource(id: string, patch: Partial<BrandSource>): Promise<BrandSource>;
+  deleteSource(id: string): Promise<void>;
 
   getPlan(id: string): Promise<Plan | null>;
   getPlanByToken(kind: "internal" | "public", token: string): Promise<Plan | null>;

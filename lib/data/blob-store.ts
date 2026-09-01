@@ -135,6 +135,19 @@ export abstract class BlobStore implements DataStore {
     await this.mutate((db) => db.sources.push(source));
     return source;
   }
+  async updateSource(id: string, patch: Partial<BrandSource>): Promise<BrandSource> {
+    return this.mutate((db) => {
+      const source = db.sources.find((s) => s.id === id);
+      if (!source) throw new Error(`source ${id} not found`);
+      Object.assign(source, patch, { id: source.id, brandId: source.brandId });
+      return { ...source };
+    });
+  }
+  async deleteSource(id: string): Promise<void> {
+    await this.mutate((db) => {
+      db.sources = db.sources.filter((s) => s.id !== id);
+    });
+  }
 
   /* ---------- plans ---------- */
   async getPlan(id: string) {

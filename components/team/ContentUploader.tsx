@@ -81,14 +81,41 @@ function xhrPut(
 export function ContentUploader({
   planId,
   initialAssets,
+  driveReady = false,
 }: {
   planId: string;
   initialAssets: PlanAsset[];
+  driveReady?: boolean;
 }) {
   const [assets, setAssets] = useState<PlanAsset[]>(initialAssets);
   const [progress, setProgress] = useState<Partial<Record<ItemType, Progress>>>({});
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const [driveMsg, setDriveMsg] = useState("");
+
+  const pullDrive = async () => {
+    if (working) return;
+    setWorking(true);
+    setError("");
+    setDriveMsg("Drive taranıyor…");
+    try {
+      const res = await fetch(`/api/plans/${planId}/import-drive`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Drive'dan çekilemedi.");
+        setDriveMsg("");
+        return;
+      }
+      const fresh = await fetch(`/api/plans/${planId}/assets`).then((r) => r.json());
+      setAssets(fresh as PlanAsset[]);
+      const failed = (data.failed as { name: string }[] | undefined)?.length ?? 0;
+      setDriveMsg(
+        `${data.imported} yeni · ${data.skipped} zaten vardı${failed ? ` · ${failed} başarısız` : ""}`,
+      );
+    } finally {
+      setWorking(false);
+    }
+  };
 
   const upload = async (type: ItemType, files: FileList | null) => {
     if (!files || files.length === 0 || working) return;
@@ -212,6 +239,20 @@ export function ContentUploader({
       </p>
 
       {error && <p className="mb-3 text-[12px] text-[var(--accent)]">{error}</p>}
+
+      {driveReady && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={pullDrive}
+            disabled={working}
+            className="rounded-md border border-[var(--brand)] px-3 py-1.5 text-[12px] font-semibold text-[var(--brand)] disabled:opacity-50"
+          >
+            Drive&apos;dan çek
+          </button>
+          {driveMsg && <span className="text-[12px] text-[var(--text-mute)]">{driveMsg}</span>}
+        </div>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-3">
         {GROUPS.map((g) => {

@@ -40,6 +40,7 @@ git push -u origin main
    | `SUPABASE_URL` | 1. adımdaki Project URL |
    | `SUPABASE_SERVICE_ROLE_KEY` | 1. adımdaki service_role secret |
    | `CRON_SECRET` | uzun rastgele metin — günlük dosya temizliği bunsuz çalışmaz |
+   | `GOOGLE_API_KEY` | *(opsiyonel — Drive klasöründen içe aktarma; yoksa "Drive'dan çek" gizli)* |
    | `ANTHROPIC_API_KEY` | *(opsiyonel — yoksa AI sahte çıktı verir)* |
    | `OSIRIS_AI_MODEL` | *(opsiyonel — varsayılan `claude-sonnet-5`; `claude-haiku-4-5` daha ucuz)* |
 
@@ -66,6 +67,9 @@ Adresin: `https://<proje-adı>.vercel.app` — kendi alan adı **gerekmez**.
   Dolarsa Supabase Pro 25 $/ay. Görsel/video Supabase Storage'da; büyük dosyalar tarayıcıdan
   doğrudan Storage'a gider (Vercel fonksiyon limitine takılmaz).
 - **AI maliyeti:** `ANTHROPIC_API_KEY` koyarsan plan başına birkaç kuruş; normal kullanımda aylık $1–8.
+- **Drive'dan içe aktarma:** `GOOGLE_API_KEY` koyarsan (Google Cloud Console → Drive API'yi etkinleştir →
+  Credentials → "API key" oluştur, Drive API'ye kısıtla), markanın ayarına "bağlantısı olan herkes"e açık bir
+  Drive klasör linki girip planda "Drive'dan çek" ile tüm görsel/videoları çekebilirsin. OAuth/onay ekranı yok.
 - **Otomatik temizlik:** Vercel Cron her gün 03:00 UTC'de `/api/cron/cleanup` çağırır; takvim
   bitiş tarihinden (rangeEnd) 14 gün geçmiş planların yüklenen görsel/videolarını Storage'dan
   siler. Plan, caption ve yorumlar kalır — sadece dosyalar gider. `CRON_SECRET` tanımlı olmalı.

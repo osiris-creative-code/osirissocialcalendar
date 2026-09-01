@@ -14,14 +14,18 @@ export default async function PlanEditorPage({
   const plan = await store.getPlan(planId);
   if (!plan) notFound();
 
-  const [brand, items, assets, comments, annotations] = await Promise.all([
+  const [brand, items, assets, comments, annotations, sources] = await Promise.all([
     store.getBrand(plan.brandId),
     store.listItems(planId),
     store.listAssets(planId),
     store.listComments(planId),
     store.listAnnotations(planId),
+    store.listSources(plan.brandId),
   ]);
   if (!brand) notFound();
+
+  const driveReady =
+    !!process.env.GOOGLE_API_KEY && sources.some((s) => s.kind === "drive_folder");
 
   const jar = await cookies();
   const actor = resolveActor(jar.get("ritim_actor")?.value) ?? { name: "Ekip", role: "yonetici" as const };
@@ -36,6 +40,7 @@ export default async function PlanEditorPage({
       annotations={annotations}
       actorName={actor.name}
       actorRole={actor.role}
+      driveReady={driveReady}
     />
   );
 }

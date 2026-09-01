@@ -24,6 +24,7 @@ export function EditorClient({
   annotations,
   actorName,
   actorRole,
+  driveReady = false,
 }: {
   plan: Plan;
   brand: Brand;
@@ -33,6 +34,7 @@ export function EditorClient({
   annotations: Annotation[];
   actorName: string;
   actorRole: Role;
+  driveReady?: boolean;
 }) {
   const [plan, setPlan] = useState(initialPlan);
   const [items, setItems] = useState(initialItems);
@@ -178,7 +180,7 @@ export function EditorClient({
         </div>
 
         {plan.stage === "taslak" && (
-          <ContentUploader planId={plan.id} initialAssets={assets} />
+          <ContentUploader planId={plan.id} initialAssets={assets} driveReady={driveReady} />
         )}
 
         <div className="flex flex-wrap items-center gap-3">
