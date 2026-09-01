@@ -2,6 +2,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Status:** ✅ Complete (all 7 tasks landed 2026-09-01, commits `97259fa`..`7358fd9`). 118 unit tests + 2 Playwright flows green; `next build` clean.
+
 **Goal:** Ship the five Phase 2 features (Drive ingest, best-effort Instagram feed, video quality fixes, wa.me links, "yayında" publish tracking) with no recurring cost.
 
 **Architecture:** Follows Phase 1 patterns exactly — one JSON blob DB behind `BlobStore` with `normalize()` backfills, thin Next.js route handlers guarded by `requireEditor`, `Source` interface for asset providers, client components calling `fetch` + `router.refresh()`. Every new nullable field is backfilled in `BlobStore.normalize`.
