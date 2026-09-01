@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { Annotation, Brand, Comment, Plan, PlanAsset, PlanItem, PlanTheme, Role } from "@/lib/types";
 import { trRange } from "@/lib/format";
 import { STAGE_LABELS } from "@/lib/plan-stages";
+import { waLink } from "@/lib/whatsapp";
 import { PlanEditor } from "@/components/team/PlanEditor";
 import { ContentUploader } from "@/components/team/ContentUploader";
 import { FeedbackInbox } from "@/components/team/FeedbackInbox";
@@ -143,6 +144,9 @@ export function EditorClient({
 
   const internalUrl = `/i/${plan.internalToken}`;
   const publicUrl = plan.publicToken ? `/c/${plan.publicToken}` : null;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const waBtn =
+    "rounded border border-[var(--ok)] px-2 py-0.5 text-[11.5px] font-semibold text-[var(--ok)]";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -206,6 +210,16 @@ export function EditorClient({
               <button type="button" onClick={() => copy(internalUrl)} className="text-[var(--brand)]">
                 Kopyala
               </button>
+              <a
+                className={waBtn}
+                target="_blank"
+                rel="noopener noreferrer"
+                href={waLink({
+                  text: `${brand.name} — iç önizleme hazır: ${origin}${internalUrl}`,
+                })}
+              >
+                WhatsApp'tan ekibe
+              </a>
             </span>
             {publicUrl && (
               <span className="flex items-center gap-2">
@@ -216,6 +230,17 @@ export function EditorClient({
                 <button type="button" onClick={() => copy(publicUrl)} className="text-[var(--brand)]">
                   Kopyala
                 </button>
+                <a
+                  className={waBtn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={waLink({
+                    phone: brand.phone,
+                    text: `${brand.name} — sosyal medya paylaşım takvimi hazır, onayına sunuyoruz: ${origin}${publicUrl}`,
+                  })}
+                >
+                  WhatsApp'tan markaya
+                </a>
               </span>
             )}
             <label className="flex items-center gap-2 text-[var(--text-dim)]">

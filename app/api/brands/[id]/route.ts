@@ -11,6 +11,9 @@ const EDITABLE: (keyof Brand)[] = [
   "colorAccent",
   "instagramHandle",
   "feedScreenshotUrl",
+  "phone",
+  "feedThumbs",
+  "feedFetchedAt",
   "status",
 ];
 

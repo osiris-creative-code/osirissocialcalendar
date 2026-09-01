@@ -23,6 +23,7 @@ export function BrandDetail({
   const [colorPrimary, setColorPrimary] = useState(brand.colorPrimary);
   const [colorAccent, setColorAccent] = useState(brand.colorAccent);
   const [handle, setHandle] = useState(brand.instagramHandle ?? "");
+  const [phone, setPhone] = useState(brand.phone ?? "");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -37,6 +38,7 @@ export function BrandDetail({
         colorPrimary,
         colorAccent,
         instagramHandle: handle,
+        phone: phone.trim() || null,
       }),
     });
     setBusy(false);
@@ -77,6 +79,16 @@ export function BrandDetail({
           <label className="text-[13px] text-[var(--text-dim)]">
             Instagram kullanıcı adı
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />
+          </label>
+          <label className="text-[13px] text-[var(--text-dim)]">
+            Telefon (WhatsApp)
+            <input
+              aria-label="Telefon"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+90 5xx xxx xx xx"
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
+            />
           </label>
           <label className="flex items-center gap-2 text-[13px] text-[var(--text-dim)]">
             Ana renk
