@@ -8,18 +8,45 @@ export function InstagramPanel({
   handle,
   initialScreenshot,
   initialInsights,
+  initialThumbs,
 }: {
   planId: string;
   brandId: string;
   handle: string | null;
   initialScreenshot: string | null;
   initialInsights: string[] | null;
+  initialThumbs?: string[] | null;
 }) {
   const [screenshot, setScreenshot] = useState<string | null>(initialScreenshot);
+  const [thumbs, setThumbs] = useState<string[] | null>(initialThumbs ?? null);
   const [insights, setInsights] = useState<string[] | null>(initialInsights);
-  const [busy, setBusy] = useState<"upload" | "analyze" | null>(null);
+  const [busy, setBusy] = useState<"upload" | "analyze" | "fetch" | null>(null);
   const [error, setError] = useState("");
+  const [note, setNote] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const cleanHandle = handle?.replace(/^@/, "") ?? null;
+  const hasSource = !!screenshot || (thumbs != null && thumbs.length > 0);
+
+  const autoFetch = async () => {
+    setBusy("fetch");
+    setError("");
+    setNote("");
+    try {
+      const res = await fetch(`/api/brands/${brandId}/fetch-feed`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok && Array.isArray(data.thumbs)) {
+        setThumbs(data.thumbs);
+        setNote(`${data.thumbs.length} kare alındı`);
+      } else if (data.reason === "cache") {
+        if (Array.isArray(data.thumbs) && data.thumbs.length) setThumbs(data.thumbs);
+        setNote("Kısa süre önce çekildi.");
+      } else {
+        setNote("Otomatik alınamadı — aşağıdan ekran görüntüsü yükleyebilirsin.");
+      }
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const uploadScreenshot = async (file: File | undefined) => {
     if (!file) return;
@@ -62,9 +89,9 @@ export function InstagramPanel({
     <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
-          Mevcut feed {handle ? `· @${handle}` : ""}
+          Mevcut feed {cleanHandle ? `· @${cleanHandle}` : ""}
         </h2>
-        {screenshot && (
+        {hasSource && (
           <button
             type="button"
             onClick={analyze}
@@ -76,7 +103,36 @@ export function InstagramPanel({
         )}
       </div>
 
-      {screenshot ? (
+      {cleanHandle && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          <a
+            href={`https://instagram.com/${cleanHandle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-md border border-[var(--border)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--text-dim)]"
+          >
+            Instagram&apos;ı Aç
+          </a>
+          <button
+            type="button"
+            onClick={autoFetch}
+            disabled={!!busy}
+            className="rounded-md border border-[var(--brand)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--brand)] disabled:opacity-60"
+          >
+            {busy === "fetch" ? "Çekiliyor…" : "Feed'i otomatik çek"}
+          </button>
+        </div>
+      )}
+      {note && <p className="mb-2 text-[11.5px] text-[var(--text-mute)]">{note}</p>}
+
+      {thumbs && thumbs.length > 0 ? (
+        <div className="grid grid-cols-3 gap-1">
+          {thumbs.slice(0, 9).map((t, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={t} alt="" className="aspect-square w-full rounded object-cover" />
+          ))}
+        </div>
+      ) : screenshot ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={screenshot}
@@ -85,8 +141,8 @@ export function InstagramPanel({
         />
       ) : (
         <div className="rounded-[var(--r-md)] border border-dashed border-[var(--border-strong)] bg-[var(--bg)] p-4 text-center text-[12px] text-[var(--text-mute)]">
-          Markanın güncel Instagram feed&apos;inin ekran görüntüsünü yükle → AI analiz etsin,
-          çıkan notlar sonraki üretimde caption&apos;lara katılır.
+          &ldquo;Feed&apos;i otomatik çek&rdquo;i dene ya da güncel feed&apos;in ekran görüntüsünü yükle →
+          AI analiz etsin, çıkan notlar sonraki üretimde caption&apos;lara katılır.
         </div>
       )}
 

@@ -331,6 +331,7 @@ export function EditorClient({
           handle={brand.instagramHandle}
           initialScreenshot={brand.feedScreenshotUrl}
           initialInsights={plan.feedInsights}
+          initialThumbs={brand.feedThumbs}
         />
         <VersionHistory planId={plan.id} currentItems={items} />
         <FeedbackInbox comments={comments} annotations={annotations} items={items} />

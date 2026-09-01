@@ -17,11 +17,17 @@ export async function POST(req: Request, ctx: Ctx) {
   const brand = await store.getBrand(plan.brandId);
   if (!brand) return json({ error: "brand not found" }, 404);
 
-  if (!brand.feedScreenshotUrl) {
+  const imageUrls =
+    brand.feedThumbs && brand.feedThumbs.length > 0
+      ? brand.feedThumbs
+      : brand.feedScreenshotUrl
+        ? [brand.feedScreenshotUrl]
+        : [];
+
+  if (imageUrls.length === 0) {
     return json({
       insights: [
-        "Analiz için önce markanın güncel Instagram feed'inin bir ekran görüntüsünü yükleyin.",
-        "(Instagram'ın kendi bağlantısı Phase 2'de gelecek.)",
+        "Analiz için önce feed'i otomatik çekin ya da güncel Instagram feed'inin bir ekran görüntüsünü yükleyin.",
       ],
       needsScreenshot: true,
     });
@@ -30,7 +36,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const { insights } = await getAI().analyzeFeed({
     brandName: brand.name,
     handle: brand.instagramHandle,
-    imageUrls: [brand.feedScreenshotUrl],
+    imageUrls,
   });
 
   await store.updatePlan(id, { feedInsights: insights });
