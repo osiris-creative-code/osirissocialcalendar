@@ -13,6 +13,7 @@ const item = (over: Partial<PlanItem>): PlanItem => ({
   media: [{ url: "/u/1.jpg", kind: "image", slideOrder: 1 }],
   isGap: false,
   hidden: false,
+  publishedAt: null,
   ...over,
 });
 

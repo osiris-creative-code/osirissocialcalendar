@@ -6,8 +6,8 @@ import type { Plan, PlanItem } from "@/lib/types";
 const plan = { id: "p", theme: { primary: "#000000", accent: "#111111" } } as Plan;
 
 const items: PlanItem[] = [
-  { id: "i1", planId: "p", date: "2026-09-01", type: "post", sort: 0, caption: "A", specialLabel: null, media: [], isGap: false, hidden: false },
-  { id: "i2", planId: "p", date: "2026-09-02", type: "post", sort: 1, caption: "B", specialLabel: null, media: [], isGap: false, hidden: false },
+  { id: "i1", planId: "p", date: "2026-09-01", type: "post", sort: 0, caption: "A", specialLabel: null, media: [], isGap: false, hidden: false, publishedAt: null },
+  { id: "i2", planId: "p", date: "2026-09-02", type: "post", sort: 1, caption: "B", specialLabel: null, media: [], isGap: false, hidden: false, publishedAt: null },
 ];
 
 describe("PlanEditor", () => {

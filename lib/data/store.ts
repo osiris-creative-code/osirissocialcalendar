@@ -47,7 +47,7 @@ export type CreatePlanInput = {
   visionEnabled?: boolean;
 };
 
-export type NewItem = Omit<PlanItem, "id" | "planId">;
+export type NewItem = Omit<PlanItem, "id" | "planId" | "publishedAt">;
 export type NewAsset = Omit<PlanAsset, "id" | "planId" | "sort">;
 
 export type AddCommentInput = Omit<Comment, "id" | "createdAt">;

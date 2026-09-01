@@ -23,6 +23,7 @@ const items: PlanItem[] = [
     media: [{ url: "/demo/ph-1.svg", kind: "image", slideOrder: 1 }],
     isGap: false,
     hidden: false,
+    publishedAt: null,
   },
   {
     id: "i2",
@@ -35,6 +36,7 @@ const items: PlanItem[] = [
     media: [{ url: "/demo/ph-2.svg", kind: "image", slideOrder: 1 }],
     isGap: false,
     hidden: false,
+    publishedAt: null,
   },
 ];
 

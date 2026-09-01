@@ -53,7 +53,13 @@ export abstract class BlobStore implements DataStore {
   protected static normalize(db: Partial<DbShape> | null): DbShape {
     if (!db) return seedData();
     return {
-      brands: (db.brands ?? []).map((b) => ({ ...b, feedScreenshotUrl: b.feedScreenshotUrl ?? null })),
+      brands: (db.brands ?? []).map((b) => ({
+        ...b,
+        feedScreenshotUrl: b.feedScreenshotUrl ?? null,
+        phone: b.phone ?? null,
+        feedThumbs: b.feedThumbs ?? null,
+        feedFetchedAt: b.feedFetchedAt ?? null,
+      })),
       sources: db.sources ?? [],
       plans: (db.plans ?? []).map((p) => ({
         ...p,
@@ -62,7 +68,7 @@ export abstract class BlobStore implements DataStore {
         reviseDeadline: p.reviseDeadline ?? null,
         mediaPurgedAt: p.mediaPurgedAt ?? null,
       })),
-      items: db.items ?? [],
+      items: (db.items ?? []).map((i) => ({ ...i, publishedAt: i.publishedAt ?? null })),
       assets: db.assets ?? [],
       versions: db.versions ?? [],
       comments: db.comments ?? [],
@@ -103,6 +109,9 @@ export abstract class BlobStore implements DataStore {
       status: "active",
       createdAt: new Date().toISOString(),
       feedScreenshotUrl: null,
+      phone: null,
+      feedThumbs: null,
+      feedFetchedAt: null,
       ...input,
     };
     await this.mutate((db) => db.brands.push(brand));
@@ -210,7 +219,12 @@ export abstract class BlobStore implements DataStore {
       .sort((a, b) => a.sort - b.sort);
   }
   async replaceItems(planId: string, items: NewItem[]): Promise<PlanItem[]> {
-    const created: PlanItem[] = items.map((it) => ({ id: newId(), planId, ...it }));
+    const created: PlanItem[] = items.map((it) => ({
+      id: newId(),
+      planId,
+      publishedAt: null,
+      ...it,
+    }));
     await this.mutate((db) => {
       db.items = db.items.filter((i) => i.planId !== planId).concat(created);
     });

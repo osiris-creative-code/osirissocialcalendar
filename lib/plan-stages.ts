@@ -7,6 +7,8 @@ export const STAGE_LABELS: Record<Stage, string> = {
   markada: "Markada",
   revize_istendi: "Revize istendi",
   onaylandi: "Onaylandı",
+  yayinda: "Yayında",
+  tamamlandi: "Tamamlandı",
 };
 
 export const STAGE_ORDER: Stage[] = [
@@ -16,6 +18,8 @@ export const STAGE_ORDER: Stage[] = [
   "markada",
   "revize_istendi",
   "onaylandi",
+  "yayinda",
+  "tamamlandi",
 ];
 
 const TRANSITIONS: Record<Stage, Stage[]> = {
@@ -24,7 +28,9 @@ const TRANSITIONS: Record<Stage, Stage[]> = {
   markaya_hazir: ["markada"],
   markada: ["revize_istendi", "onaylandi"],
   revize_istendi: ["markada"],
-  onaylandi: [],
+  onaylandi: ["yayinda"],
+  yayinda: ["onaylandi", "tamamlandi"],
+  tamamlandi: [],
 };
 
 export function canTransition(from: Stage, to: Stage): boolean {

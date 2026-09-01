@@ -8,12 +8,14 @@ const CLASS: Record<Stage, string> = {
   markada: "bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] text-[var(--warn)]",
   revize_istendi: "bg-[var(--accent-soft)] text-[var(--accent)]",
   onaylandi: "bg-[var(--ok-soft)] text-[var(--ok)]",
+  yayinda: "bg-[var(--brand-soft)] text-[var(--brand)]",
+  tamamlandi: "bg-[var(--ok-soft)] text-[var(--ok)]",
 };
 
 export function StageBadge({ stage }: { stage: Stage }) {
   return (
     <span className={`rounded-full px-2.5 py-1 text-[11.5px] font-semibold ${CLASS[stage]}`}>
-      {stage === "onaylandi" ? "✓ " : ""}
+      {stage === "onaylandi" || stage === "tamamlandi" ? "✓ " : ""}
       {STAGE_LABELS[stage]}
     </span>
   );

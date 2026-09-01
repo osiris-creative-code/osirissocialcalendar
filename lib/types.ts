@@ -13,6 +13,8 @@ export const STAGES = [
   "markada",
   "revize_istendi",
   "onaylandi",
+  "yayinda",
+  "tamamlandi",
 ] as const;
 export type Stage = (typeof STAGES)[number];
 
@@ -28,7 +30,15 @@ export type CommentStatus = (typeof COMMENT_STATUSES)[number];
 /* ------------------------------------------------------------------ *
  * Row shapes
  * ------------------------------------------------------------------ */
-export type Media = { url: string; kind: "image" | "video"; slideOrder: number };
+export type Media = {
+  url: string;
+  kind: "image" | "video";
+  slideOrder: number;
+  /** Poster frame for a video (grid thumbnail + <video poster>). */
+  posterUrl?: string;
+  /** false ⇒ browser likely can't play this file (MOV/AVI/…). Absent ⇒ playable. */
+  webPlayable?: boolean;
+};
 
 export type Brand = {
   id: string;
@@ -39,6 +49,12 @@ export type Brand = {
   instagramHandle: string | null;
   /** Uploaded screenshot of the brand's current feed, for AI feed analysis. */
   feedScreenshotUrl: string | null;
+  /** WhatsApp number (free text, digits used for wa.me); null = none. */
+  phone: string | null;
+  /** Re-hosted thumbnails from the last automatic Instagram feed fetch. */
+  feedThumbs: string[] | null;
+  /** ISO timestamp of that fetch, for the 12h cache guard. */
+  feedFetchedAt: string | null;
   status: "active" | "archived";
   createdByName: string;
   createdAt: string;
@@ -47,7 +63,7 @@ export type Brand = {
 export type BrandSource = {
   id: string;
   brandId: string;
-  kind: "drive_oauth" | "public_link" | "manual";
+  kind: "drive_oauth" | "public_link" | "manual" | "drive_folder";
   label: string;
   config: Record<string, unknown>;
 };
@@ -101,6 +117,8 @@ export type PlanItem = {
   hidden: boolean;
   /** Shown to the brand as "hazırlanıyor" — a real slot whose file isn't ready. */
   placeholder?: boolean;
+  /** ISO timestamp this slot was marked published (stage "yayinda"); null = not yet. */
+  publishedAt: string | null;
 };
 
 export type PlanAsset = {
@@ -115,6 +133,10 @@ export type PlanAsset = {
   sort: number;
   /** A reserved slot with no file yet (e.g. a reel still being edited). */
   placeholder?: boolean;
+  /** false ⇒ browser likely can't play this video (MOV/AVI/…). Absent ⇒ playable. */
+  webPlayable?: boolean;
+  /** Captured poster frame for a video asset. */
+  posterUrl?: string;
 };
 
 export type Comment = {
@@ -161,6 +183,8 @@ const zMedia = z.object({
   url: z.string(),
   kind: z.enum(["image", "video"]),
   slideOrder: z.number(),
+  posterUrl: z.string().optional(),
+  webPlayable: z.boolean().optional(),
 });
 
 export const zBrand = z.object({
@@ -171,6 +195,9 @@ export const zBrand = z.object({
   colorAccent: z.string(),
   instagramHandle: z.string().nullable(),
   feedScreenshotUrl: z.string().nullable(),
+  phone: z.string().nullable(),
+  feedThumbs: z.array(z.string()).nullable(),
+  feedFetchedAt: z.string().nullable(),
   status: z.enum(["active", "archived"]),
   createdByName: z.string(),
   createdAt: z.string(),
@@ -210,6 +237,7 @@ export const zPlanItem = z.object({
   isGap: z.boolean(),
   hidden: z.boolean(),
   placeholder: z.boolean().optional(),
+  publishedAt: z.string().nullable(),
 });
 
 export const zComment = z.object({
