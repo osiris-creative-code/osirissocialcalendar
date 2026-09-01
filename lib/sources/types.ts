@@ -8,6 +8,8 @@ export type Asset = {
   url: string;
   slideGroup?: string;
   slideOrder: number;
+  posterUrl?: string;
+  webPlayable?: boolean;
 };
 
 export type SourceConfig = Record<string, unknown>;

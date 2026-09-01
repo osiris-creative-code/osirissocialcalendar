@@ -1,6 +1,6 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
-import { deleteUploads } from "@/lib/uploads";
+import { deleteUploads, isWebPlayableVideo } from "@/lib/uploads";
 import { slideOrderFromName } from "@/lib/sources/slide-order";
 import { ITEM_TYPES, type ItemType } from "@/lib/types";
 import type { NewAsset } from "@/lib/data/store";
@@ -13,6 +13,7 @@ type IncomingAsset = {
   url: string;
   name: string;
   placeholder?: boolean;
+  posterUrl?: string;
 };
 
 export async function GET(_req: Request, ctx: Ctx) {
@@ -37,9 +38,10 @@ export async function POST(req: Request, ctx: Ctx) {
     if (!(ITEM_TYPES as readonly string[]).includes(a.type)) throw new Error("bad type");
     const order = slideOrderFromName(a.name);
     const carousel = order != null && a.type !== "story" && a.type !== "reel";
+    const kind = a.kind === "video" ? "video" : "image";
     return {
       type: a.type,
-      kind: a.kind === "video" ? "video" : "image",
+      kind,
       url: a.url,
       name: a.name,
       slideGroup: carousel
@@ -47,6 +49,8 @@ export async function POST(req: Request, ctx: Ctx) {
         : null,
       slideOrder: order ?? 1,
       placeholder: a.placeholder === true,
+      ...(kind === "video" ? { webPlayable: isWebPlayableVideo(a.name) } : {}),
+      ...(a.posterUrl ? { posterUrl: a.posterUrl } : {}),
     };
   });
 

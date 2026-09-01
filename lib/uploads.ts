@@ -11,6 +11,8 @@ function supabase(): SupabaseClient | null {
   return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
 }
 
+export { isWebPlayableVideo } from "./media-format";
+
 function safeKey(name: string): string {
   const clean = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80) || "file";
   return `${newId()}-${clean}`;

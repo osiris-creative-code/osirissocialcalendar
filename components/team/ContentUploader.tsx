@@ -2,6 +2,54 @@
 
 import { useState } from "react";
 import type { ItemType, PlanAsset } from "@/lib/types";
+import { isWebPlayableVideo } from "@/lib/media-format";
+
+/** Grab the first frame of a video as a JPEG data blob, upload it, return its URL. Best-effort. */
+async function grabPoster(file: File): Promise<string | null> {
+  try {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.preload = "metadata";
+    video.src = url;
+    const dataUrl = await new Promise<string | null>((resolve) => {
+      const done = (v: string | null) => {
+        URL.revokeObjectURL(url);
+        resolve(v);
+      };
+      const timer = setTimeout(() => done(null), 4000);
+      video.onloadeddata = () => {
+        video.currentTime = Math.min(0.1, video.duration || 0.1);
+      };
+      video.onseeked = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth || 720;
+          canvas.height = video.videoHeight || 1280;
+          canvas.getContext("2d")!.drawImage(video, 0, 0, canvas.width, canvas.height);
+          clearTimeout(timer);
+          done(canvas.toDataURL("image/jpeg", 0.7));
+        } catch {
+          clearTimeout(timer);
+          done(null);
+        }
+      };
+      video.onerror = () => {
+        clearTimeout(timer);
+        done(null);
+      };
+    });
+    if (!dataUrl) return null;
+    const blob = await (await fetch(dataUrl)).blob();
+    const fd = new FormData();
+    fd.append("file", blob, `${file.name.replace(/\.[^.]+$/, "")}-poster.jpg`);
+    const res = await fetch("/api/uploads", { method: "POST", body: fd });
+    if (!res.ok) return null;
+    return ((await res.json()) as { url?: string }).url ?? null;
+  } catch {
+    return null;
+  }
+}
 
 const GROUPS: { type: ItemType; label: string; accept: string }[] = [
   { type: "post", label: "Post görselleri", accept: "image/*" },
@@ -50,7 +98,13 @@ export function ContentUploader({
     setProgress({ [type]: { done: 0, total: list.length, pct: 0 } });
 
     try {
-      const recorded: { type: ItemType; kind: "image" | "video"; url: string; name: string }[] = [];
+      const recorded: {
+        type: ItemType;
+        kind: "image" | "video";
+        url: string;
+        name: string;
+        posterUrl?: string;
+      }[] = [];
       for (let i = 0; i < list.length; i++) {
         const file = list[i];
         const signRes = await fetch(`/api/plans/${planId}/assets/sign`, {
@@ -80,11 +134,15 @@ export function ContentUploader({
           return;
         }
 
+        const isVideo = file.type.startsWith("video") || !isWebPlayableVideo(file.name);
+        const posterUrl =
+          isVideo && type === "reel" ? (await grabPoster(file)) ?? undefined : undefined;
         recorded.push({
           type,
           kind: file.type.startsWith("video") ? "video" : "image",
           url: target.publicUrl,
           name: file.name,
+          ...(posterUrl ? { posterUrl } : {}),
         });
         setProgress({
           [type]: { done: i + 1, total: list.length, pct: Math.round(((i + 1) * 100) / list.length) },
@@ -228,6 +286,14 @@ export function ContentUploader({
               <span className="max-w-[150px] truncate text-[var(--text-dim)]">
                 {a.placeholder ? "Reels — video bekleniyor" : a.name}
               </span>
+              {a.kind === "video" && a.webPlayable === false && (
+                <span
+                  title="Tarayıcıda oynamayabilir — MP4 (H.264) yükleyin"
+                  className="rounded bg-[var(--warn-soft)] px-1 text-[10px] font-semibold text-[var(--warn)]"
+                >
+                  MP4 değil
+                </span>
+              )}
               <button
                 type="button"
                 onClick={() => remove(a.id)}

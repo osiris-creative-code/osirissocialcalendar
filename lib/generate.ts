@@ -33,6 +33,8 @@ async function buildDrafts(plan: Plan) {
         url: a.url,
         slideGroup: a.slideGroup ?? undefined,
         slideOrder: a.slideOrder,
+        posterUrl: a.posterUrl,
+        webPlayable: a.webPlayable,
       }))
     : await new MockDriveSource(DEMO_SOURCE_CONFIG).list();
 
@@ -84,7 +86,13 @@ export async function runGenerate(
     specialLabel: x.specialLabel,
     media: x.assetIds.map((id) => {
       const a = d.assetById.get(id)!;
-      return { url: a.url, kind: a.kind, slideOrder: a.slideOrder };
+      return {
+        url: a.url,
+        kind: a.kind,
+        slideOrder: a.slideOrder,
+        ...(a.posterUrl ? { posterUrl: a.posterUrl } : {}),
+        ...(a.webPlayable === false ? { webPlayable: false } : {}),
+      };
     }),
     isGap: x.isGap,
     hidden: false,
