@@ -46,6 +46,7 @@ export type CreatePlanInput = {
   theme: PlanTheme;
   visionEnabled?: boolean;
   driveFolderUrl?: string | null;
+  reelLinks?: string[];
 };
 
 export type NewItem = Omit<PlanItem, "id" | "planId" | "publishedAt">;

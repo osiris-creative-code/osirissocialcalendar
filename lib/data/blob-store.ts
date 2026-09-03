@@ -68,6 +68,7 @@ export abstract class BlobStore implements DataStore {
         reviseDeadline: p.reviseDeadline ?? null,
         mediaPurgedAt: p.mediaPurgedAt ?? null,
         driveFolderUrl: p.driveFolderUrl ?? null,
+        reelLinks: p.reelLinks ?? [],
       })),
       items: (db.items ?? []).map((i) => ({ ...i, publishedAt: i.publishedAt ?? null })),
       assets: db.assets ?? [],
@@ -172,6 +173,7 @@ export abstract class BlobStore implements DataStore {
       reviseDeadline: null,
       mediaPurgedAt: null,
       driveFolderUrl: input.driveFolderUrl?.trim() || null,
+      reelLinks: input.reelLinks ?? [],
     };
     await this.mutate((db) => db.plans.push(plan));
     return plan;

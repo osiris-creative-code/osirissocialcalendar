@@ -124,7 +124,11 @@ export default function RehberPage() {
           <p>
             • <b>Drive’dan çek</b> — plana girdiğin klasörü tarar; POST/STORY/REELS (ve “… EK”) alt
             klasörlerindeki her şeyi tipiyle içeri alır, CROP’u atlar, “KAYDIRMALI N” klasörlerini
-            carousel yapar. Linki buradan da değiştirebilirsin.
+            carousel yapar. Klasör linkini ve <b>Reels linklerini</b> buradan da değiştirebilirsin.
+          </p>
+          <p>
+            • <b>Reels ayrı link geldiyse</b> — Reels linkleri kutusuna her satıra bir Google Drive
+            video-dosyası linki yapıştır; “Drive’dan çek” onları da indirir.
           </p>
           <p>• Elle: Post / Story / Reels kutularına dosya bırak.</p>
           <p>• Reels henüz hazır değilse <b>＋ Placeholder</b> — markaya “hazırlanıyor” görünür.</p>

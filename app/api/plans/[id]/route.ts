@@ -32,6 +32,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
         visionEnabled?: boolean;
         reviseDeadline?: string | null;
         driveFolderUrl?: string | null;
+        reelLinks?: string[];
       }
     | null;
   if (!body) return json({ error: "body required" }, 400);
@@ -45,6 +46,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (typeof body.visionEnabled === "boolean") patch.visionEnabled = body.visionEnabled;
   if ("reviseDeadline" in body) patch.reviseDeadline = body.reviseDeadline || null;
   if ("driveFolderUrl" in body) patch.driveFolderUrl = body.driveFolderUrl?.trim() || null;
+  if (Array.isArray(body.reelLinks)) {
+    patch.reelLinks = body.reelLinks.map((s) => String(s).trim()).filter(Boolean);
+  }
   const updated = await store.updatePlan(id, patch);
 
   await store.logActivity({

@@ -13,6 +13,7 @@ export async function POST(req: Request) {
         rangeEnd?: string;
         prompt?: string;
         driveFolderUrl?: string;
+        reelLinks?: string[];
       }
     | null;
   if (!body?.brandId || !body.title?.trim() || !body.rangeStart || !body.rangeEnd) {
@@ -31,6 +32,9 @@ export async function POST(req: Request) {
     prompt: body.prompt ?? "",
     theme: { primary: brand.colorPrimary, accent: brand.colorAccent },
     driveFolderUrl: body.driveFolderUrl,
+    reelLinks: Array.isArray(body.reelLinks)
+      ? body.reelLinks.map((s) => String(s).trim()).filter(Boolean)
+      : [],
   });
   await store.logActivity({
     planId: plan.id,

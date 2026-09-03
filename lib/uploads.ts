@@ -13,6 +13,47 @@ function supabase(): SupabaseClient | null {
 
 export { isWebPlayableVideo } from "./media-format";
 
+/** Step-by-step check of the Supabase Storage path, for the Developer page. */
+export async function storageDiag(): Promise<{ ok: boolean; steps: string[] }> {
+  const steps: string[] = [];
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  steps.push(`SUPABASE_URL: ${url ? "var" : "YOK"}`);
+  steps.push(`SUPABASE_SERVICE_ROLE_KEY: ${key ? `var (${key.slice(0, 6)}…, ${key.length} karakter)` : "YOK"}`);
+  steps.push(`bucket adı: ${BUCKET}`);
+  const sb = supabase();
+  if (!sb) return { ok: false, steps: [...steps, "→ Supabase env eksik, yerel dosya moduna düşer."] };
+
+  const got = await sb.storage.getBucket(BUCKET);
+  if (got.error) {
+    steps.push(`getBucket hatası: ${got.error.message}`);
+    const created = await sb.storage.createBucket(BUCKET, { public: true });
+    steps.push(
+      created.error
+        ? `createBucket hatası: ${created.error.message}`
+        : "createBucket: bucket oluşturuldu (public).",
+    );
+    if (created.error && !/exist/i.test(created.error.message)) return { ok: false, steps };
+  } else {
+    steps.push(`getBucket: bucket var (public: ${got.data?.public}).`);
+  }
+
+  const testKey = `healthcheck/${newId()}.txt`;
+  const up = await sb.storage.from(BUCKET).upload(testKey, Buffer.from("ok"), {
+    contentType: "text/plain",
+    upsert: true,
+  });
+  if (up.error) return { ok: false, steps: [...steps, `upload hatası: ${up.error.message}`] };
+  steps.push("upload: başarılı.");
+
+  const pub = sb.storage.from(BUCKET).getPublicUrl(testKey).data.publicUrl;
+  const back = await fetch(pub).then((r) => r.status).catch((e) => `fetch hatası ${(e as Error).message}`);
+  steps.push(`public URL geri okuma: ${back}`);
+  await sb.storage.from(BUCKET).remove([testKey]).catch(() => undefined);
+
+  return { ok: back === 200, steps };
+}
+
 function safeKey(name: string): string {
   const clean = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80) || "file";
   return `${newId()}-${clean}`;

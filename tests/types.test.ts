@@ -55,6 +55,7 @@ describe("zPlan", () => {
       reviseDeadline: null,
       mediaPurgedAt: null,
       driveFolderUrl: null,
+      reelLinks: [],
     };
     expect(zPlan.safeParse(ok).success).toBe(true);
   });

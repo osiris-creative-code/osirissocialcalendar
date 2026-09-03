@@ -12,6 +12,7 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
   const [rangeStart, setRangeStart] = useState("2026-08-28");
   const [rangeEnd, setRangeEnd] = useState("2026-09-11");
   const [driveFolderUrl, setDriveFolderUrl] = useState("");
+  const [reelLinksText, setReelLinksText] = useState("");
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +24,15 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
     const res = await fetch("/api/plans", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ brandId, title, rangeStart, rangeEnd, prompt, driveFolderUrl }),
+      body: JSON.stringify({
+        brandId,
+        title,
+        rangeStart,
+        rangeEnd,
+        prompt,
+        driveFolderUrl,
+        reelLinks: reelLinksText.split("\n").map((s) => s.trim()).filter(Boolean),
+      }),
     });
     setBusy(false);
     if (res.ok) {
@@ -83,6 +92,21 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
         <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
           Bu çekimin klasörü. İçindeki POST / STORY / REELS alt klasörlerinden içerik çekilir
           (CROP klasörleri atlanır). Klasör “bağlantısı olan herkes”e açık olmalı.
+        </span>
+      </label>
+
+      <label className="text-[13px] text-[var(--text-dim)]">
+        Reels linkleri (opsiyonel)
+        <textarea
+          aria-label="Reels linkleri"
+          value={reelLinksText}
+          onChange={(e) => setReelLinksText(e.target.value)}
+          placeholder={"https://drive.google.com/file/d/…/view\nher satıra bir link"}
+          className="mt-1 min-h-[72px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-[12px] leading-5"
+        />
+        <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
+          Reels ayrı link olarak geldiyse buraya yapıştır — her satıra bir Google Drive video-dosyası
+          linki. “Drive’dan çek” bunları da indirir.
         </span>
       </label>
 

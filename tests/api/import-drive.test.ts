@@ -10,6 +10,7 @@ vi.mock("@/lib/uploads", async (importOriginal) => {
 
 import { POST as createPlan } from "@/app/api/plans/route";
 import { GET as listAssets } from "@/app/api/plans/[id]/assets/route";
+import { PATCH as patchPlan } from "@/app/api/plans/[id]/route";
 import { POST as importDrive } from "@/app/api/plans/[id]/import-drive/route";
 import { GET as listBrands } from "@/app/api/brands/route";
 
@@ -99,5 +100,25 @@ describe("import-drive", () => {
     const plan = await planWithDrive();
     const res = await importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id));
     expect(res.status).toBe(400);
+  });
+
+  it("imports separately-delivered reels from Drive file links, flags non-Drive ones", async () => {
+    const plan = await planWithDrive();
+    await patchPlan(
+      j(`/api/plans/${plan.id}`, "PATCH", {
+        reelLinks: [
+          "https://drive.google.com/file/d/REELFILEID12345678901/view?usp=sharing",
+          "https://wetransfer.com/whatever",
+        ],
+      }),
+      ctx(plan.id),
+    );
+    const res = await importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id));
+    const data = await res.json();
+    expect(data.imported).toBe(1);
+    expect(data.failed.some((f: { reason: string }) => /Drive dosya linki değil/.test(f.reason))).toBe(true);
+
+    const assets = await (await listAssets(j(`/api/plans/${plan.id}/assets`, "GET"), ctx(plan.id))).json();
+    expect(assets.filter((a: { type: string }) => a.type === "reel")).toHaveLength(1);
   });
 });

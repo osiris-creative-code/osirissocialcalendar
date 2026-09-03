@@ -64,7 +64,7 @@ function xhrPut(
   file: File,
   headers: Record<string, string>,
   onProgress: (pct: number) => void,
-): Promise<boolean> {
+): Promise<{ ok: boolean; detail: string }> {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
     xhr.open("PUT", url);
@@ -72,8 +72,12 @@ function xhrPut(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
-    xhr.onerror = () => resolve(false);
+    xhr.onload = () =>
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        detail: `${xhr.status} ${(xhr.responseText || "").slice(0, 160)}`,
+      });
+    xhr.onerror = () => resolve({ ok: false, detail: "ağ hatası (CORS?)" });
     xhr.send(file);
   });
 }
@@ -83,11 +87,13 @@ export function ContentUploader({
   initialAssets,
   driveEnabled = false,
   driveFolderUrl = null,
+  reelLinks = [],
 }: {
   planId: string;
   initialAssets: PlanAsset[];
   driveEnabled?: boolean;
   driveFolderUrl?: string | null;
+  reelLinks?: string[];
 }) {
   const [assets, setAssets] = useState<PlanAsset[]>(initialAssets);
   const [progress, setProgress] = useState<Partial<Record<ItemType, Progress>>>({});
@@ -95,21 +101,25 @@ export function ContentUploader({
   const [error, setError] = useState("");
   const [driveMsg, setDriveMsg] = useState("");
   const [driveLink, setDriveLink] = useState(driveFolderUrl ?? "");
+  const [reelText, setReelText] = useState(reelLinks.join("\n"));
   const [driveSaved, setDriveSaved] = useState(false);
 
-  const saveDriveLink = async () => {
+  const persistDrive = async () => {
     setDriveSaved(false);
     const res = await fetch(`/api/plans/${planId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ driveFolderUrl: driveLink.trim() || null }),
+      body: JSON.stringify({
+        driveFolderUrl: driveLink.trim() || null,
+        reelLinks: reelText.split("\n").map((s) => s.trim()).filter(Boolean),
+      }),
     });
     if (res.ok) setDriveSaved(true);
   };
 
   const pullDrive = async () => {
     if (working) return;
-    if (driveLink.trim() && driveLink.trim() !== (driveFolderUrl ?? "")) await saveDriveLink();
+    await persistDrive();
     setWorking(true);
     setError("");
     setDriveMsg("Drive taranıyor…");
@@ -117,16 +127,17 @@ export function ContentUploader({
       const res = await fetch(`/api/plans/${planId}/import-drive`, { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Drive'dan çekilemedi.");
+        setError(data.error || `Drive'dan çekilemedi (${res.status}).`);
         setDriveMsg("");
         return;
       }
       const fresh = await fetch(`/api/plans/${planId}/assets`).then((r) => r.json());
       setAssets(fresh as PlanAsset[]);
-      const failed = (data.failed as { name: string }[] | undefined)?.length ?? 0;
-      setDriveMsg(
-        `${data.imported} yeni · ${data.skipped} zaten vardı${failed ? ` · ${failed} başarısız` : ""}`,
-      );
+      const failed = (data.failed as { name: string; reason: string }[] | undefined) ?? [];
+      const bits = [`${data.imported} yeni`, `${data.skipped} zaten vardı`];
+      if (failed.length) bits.push(`${failed.length} başarısız`);
+      setDriveMsg((data.note ? `${data.note} · ` : "") + bits.join(" · "));
+      if (failed.length) setError(`İlk hata: ${failed[0].name} — ${failed[0].reason}`);
     } finally {
       setWorking(false);
     }
@@ -160,7 +171,7 @@ export function ContentUploader({
           return;
         }
 
-        const ok = await xhrPut(
+        const put = await xhrPut(
           target.mode === "supabase" ? target.signedUrl : target.uploadPath,
           file,
           target.mode === "supabase"
@@ -171,8 +182,8 @@ export function ContentUploader({
               [type]: { done: i, total: list.length, pct: Math.round((i * 100 + pct) / list.length) },
             }),
         );
-        if (!ok) {
-          setError("Depoya yüklenemedi.");
+        if (!put.ok) {
+          setError(`Depoya yüklenemedi — ${put.detail}`);
           return;
         }
 
@@ -256,29 +267,38 @@ export function ContentUploader({
       {error && <p className="mb-3 text-[12px] text-[var(--accent)]">{error}</p>}
 
       {driveEnabled && (
-        <div className="mb-3 rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-2.5">
+        <div className="mb-3 flex flex-col gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-2.5">
           <div className="flex flex-wrap items-center gap-2">
             <input
               aria-label="Drive klasör linki"
               value={driveLink}
               onChange={(e) => setDriveLink(e.target.value)}
-              onBlur={saveDriveLink}
+              onBlur={persistDrive}
               placeholder="https://drive.google.com/drive/folders/… (bu çekimin klasörü)"
               className="min-w-[220px] flex-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[12px]"
             />
             <button
               type="button"
               onClick={pullDrive}
-              disabled={working || !driveLink.trim()}
+              disabled={working || (!driveLink.trim() && !reelText.trim())}
               className="rounded-md border border-[var(--brand)] px-3 py-1.5 text-[12px] font-semibold text-[var(--brand)] disabled:opacity-50"
             >
               Drive&apos;dan çek
             </button>
           </div>
-          <p className="mt-1.5 text-[11px] text-[var(--text-mute)]">
-            İçindeki POST / STORY / REELS (ve “… EK”) alt klasörlerinden çekilir; CROP klasörleri
-            atlanır. “KAYDIRMALI 1/2/3” alt klasörleri tek bir carousel olur.
-            {driveSaved && <span className="text-[var(--ok)]"> · link kaydedildi</span>}
+          <textarea
+            aria-label="Reels linkleri"
+            value={reelText}
+            onChange={(e) => setReelText(e.target.value)}
+            onBlur={persistDrive}
+            placeholder="Reels linkleri — her satıra bir Google Drive video-dosyası linki (opsiyonel)"
+            className="min-h-[52px] w-full resize-y rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[12px]"
+          />
+          <p className="text-[11px] text-[var(--text-mute)]">
+            Klasördeki POST / STORY / REELS (ve “… EK”) alt klasörlerinden çekilir; CROP atlanır.
+            “KAYDIRMALI 1/2/3” alt klasörleri tek bir carousel olur. Reels ayrı link geldiyse
+            yukarıya yapıştır.
+            {driveSaved && <span className="text-[var(--ok)]"> · kaydedildi</span>}
             {driveMsg && <span className="text-[var(--text-dim)]"> · {driveMsg}</span>}
           </p>
         </div>

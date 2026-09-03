@@ -94,6 +94,8 @@ export type Plan = {
   mediaPurgedAt: string | null;
   /** This shoot's Google Drive folder link (per plan, not per brand). */
   driveFolderUrl: string | null;
+  /** Separately-delivered reels — one Google Drive video-file link per entry. */
+  reelLinks: string[];
 };
 
 export type PlanVersion = {
@@ -226,6 +228,7 @@ export const zPlan = z.object({
   reviseDeadline: z.string().nullable(),
   mediaPurgedAt: z.string().nullable(),
   driveFolderUrl: z.string().nullable(),
+  reelLinks: z.array(z.string()),
 });
 
 export const zPlanItem = z.object({

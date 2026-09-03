@@ -181,7 +181,7 @@ export function EditorClient({
         </div>
 
         {plan.stage === "taslak" && (
-          <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} />
+          <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} reelLinks={plan.reelLinks} />
         )}
 
         <div className="flex flex-wrap items-center gap-3">

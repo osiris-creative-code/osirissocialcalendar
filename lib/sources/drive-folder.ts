@@ -19,6 +19,19 @@ export function driveDownloadUrl(id: string, apiKey: string): string {
   return `${API}/${id}?alt=media&key=${apiKey}`;
 }
 
+/** Pull a Drive *file* id out of a share link (…/file/d/<id>/view, ?id=<id>, /uc?id=<id>). */
+export function parseDriveFileId(url: string): string | null {
+  const s = url.trim();
+  const fileD = /\/file\/d\/([a-zA-Z0-9_-]+)/.exec(s);
+  if (fileD) return fileD[1];
+  const idParam = /[?&]id=([a-zA-Z0-9_-]+)/.exec(s);
+  if (idParam) return idParam[1];
+  const dOnly = /\/d\/([a-zA-Z0-9_-]{20,})/.exec(s);
+  if (dOnly) return dOnly[1];
+  if (/^[a-zA-Z0-9_-]{20,}$/.test(s)) return s;
+  return null;
+}
+
 const norm = (s: string) => s.toLocaleLowerCase("tr").trim();
 
 /** Which slot type a folder name denotes, or null if it isn't a type folder. */
