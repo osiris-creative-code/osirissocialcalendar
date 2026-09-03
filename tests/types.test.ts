@@ -54,6 +54,7 @@ describe("zPlan", () => {
       feedInsights: null,
       reviseDeadline: null,
       mediaPurgedAt: null,
+      driveFolderUrl: null,
     };
     expect(zPlan.safeParse(ok).success).toBe(true);
   });

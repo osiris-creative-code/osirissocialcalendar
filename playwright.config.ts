@@ -20,6 +20,8 @@ export default defineConfig({
       OSIRIS_TEAM_TOKEN: "osiris-dev",
       OSIRIS_DEV_PASSWORD: "dev",
       OSIRIS_DB_PATH: DB_PATH,
+      // so the "Drive'dan çek" UI renders for the guide screenshots; never actually called in E2E
+      GOOGLE_API_KEY: "e2e-capture-key",
     },
   },
 });

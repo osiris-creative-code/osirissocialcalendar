@@ -31,6 +31,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
         items?: NewItem[];
         visionEnabled?: boolean;
         reviseDeadline?: string | null;
+        driveFolderUrl?: string | null;
       }
     | null;
   if (!body) return json({ error: "body required" }, 400);
@@ -43,6 +44,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (body.theme) patch.theme = body.theme;
   if (typeof body.visionEnabled === "boolean") patch.visionEnabled = body.visionEnabled;
   if ("reviseDeadline" in body) patch.reviseDeadline = body.reviseDeadline || null;
+  if ("driveFolderUrl" in body) patch.driveFolderUrl = body.driveFolderUrl?.trim() || null;
   const updated = await store.updatePlan(id, patch);
 
   await store.logActivity({

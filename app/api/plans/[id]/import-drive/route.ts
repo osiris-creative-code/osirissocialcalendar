@@ -1,14 +1,14 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
 import { putUpload, isWebPlayableVideo } from "@/lib/uploads";
-import { DriveFolderSource } from "@/lib/sources/drive-folder";
+import { DriveFolderSource, parseDriveFolderId } from "@/lib/sources/drive-folder";
 import type { NewAsset } from "@/lib/data/store";
 
 export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Pull every media file from the brand's public Drive folder into the plan's assets. */
+/** Pull every media file from this plan's shoot Drive folder into the plan's assets. */
 export async function POST(req: Request, ctx: Ctx) {
   const actor = requireEditor(req);
   if (actor instanceof Response) return actor;
@@ -21,10 +21,9 @@ export async function POST(req: Request, ctx: Ctx) {
   const plan = await store.getPlan(id);
   if (!plan) return json({ error: "plan not found" }, 404);
 
-  const source = (await store.listSources(plan.brandId)).find((s) => s.kind === "drive_folder");
-  const folderId = source?.config?.folderId;
-  if (typeof folderId !== "string" || !folderId) {
-    return json({ error: "markanın Drive klasörü ayarlı değil" }, 400);
+  const folderId = plan.driveFolderUrl ? parseDriveFolderId(plan.driveFolderUrl) : null;
+  if (!folderId) {
+    return json({ error: "planın Drive klasör linki ayarlı değil" }, 400);
   }
 
   let listed;
@@ -34,8 +33,9 @@ export async function POST(req: Request, ctx: Ctx) {
     return json({ error: `Drive listelenemedi: ${(e as Error).message}` }, 502);
   }
 
-  const have = new Set((await store.listAssets(id)).map((a) => a.name));
-  const fresh = listed.filter((a) => !have.has(a.name));
+  const key = (a: { name: string; slideGroup?: string | null }) => `${a.slideGroup ?? ""}::${a.name}`;
+  const have = new Set((await store.listAssets(id)).map(key));
+  const fresh = listed.filter((a) => !have.has(key(a)));
 
   const staged: NewAsset[] = [];
   const failed: { name: string; reason: string }[] = [];

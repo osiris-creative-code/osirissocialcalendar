@@ -6,7 +6,14 @@ export async function POST(req: Request) {
   if (actor instanceof Response) return actor;
 
   const body = (await req.json().catch(() => null)) as
-    | { brandId?: string; title?: string; rangeStart?: string; rangeEnd?: string; prompt?: string }
+    | {
+        brandId?: string;
+        title?: string;
+        rangeStart?: string;
+        rangeEnd?: string;
+        prompt?: string;
+        driveFolderUrl?: string;
+      }
     | null;
   if (!body?.brandId || !body.title?.trim() || !body.rangeStart || !body.rangeEnd) {
     return json({ error: "brandId, title, rangeStart, rangeEnd required" }, 400);
@@ -23,6 +30,7 @@ export async function POST(req: Request) {
     rangeEnd: body.rangeEnd,
     prompt: body.prompt ?? "",
     theme: { primary: brand.colorPrimary, accent: brand.colorAccent },
+    driveFolderUrl: body.driveFolderUrl,
   });
   await store.logActivity({
     planId: plan.id,

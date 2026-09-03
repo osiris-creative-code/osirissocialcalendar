@@ -8,10 +8,8 @@ export default async function NewPlanPage({
   params: Promise<{ brandId: string }>;
 }) {
   const { brandId } = await params;
-  const store = getStore();
-  const brand = await store.getBrand(brandId);
+  const brand = await getStore().getBrand(brandId);
   if (!brand) notFound();
-  const sources = await store.listSources(brandId);
 
-  return <NewPlanForm brandId={brandId} sources={sources} />;
+  return <NewPlanForm brandId={brandId} />;
 }

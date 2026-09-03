@@ -2,17 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { BrandSource } from "@/lib/types";
 
 const DEFAULT_PROMPT =
   "01–12 Eylül arası: 2 günde bir post, her gün story, haftada 1 reels. 7 Eylül Dünya Çikolata Günü'ne özel post. Postlarda sıcak, samimi bir dil ve hafif emoji. Story'lere açıklama yazma.";
 
-export function NewPlanForm({ brandId, sources }: { brandId: string; sources: BrandSource[] }) {
+export function NewPlanForm({ brandId }: { brandId: string }) {
   const router = useRouter();
   const [title, setTitle] = useState("Eylül Takvimi");
   const [rangeStart, setRangeStart] = useState("2026-08-28");
   const [rangeEnd, setRangeEnd] = useState("2026-09-11");
-  const [sourceId, setSourceId] = useState(sources[0]?.id ?? "");
+  const [driveFolderUrl, setDriveFolderUrl] = useState("");
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +23,7 @@ export function NewPlanForm({ brandId, sources }: { brandId: string; sources: Br
     const res = await fetch("/api/plans", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ brandId, title, rangeStart, rangeEnd, prompt, sourceId }),
+      body: JSON.stringify({ brandId, title, rangeStart, rangeEnd, prompt, driveFolderUrl }),
     });
     setBusy(false);
     if (res.ok) {
@@ -72,23 +71,20 @@ export function NewPlanForm({ brandId, sources }: { brandId: string; sources: Br
         </label>
       </div>
 
-      <fieldset className="text-[13px] text-[var(--text-dim)]">
-        <legend className="mb-1">İçerik kaynağı</legend>
-        <div className="flex flex-col gap-1.5">
-          {sources.map((s) => (
-            <label key={s.id} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="source"
-                value={s.id}
-                checked={sourceId === s.id}
-                onChange={() => setSourceId(s.id)}
-              />
-              {s.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <label className="text-[13px] text-[var(--text-dim)]">
+        Google Drive klasör linki (opsiyonel)
+        <input
+          aria-label="Drive klasör linki"
+          value={driveFolderUrl}
+          onChange={(e) => setDriveFolderUrl(e.target.value)}
+          placeholder="https://drive.google.com/drive/folders/…"
+          className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
+        />
+        <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
+          Bu çekimin klasörü. İçindeki POST / STORY / REELS alt klasörlerinden içerik çekilir
+          (CROP klasörleri atlanır). Klasör “bağlantısı olan herkes”e açık olmalı.
+        </span>
+      </label>
 
       <label className="text-[13px] text-[var(--text-dim)]">
         Plan promptu

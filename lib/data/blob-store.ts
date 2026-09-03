@@ -67,6 +67,7 @@ export abstract class BlobStore implements DataStore {
         feedInsights: p.feedInsights ?? null,
         reviseDeadline: p.reviseDeadline ?? null,
         mediaPurgedAt: p.mediaPurgedAt ?? null,
+        driveFolderUrl: p.driveFolderUrl ?? null,
       })),
       items: (db.items ?? []).map((i) => ({ ...i, publishedAt: i.publishedAt ?? null })),
       assets: db.assets ?? [],
@@ -135,19 +136,6 @@ export abstract class BlobStore implements DataStore {
     await this.mutate((db) => db.sources.push(source));
     return source;
   }
-  async updateSource(id: string, patch: Partial<BrandSource>): Promise<BrandSource> {
-    return this.mutate((db) => {
-      const source = db.sources.find((s) => s.id === id);
-      if (!source) throw new Error(`source ${id} not found`);
-      Object.assign(source, patch, { id: source.id, brandId: source.brandId });
-      return { ...source };
-    });
-  }
-  async deleteSource(id: string): Promise<void> {
-    await this.mutate((db) => {
-      db.sources = db.sources.filter((s) => s.id !== id);
-    });
-  }
 
   /* ---------- plans ---------- */
   async getPlan(id: string) {
@@ -183,6 +171,7 @@ export abstract class BlobStore implements DataStore {
       feedInsights: null,
       reviseDeadline: null,
       mediaPurgedAt: null,
+      driveFolderUrl: input.driveFolderUrl?.trim() || null,
     };
     await this.mutate((db) => db.plans.push(plan));
     return plan;

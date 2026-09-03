@@ -12,10 +12,7 @@ export default async function BrandDetailPage({
   const brand = await store.getBrand(brandId);
   if (!brand) notFound();
 
-  const [sources, plans] = await Promise.all([
-    store.listSources(brandId),
-    store.listPlans({ brandId }),
-  ]);
+  const plans = await store.listPlans({ brandId });
 
-  return <BrandDetail brand={brand} sources={sources} plans={plans} />;
+  return <BrandDetail brand={brand} plans={plans} />;
 }

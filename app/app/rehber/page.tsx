@@ -81,35 +81,55 @@ export default function RehberPage() {
         </Step>
 
         <Step n={2} title="Marka ayarları">
-          <p>Marka kartına tıkla. Buradan:</p>
-          <p>• <b>Telefon (WhatsApp)</b> → sonra “WhatsApp’tan markaya” düğmesi doğrudan bu numarayı açar.</p>
           <p>
-            • <b>Google Drive klasör linki</b> → klasör “bağlantısı olan herkes”e açık olmalı. Kaydedince
-            planlarda <b>Drive’dan çek</b> düğmesi çıkar.
+            Marka kartına tıkla. <b>Telefon (WhatsApp)</b> girersen sonra “WhatsApp’tan markaya”
+            düğmesi doğrudan bu numarayı açar. Logo, renkler ve Instagram kullanıcı adı da buradan.
           </p>
-          <Shot src="y3-marka-ayar" alt="Marka ayarları — telefon, renkler, Drive klasör linki" />
+          <p className="text-[var(--text-mute)]">
+            Not: Drive klasörü marka ayarı değil — her çekimin kendi klasörü olduğu için{" "}
+            <b>plan oluştururken</b> girilir (adım 3).
+          </p>
+          <Shot src="y3-marka-ayar" alt="Marka ayarları — telefon, logo, renkler" />
         </Step>
 
         <Step n={3} title="Yeni plan">
           <p>
-            Marka sayfasında <b>Yeni plan</b> → başlık, başlangıç–bitiş tarihi ve kural metni.
+            Marka sayfasında <b>Yeni plan</b> → başlık, başlangıç–bitiş tarihi, kural metni ve{" "}
+            <b>bu çekimin Google Drive klasör linki</b> (opsiyonel).
           </p>
           <p className="rounded-lg bg-[var(--bg)] p-2 font-mono text-[12px] text-[var(--text-dim)]">
             1–14 Eylül: 2 günde bir post, her gün story, haftada 1 reels. 7 Eylül’e özel post.
             Story’lere açıklama yazma.
           </p>
-          <Shot src="y4-yeni-plan" alt="Yeni plan formu" />
+          <p>
+            Drive linki her çekimde değişir. Klasör “bağlantısı olan herkes”e açık olmalı; içi şöyle
+            olmalı:
+          </p>
+          <pre className="overflow-x-auto rounded-lg bg-[var(--bg)] p-2 text-[11.5px] leading-5 text-[var(--text-dim)]">{`ERÇİ 3 - Boyutlandırılmış/   ← plan linki bunu gösterir
+  POST/
+    <tekli post görselleri>
+    KAYDIRMALI 1/   → tek bir carousel
+    KAYDIRMALI 2/
+  STORY/
+  REELS/          ← video dosyaları
+  CROP/           → atlanır (dekupeler)
+  ERÇİ EK/        → içine girilir, orada da POST/STORY/REELS`}</pre>
+          <Shot src="y4-yeni-plan" alt="Yeni plan formu — Drive klasör linki alanı" />
         </Step>
 
-        <Step n={4} title="İçerik yükle">
+        <Step n={4} title="İçerik yükle veya Drive’dan çek">
           <p>
-            Plan <b>Taslak</b> aşamasındayken Post / Story / Reels kutularına dosyaları bırak.
-            “kaydırmalı 1 / 2” isimli dosyalar tek bir carousel olur.
+            Plan <b>Taslak</b> aşamasındayken:
           </p>
+          <p>
+            • <b>Drive’dan çek</b> — plana girdiğin klasörü tarar; POST/STORY/REELS (ve “… EK”) alt
+            klasörlerindeki her şeyi tipiyle içeri alır, CROP’u atlar, “KAYDIRMALI N” klasörlerini
+            carousel yapar. Linki buradan da değiştirebilirsin.
+          </p>
+          <p>• Elle: Post / Story / Reels kutularına dosya bırak.</p>
           <p>• Reels henüz hazır değilse <b>＋ Placeholder</b> — markaya “hazırlanıyor” görünür.</p>
-          <p>• Drive klasörü bağlıysa <b>Drive’dan çek</b> hepsini indirir.</p>
-          <p>• Video: tarayıcıda oynaması için <b>MP4 (H.264)</b> yükle. MOV/AVI’de uyarı çıkar ve marka tarafında oynamaz.</p>
-          <Shot src="y5-icerik-yukle" alt="Editör — İçerik bölümü" />
+          <p>• Video: <b>MP4 (H.264)</b> yükle. MOV/AVI’de “MP4 değil” uyarısı çıkar, marka tarafında oynamaz.</p>
+          <Shot src="y5-icerik-yukle" alt="Editör — İçerik bölümü, Drive klasör linki + “Drive’dan çek”" />
         </Step>
 
         <Step n={5} title="Takvimi üret">

@@ -92,6 +92,8 @@ export type Plan = {
   reviseDeadline: string | null;
   /** ISO timestamp the uploaded files were swept from Storage; null = still kept. */
   mediaPurgedAt: string | null;
+  /** This shoot's Google Drive folder link (per plan, not per brand). */
+  driveFolderUrl: string | null;
 };
 
 export type PlanVersion = {
@@ -223,6 +225,7 @@ export const zPlan = z.object({
   feedInsights: z.array(z.string()).nullable(),
   reviseDeadline: z.string().nullable(),
   mediaPurgedAt: z.string().nullable(),
+  driveFolderUrl: z.string().nullable(),
 });
 
 export const zPlanItem = z.object({

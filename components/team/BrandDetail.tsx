@@ -3,18 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import type { Brand, BrandSource, Plan } from "@/lib/types";
+import type { Brand, Plan } from "@/lib/types";
 import { trRange } from "@/lib/format";
 import { StageBadge } from "./StageBadge";
 import { LogoUpload } from "./LogoUpload";
 
 export function BrandDetail({
   brand,
-  sources,
   plans,
 }: {
   brand: Brand;
-  sources: BrandSource[];
   plans: Plan[];
 }) {
   const router = useRouter();
@@ -26,27 +24,6 @@ export function BrandDetail({
   const [phone, setPhone] = useState(brand.phone ?? "");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
-
-  const driveSource = sources.find((s) => s.kind === "drive_folder");
-  const driveFolderId = typeof driveSource?.config?.folderId === "string" ? driveSource.config.folderId : "";
-  const [driveUrl, setDriveUrl] = useState(driveFolderId ? `https://drive.google.com/drive/folders/${driveFolderId}` : "");
-  const [driveMsg, setDriveMsg] = useState("");
-
-  const saveDrive = async () => {
-    setDriveMsg("");
-    const res = await fetch(`/api/brands/${brand.id}/sources`, {
-      method: driveUrl.trim() ? "POST" : "DELETE",
-      headers: { "content-type": "application/json" },
-      body: driveUrl.trim() ? JSON.stringify({ url: driveUrl.trim() }) : undefined,
-    });
-    if (res.ok) {
-      setDriveMsg(driveUrl.trim() ? "Klasör bağlandı" : "Klasör kaldırıldı");
-      router.refresh();
-    } else {
-      const d = await res.json().catch(() => ({}));
-      setDriveMsg(d.error || "Kaydedilemedi");
-    }
-  };
 
   const save = async () => {
     setBusy(true);
@@ -126,27 +103,10 @@ export function BrandDetail({
           </button>
           {saved && <span className="text-[12.5px] text-[var(--ok)]">Kaydedildi</span>}
         </div>
-        <div className="mt-4 border-t border-[var(--border)] pt-3">
-          <label className="text-[13px] text-[var(--text-dim)]">
-            Google Drive klasör linki (opsiyonel)
-            <input
-              aria-label="Drive klasör linki"
-              value={driveUrl}
-              onChange={(e) => setDriveUrl(e.target.value)}
-              placeholder="https://drive.google.com/drive/folders/..."
-              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
-            />
-          </label>
-          <p className="mt-1 text-[11.5px] text-[var(--text-mute)]">
-            Klasör &ldquo;bağlantısı olan herkes&rdquo;e açık olmalı. Planlarda &ldquo;Drive&apos;dan çek&rdquo; ile içeri aktarılır.
-          </p>
-          <div className="mt-2 flex items-center gap-3">
-            <button type="button" onClick={saveDrive} className="rounded-lg border border-[var(--border-strong)] px-3 py-1.5 text-[12px] font-semibold text-[var(--text-dim)]">
-              Klasörü kaydet
-            </button>
-            {driveMsg && <span className="text-[12px] text-[var(--text-mute)]">{driveMsg}</span>}
-          </div>
-        </div>
+        <p className="mt-3 text-[11.5px] text-[var(--text-mute)]">
+          Google Drive klasörü artık marka değil, <b>plan</b> ayarı — her çekimin kendi linkiyle plan
+          oluştururken girilir.
+        </p>
       </section>
 
       <section>

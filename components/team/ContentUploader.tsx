@@ -81,20 +81,35 @@ function xhrPut(
 export function ContentUploader({
   planId,
   initialAssets,
-  driveReady = false,
+  driveEnabled = false,
+  driveFolderUrl = null,
 }: {
   planId: string;
   initialAssets: PlanAsset[];
-  driveReady?: boolean;
+  driveEnabled?: boolean;
+  driveFolderUrl?: string | null;
 }) {
   const [assets, setAssets] = useState<PlanAsset[]>(initialAssets);
   const [progress, setProgress] = useState<Partial<Record<ItemType, Progress>>>({});
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const [driveMsg, setDriveMsg] = useState("");
+  const [driveLink, setDriveLink] = useState(driveFolderUrl ?? "");
+  const [driveSaved, setDriveSaved] = useState(false);
+
+  const saveDriveLink = async () => {
+    setDriveSaved(false);
+    const res = await fetch(`/api/plans/${planId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ driveFolderUrl: driveLink.trim() || null }),
+    });
+    if (res.ok) setDriveSaved(true);
+  };
 
   const pullDrive = async () => {
     if (working) return;
+    if (driveLink.trim() && driveLink.trim() !== (driveFolderUrl ?? "")) await saveDriveLink();
     setWorking(true);
     setError("");
     setDriveMsg("Drive taranıyor…");
@@ -234,23 +249,38 @@ export function ContentUploader({
         İçerik
       </h2>
       <p className="mb-3 text-[12px] text-[var(--text-mute)]">
-        Drive&apos;dan indirdiğin görselleri/videoları buraya yükle. Yüklemezsen örnek içerikle üretilir.
-        “kaydırmalı 1 / 2” isimli dosyalar tek bir carousel olur.
+        Bu çekimin görsellerini/videolarını buraya yükle ya da Drive klasöründen çek. Yüklemezsen
+        örnek içerikle üretilir.
       </p>
 
       {error && <p className="mb-3 text-[12px] text-[var(--accent)]">{error}</p>}
 
-      {driveReady && (
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={pullDrive}
-            disabled={working}
-            className="rounded-md border border-[var(--brand)] px-3 py-1.5 text-[12px] font-semibold text-[var(--brand)] disabled:opacity-50"
-          >
-            Drive&apos;dan çek
-          </button>
-          {driveMsg && <span className="text-[12px] text-[var(--text-mute)]">{driveMsg}</span>}
+      {driveEnabled && (
+        <div className="mb-3 rounded-[10px] border border-[var(--border)] bg-[var(--bg)] p-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              aria-label="Drive klasör linki"
+              value={driveLink}
+              onChange={(e) => setDriveLink(e.target.value)}
+              onBlur={saveDriveLink}
+              placeholder="https://drive.google.com/drive/folders/… (bu çekimin klasörü)"
+              className="min-w-[220px] flex-1 rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[12px]"
+            />
+            <button
+              type="button"
+              onClick={pullDrive}
+              disabled={working || !driveLink.trim()}
+              className="rounded-md border border-[var(--brand)] px-3 py-1.5 text-[12px] font-semibold text-[var(--brand)] disabled:opacity-50"
+            >
+              Drive&apos;dan çek
+            </button>
+          </div>
+          <p className="mt-1.5 text-[11px] text-[var(--text-mute)]">
+            İçindeki POST / STORY / REELS (ve “… EK”) alt klasörlerinden çekilir; CROP klasörleri
+            atlanır. “KAYDIRMALI 1/2/3” alt klasörleri tek bir carousel olur.
+            {driveSaved && <span className="text-[var(--ok)]"> · link kaydedildi</span>}
+            {driveMsg && <span className="text-[var(--text-dim)]"> · {driveMsg}</span>}
+          </p>
         </div>
       )}
 

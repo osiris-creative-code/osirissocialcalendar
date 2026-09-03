@@ -54,8 +54,8 @@ Adresin: `https://<proje-adı>.vercel.app` — kendi alan adı **gerekmez**.
 ## 4. Kullanım
 
 - Ekip: `https://<proje>.vercel.app/app` → ekip kodu → isim + rol.
-- Yeni plan → **İçerik** bölümünden Drive'dan indirdiğin görselleri/videoları yükle
-  (yüklemezsen örnek içerikle üretir) → prompt → **Takvimi üret**.
+- Yeni plan → bu çekimin **Drive klasör linkini** yapıştır (opsiyonel) → **İçerik** bölümünde
+  **Drive'dan çek** ya da elle yükle (yüklemezsen örnek içerikle üretir) → prompt → **Takvimi üret**.
 - **İç onaya gönder** → çıkan `/i/...` linkini ekibe ver → onaylayan **Onayla** der →
   çıkan `/c/...` linkini WhatsApp'tan markaya gönder.
 
@@ -68,8 +68,10 @@ Adresin: `https://<proje-adı>.vercel.app` — kendi alan adı **gerekmez**.
   doğrudan Storage'a gider (Vercel fonksiyon limitine takılmaz).
 - **AI maliyeti:** `ANTHROPIC_API_KEY` koyarsan plan başına birkaç kuruş; normal kullanımda aylık $1–8.
 - **Drive'dan içe aktarma:** `GOOGLE_API_KEY` koyarsan (Google Cloud Console → Drive API'yi etkinleştir →
-  Credentials → "API key" oluştur, Drive API'ye kısıtla), markanın ayarına "bağlantısı olan herkes"e açık bir
-  Drive klasör linki girip planda "Drive'dan çek" ile tüm görsel/videoları çekebilirsin. OAuth/onay ekranı yok.
+  Credentials → "API key" oluştur, Drive API'ye kısıtla), **her planda** o çekimin "bağlantısı olan
+  herkes"e açık Drive klasör linkini girip **Drive'dan çek** ile içeri aktarırsın. Klasör özyinelemeli
+  taranır: `POST` / `STORY` / `REELS` (ve `… EK`) alt klasörleri tiplerine göre alınır, `CROP` klasörleri
+  atlanır, `KAYDIRMALI 1/2/3` alt klasörleri tek bir carousel olur. OAuth/onay ekranı yok.
 - **Otomatik temizlik:** Vercel Cron her gün 03:00 UTC'de `/api/cron/cleanup` çağırır; takvim
   bitiş tarihinden (rangeEnd) 14 gün geçmiş planların yüklenen görsel/videolarını Storage'dan
   siler. Plan, caption ve yorumlar kalır — sadece dosyalar gider. `CRON_SECRET` tanımlı olmalı.
