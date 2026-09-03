@@ -42,6 +42,9 @@ export function TopBar({
         <Link href="/app/queue" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
           Onay kuyruğu
         </Link>
+        <Link href="/app/rehber" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
+          Rehber
+        </Link>
         {showDeveloper && (
           <Link href="/app/developer" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
             Developer
