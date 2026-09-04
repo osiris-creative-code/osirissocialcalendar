@@ -24,6 +24,11 @@ export function drivePreviewUrl(id: string): string {
   return `https://drive.google.com/file/d/${id}/preview`;
 }
 
+/** A Google-resized copy of a link-shared image — served as bytes, usable in <img>. */
+export function driveResizedImageUrl(id: string, width = 2000): string {
+  return `https://lh3.googleusercontent.com/d/${id}=w${width}`;
+}
+
 /** Pull a Drive *file* id out of a share link (…/file/d/<id>/view, ?id=<id>, /uc?id=<id>). */
 export function parseDriveFileId(url: string): string | null {
   const s = url.trim();
@@ -51,7 +56,7 @@ export function folderType(name: string): ItemType | null {
 const isCrop = (name: string) => norm(name).includes("crop");
 const isCarousel = (name: string) => /kayd[ıi]rmal[ıi]/.test(norm(name));
 
-type DriveEntry = { id: string; name: string; mimeType: string };
+type DriveEntry = { id: string; name: string; mimeType: string; size?: string };
 
 /**
  * Lists a *public* ("anyone with the link") shoot folder using only an API key.
@@ -80,7 +85,7 @@ export class DriveFolderSource implements Source {
       const u = new URL(API);
       u.searchParams.set("q", `'${folderId}' in parents and trashed = false`);
       u.searchParams.set("key", this.apiKey);
-      u.searchParams.set("fields", "nextPageToken, files(id, name, mimeType)");
+      u.searchParams.set("fields", "nextPageToken, files(id, name, mimeType, size)");
       u.searchParams.set("pageSize", "1000");
       u.searchParams.set("supportsAllDrives", "true");
       u.searchParams.set("includeItemsFromAllDrives", "true");
@@ -125,6 +130,7 @@ export class DriveFolderSource implements Source {
             url: driveDownloadUrl(f.id, this.apiKey),
             slideGroup: carouselGroup ?? undefined,
             slideOrder: carouselGroup ? i + 1 : 1,
+            sizeBytes: f.size ? Number(f.size) : undefined,
           });
         });
       }

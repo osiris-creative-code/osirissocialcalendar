@@ -12,6 +12,8 @@ export type Asset = {
   webPlayable?: boolean;
   /** Play via Drive's own embed instead of re-hosting (big videos). */
   driveEmbed?: boolean;
+  /** File size in bytes, when the source reports it. */
+  sizeBytes?: number;
 };
 
 export type SourceConfig = Record<string, unknown>;

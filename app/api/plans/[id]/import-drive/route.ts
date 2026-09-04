@@ -7,11 +7,14 @@ import {
   parseDriveFileId,
   driveDownloadUrl,
   drivePreviewUrl,
+  driveResizedImageUrl,
 } from "@/lib/sources/drive-folder";
 import type { Asset } from "@/lib/sources/types";
 import type { NewAsset } from "@/lib/data/store";
 
 export const maxDuration = 60;
+
+const MAX_REHOST_BYTES = 40 * 1024 * 1024; // stay well under Supabase's 50 MB cap
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -120,22 +123,39 @@ export async function POST(req: Request, ctx: Ctx) {
           continue;
         }
 
-        const res = await fetch(a.url);
-        if (!res.ok) {
-          const body = await res.text().catch(() => "");
-          throw new Error(`indirilemedi ${res.status} ${body.slice(0, 120)}`);
-        }
-        const bytes = Buffer.from(await res.arrayBuffer());
-        const contentType = res.headers.get("content-type") || "application/octet-stream";
-        const { url } = await putUpload({ name: a.name, contentType, bytes });
-        staged.push({
+        const driveImage = (url: string) => ({
           type: a.type,
-          kind: a.kind,
+          kind: "image" as const,
           url,
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,
         });
+
+        // Oversized image → skip re-hosting, use a Google-resized copy from Drive.
+        if (a.sizeBytes && a.sizeBytes > MAX_REHOST_BYTES) {
+          staged.push(driveImage(driveResizedImageUrl(a.id)));
+          continue;
+        }
+
+        try {
+          const res = await fetch(a.url);
+          if (!res.ok) {
+            const body = await res.text().catch(() => "");
+            throw new Error(`indirilemedi ${res.status} ${body.slice(0, 120)}`);
+          }
+          const bytes = Buffer.from(await res.arrayBuffer());
+          const contentType = res.headers.get("content-type") || "application/octet-stream";
+          const { url } = await putUpload({ name: a.name, contentType, bytes });
+          staged.push({ ...driveImage(url), kind: a.kind });
+        } catch (e) {
+          // Storage rejected it (size) or download failed → fall back to the Drive copy.
+          if (/size|exceed|too large|413/i.test((e as Error).message)) {
+            staged.push(driveImage(driveResizedImageUrl(a.id)));
+          } else {
+            throw e;
+          }
+        }
       } catch (e) {
         failed.push({ name: a.name, reason: (e as Error).message });
       }
