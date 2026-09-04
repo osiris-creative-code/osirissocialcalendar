@@ -58,6 +58,10 @@ export async function previewGenerate(plan: Plan): Promise<GeneratePreview> {
   };
 }
 
+/** Above this many drafts, vision stops attaching images — keeps one big shoot's
+ *  worth of items from turning into a single huge (slow, expensive) vision call. */
+const MAX_VISION_ITEMS = 15;
+
 /** Builds the chosen item set and writes captions — one AI call. */
 export async function runGenerate(
   plan: Plan,
@@ -66,17 +70,18 @@ export async function runGenerate(
 ): Promise<GenerateResult> {
   const d = await buildDrafts(plan);
   const drafts: DraftItem[] = mode === "stopAtAssets" ? d.stopAtAssets : d.extend;
+  const vision = plan.visionEnabled && drafts.length <= MAX_VISION_ITEMS;
 
   const { captions } = await getAI().captions({
     brandName: brand.name,
     tone: "sıcak",
     feedInsights: plan.feedInsights,
-    vision: plan.visionEnabled,
+    vision,
     items: drafts.map((x) => ({
       date: x.date,
       type: x.type,
       specialLabel: x.specialLabel,
-      imageUrl: visionSafeUrl(d.assetById.get(x.assetIds[0] ?? "")?.url),
+      imageUrl: vision ? visionSafeUrl(d.assetById.get(x.assetIds[0] ?? "")?.url) : null,
     })),
   });
 

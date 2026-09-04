@@ -96,19 +96,30 @@ export function EditorClient({
   const generate = async () => {
     setBusy(true);
     setGenerating(true);
-    await saveMeta();
-    const res = await fetch(`/api/plans/${plan.id}/generate`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    const preview = await res.json();
-    setBusy(false);
-    if (preview.gap) {
-      setGenerating(false);
-      setGap(preview.preview);
-    } else {
+    try {
+      await saveMeta();
+      const res = await fetch(`/api/plans/${plan.id}/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const text = await res.text();
+      const preview = text ? JSON.parse(text) : {};
+      if (!res.ok) {
+        Toast.show(preview.error || `Üretim başlatılamadı (${res.status})`);
+        return;
+      }
+      if (preview.gap) {
+        setGap(preview.preview);
+        return; // gap modal takes over; applyGenerate keeps `generating` on
+      }
       await applyGenerate("extend", preview.preview.extendCount);
+      return; // applyGenerate owns busy/generating from here
+    } catch (e) {
+      Toast.show(`Üretim başlatılamadı: ${(e as Error).message}`);
+    } finally {
+      setBusy(false);
+      setGenerating(false);
     }
   };
 
@@ -116,16 +127,26 @@ export function EditorClient({
     setBusy(true);
     setGenItemCount(itemCount);
     setGenerating(true);
-    const res = await fetch(`/api/plans/${plan.id}/generate`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ mode }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    setGenerating(false);
-    setGap(null);
-    if (data.items) setItems(data.items);
+    try {
+      const res = await fetch(`/api/plans/${plan.id}/generate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!res.ok) {
+        Toast.show(data.error || `Üretilemedi (${res.status}). Tekrar dene.`);
+        return;
+      }
+      setGap(null);
+      if (data.items) setItems(data.items);
+    } catch (e) {
+      Toast.show(`Üretilemedi: ${(e as Error).message}. Tekrar dene.`);
+    } finally {
+      setBusy(false);
+      setGenerating(false);
+    }
   };
 
   const publishAction = async (action: "start" | "revert") => {

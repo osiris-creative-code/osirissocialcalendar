@@ -2,7 +2,7 @@ import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
 import { previewGenerate, runGenerate } from "@/lib/generate";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
