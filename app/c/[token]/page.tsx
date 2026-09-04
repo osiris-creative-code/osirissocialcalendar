@@ -1,6 +1,7 @@
 import { getStore } from "@/lib/db";
 import { trRange } from "@/lib/format";
 import { InvalidLink } from "@/components/InvalidLink";
+import { AppBackground } from "@/components/team/AppBackground";
 import { BrandViewClient } from "./BrandViewClient";
 import { brandFonts, fontFaceCss } from "@/lib/fonts";
 
@@ -37,16 +38,19 @@ export default async function BrandCalendarPage({
     .slice(0, 2);
 
   return (
-    <BrandViewClient
-      plan={plan}
-      brand={brand}
-      items={items}
-      comments={comments}
-      annotations={annotations}
-      splashTitle={splashTitle}
-      publishedVersions={published}
-      fontFaceCss={faceCss || undefined}
-      fontVars={fontVars}
-    />
+    <>
+      <AppBackground background={settings.background} />
+      <BrandViewClient
+        plan={plan}
+        brand={brand}
+        items={items}
+        comments={comments}
+        annotations={annotations}
+        splashTitle={splashTitle}
+        publishedVersions={published}
+        fontFaceCss={faceCss || undefined}
+        fontVars={fontVars}
+      />
+    </>
   );
 }

@@ -1,6 +1,7 @@
 import { getStore } from "@/lib/db";
 import { trRange } from "@/lib/format";
 import { InvalidLink } from "@/components/InvalidLink";
+import { AppBackground } from "@/components/team/AppBackground";
 import { InternalClient } from "./InternalClient";
 
 export default async function InternalPreviewPage({
@@ -21,16 +22,20 @@ export default async function InternalPreviewPage({
   ]);
   if (!brand) return <InvalidLink />;
 
+  const settings = await store.getSettings();
   const title = `${trRange(plan.rangeStart, plan.rangeEnd)} Sosyal Medya Paylaşım Takvimi`;
 
   return (
-    <InternalClient
-      plan={plan}
-      brand={brand}
-      items={items}
-      comments={comments}
-      annotations={annotations}
-      title={title}
-    />
+    <>
+      <AppBackground background={settings.background} />
+      <InternalClient
+        plan={plan}
+        brand={brand}
+        items={items}
+        comments={comments}
+        annotations={annotations}
+        title={title}
+      />
+    </>
   );
 }
