@@ -46,8 +46,28 @@ export type AnalyzeFeedResult = {
   insights: string[];
 };
 
+export type SuggestPlanRequest = {
+  brandName: string;
+  rangeStart: string;
+  rangeEnd: string;
+  /** Real asset counts — post is carousel-group count. */
+  counts: { post: number; story: number; reel: number };
+  /** A ready parser-friendly cadence brief computed from the counts. */
+  cadenceBrief: string;
+  /** Sample image URLs for vision (special-day graphics, tone). */
+  imageUrls: string[];
+};
+
+export type SuggestPlanResult = {
+  /** Full Turkish brief to drop into the plan prompt. */
+  prompt: string;
+  /** One short line on what was found. */
+  note: string;
+};
+
 export interface AIClient {
   captions(req: CaptionRequest): Promise<CaptionResult>;
   rewriteCaption(req: RewriteRequest): Promise<{ caption: string }>;
   analyzeFeed(req: AnalyzeFeedRequest): Promise<AnalyzeFeedResult>;
+  suggestPlan(req: SuggestPlanRequest): Promise<SuggestPlanResult>;
 }

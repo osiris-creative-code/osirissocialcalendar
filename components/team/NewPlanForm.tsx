@@ -3,17 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-const DEFAULT_PROMPT =
-  "01–12 Eylül arası: 2 günde bir post, her gün story, haftada 1 reels. 7 Eylül Dünya Çikolata Günü'ne özel post. Postlarda sıcak, samimi bir dil ve hafif emoji. Story'lere açıklama yazma.";
-
 export function NewPlanForm({ brandId }: { brandId: string }) {
   const router = useRouter();
   const [title, setTitle] = useState("Eylül Takvimi");
   const [rangeStart, setRangeStart] = useState("2026-08-28");
   const [rangeEnd, setRangeEnd] = useState("2026-09-11");
-  const [driveFolderUrl, setDriveFolderUrl] = useState("");
-  const [reelLinksText, setReelLinksText] = useState("");
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,15 +18,7 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
     const res = await fetch("/api/plans", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        brandId,
-        title,
-        rangeStart,
-        rangeEnd,
-        prompt,
-        driveFolderUrl,
-        reelLinks: reelLinksText.split("\n").map((s) => s.trim()).filter(Boolean),
-      }),
+      body: JSON.stringify({ brandId, title, rangeStart, rangeEnd }),
     });
     setBusy(false);
     if (res.ok) {
@@ -44,8 +30,14 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
   };
 
   return (
-    <form className="mx-auto flex max-w-[560px] flex-col gap-4" onSubmit={submit}>
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Yeni plan</h1>
+    <form className="mx-auto flex max-w-[520px] flex-col gap-4" onSubmit={submit}>
+      <div>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Yeni plan</h1>
+        <p className="mt-1 text-[13px] text-[var(--text-mute)]">
+          İçerik, prompt ve “Plan öner” bir sonraki adımda. Burada sadece bir başlık ve tahmini tarih
+          aralığı ver — tarihleri sonra içeriğe göre değiştirebilirsin.
+        </p>
+      </div>
 
       <label className="text-[13px] text-[var(--text-dim)]">
         Başlık
@@ -79,46 +71,6 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
           />
         </label>
       </div>
-
-      <label className="text-[13px] text-[var(--text-dim)]">
-        Google Drive klasör linki (opsiyonel)
-        <input
-          aria-label="Drive klasör linki"
-          value={driveFolderUrl}
-          onChange={(e) => setDriveFolderUrl(e.target.value)}
-          placeholder="https://drive.google.com/drive/folders/…"
-          className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
-        />
-        <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
-          Bu çekimin klasörü. İçindeki POST / STORY / REELS alt klasörlerinden içerik çekilir
-          (CROP klasörleri atlanır). Klasör “bağlantısı olan herkes”e açık olmalı.
-        </span>
-      </label>
-
-      <label className="text-[13px] text-[var(--text-dim)]">
-        Reels linkleri (opsiyonel)
-        <textarea
-          aria-label="Reels linkleri"
-          value={reelLinksText}
-          onChange={(e) => setReelLinksText(e.target.value)}
-          placeholder={"https://drive.google.com/drive/folders/…  (reels klasörü)\nher satıra bir link"}
-          className="mt-1 min-h-[72px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-[12px] leading-5"
-        />
-        <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
-          Reels ayrı geldiyse buraya yapıştır — Drive <b>klasör</b> linki (içindeki tüm videolar
-          reels olur) ya da tek tek dosya linkleri. “Drive’dan çek” bunları da indirir.
-        </span>
-      </label>
-
-      <label className="text-[13px] text-[var(--text-dim)]">
-        Plan promptu
-        <textarea
-          aria-label="Plan promptu"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="mt-1 min-h-[132px] w-full resize-y rounded-lg border border-[var(--border-strong)] bg-[var(--bg)] p-3 text-[13px] leading-6"
-        />
-      </label>
 
       {error && <p className="text-[12.5px] text-[var(--accent)]">{error}</p>}
 

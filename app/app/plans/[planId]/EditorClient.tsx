@@ -43,9 +43,48 @@ export function EditorClient({
   const [generating, setGenerating] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [title, setTitle] = useState(initialPlan.title);
+  const [rangeStart, setRangeStart] = useState(initialPlan.rangeStart);
+  const [rangeEnd, setRangeEnd] = useState(initialPlan.rangeEnd);
+  const [prompt, setPrompt] = useState(initialPlan.prompt);
+  const [suggestion, setSuggestion] = useState<{ prompt: string; note: string } | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+
+  const patchMeta = async (fields: Partial<Plan>) => {
+    setPlan((p) => ({ ...p, ...fields }));
+    await fetch(`/api/plans/${plan.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(fields),
+    });
+  };
+  const saveMeta = () => patchMeta({ title, rangeStart, rangeEnd, prompt });
+
+  const suggest = async () => {
+    setSuggesting(true);
+    setSuggestion(null);
+    await saveMeta();
+    try {
+      const res = await fetch(`/api/plans/${plan.id}/suggest`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) setSuggestion({ prompt: data.prompt, note: data.note });
+      else Toast.show(data.error || "Öneri alınamadı");
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const applySuggestion = () => {
+    if (!suggestion) return;
+    setPrompt(suggestion.prompt);
+    patchMeta({ prompt: suggestion.prompt });
+    setSuggestion(null);
+  };
+
   const generate = async () => {
     setBusy(true);
     setGenerating(true);
+    await saveMeta();
     const res = await fetch(`/api/plans/${plan.id}/generate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -170,18 +209,98 @@ export function EditorClient({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">{plan.title}</h1>
-            <p className="mt-1 font-mono text-[12.5px] text-[var(--text-mute)]">
-              {brand.name} · {trRange(plan.rangeStart, plan.rangeEnd)}
-            </p>
-          </div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          {plan.stage === "taslak" ? (
+            <div className="flex flex-1 flex-col gap-2">
+              <input
+                aria-label="Başlık"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={saveMeta}
+                className="w-full max-w-[420px] rounded-lg border border-transparent bg-transparent px-1 py-0.5 font-[family-name:var(--font-display)] text-2xl font-semibold hover:border-[var(--border)] focus:border-[var(--border-strong)] focus:outline-none"
+              />
+              <div className="flex items-center gap-2 font-mono text-[12px] text-[var(--text-mute)]">
+                {brand.name} ·
+                <input
+                  aria-label="Başlangıç"
+                  type="date"
+                  value={rangeStart}
+                  onChange={(e) => setRangeStart(e.target.value)}
+                  onBlur={saveMeta}
+                  className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-0.5"
+                />
+                –
+                <input
+                  aria-label="Bitiş"
+                  type="date"
+                  value={rangeEnd}
+                  onChange={(e) => setRangeEnd(e.target.value)}
+                  onBlur={saveMeta}
+                  className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-0.5"
+                />
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">{plan.title}</h1>
+              <p className="mt-1 font-mono text-[12.5px] text-[var(--text-mute)]">
+                {brand.name} · {trRange(plan.rangeStart, plan.rangeEnd)}
+              </p>
+            </div>
+          )}
           <StageBadge stage={plan.stage} />
         </div>
 
         {plan.stage === "taslak" && (
-          <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} reelLinks={plan.reelLinks} />
+          <>
+            <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} reelLinks={plan.reelLinks} />
+
+            <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
+                  Plan kuralları
+                </h2>
+                <button
+                  type="button"
+                  onClick={suggest}
+                  disabled={suggesting || busy}
+                  className="rounded-md border border-[var(--brand)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--brand)] disabled:opacity-50"
+                >
+                  {suggesting ? "Öneriliyor…" : "Plan öner"}
+                </button>
+              </div>
+              <textarea
+                aria-label="Plan promptu"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onBlur={saveMeta}
+                placeholder="Örn: 2 günde bir post, her gün story, haftada 1 reels. 7 Eylül'e özel post. Story'lere açıklama yazma."
+                className="min-h-[96px] w-full resize-y rounded-lg border border-[var(--border-strong)] bg-[var(--bg)] p-3 text-[13px] leading-6"
+              />
+              {suggestion && (
+                <div className="mt-2 rounded-lg border border-[var(--brand-soft)] bg-[var(--brand-soft)] p-3 text-[12.5px]">
+                  <p className="text-[var(--text-dim)]">{suggestion.note}</p>
+                  <p className="mt-1.5 rounded bg-[var(--bg)] p-2 leading-5">{suggestion.prompt}</p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={applySuggestion}
+                      className="rounded-md bg-[var(--brand)] px-3 py-1 text-[11.5px] font-semibold text-[var(--brand-ink)]"
+                    >
+                      Uygula
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSuggestion(null)}
+                      className="rounded-md px-3 py-1 text-[11.5px] text-[var(--text-mute)]"
+                    >
+                      Kapat
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         <div className="flex flex-wrap items-center gap-3">

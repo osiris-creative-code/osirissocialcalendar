@@ -34,7 +34,6 @@ test("capture guide screenshots", async ({ page, context }) => {
 
   await page.getByText("Deniz Cafe").click();
   await expect(page.getByRole("button", { name: "Yeni plan" })).toBeVisible();
-  await page.getByLabel("Telefon").fill("+90 555 111 22 33");
   await page.waitForTimeout(200);
   await page.screenshot({ path: shot("y3-marka-ayar") });
 
@@ -42,17 +41,29 @@ test("capture guide screenshots", async ({ page, context }) => {
   await page.getByLabel("Başlık").fill("Eylül Takvimi");
   await page.getByLabel("Başlangıç").fill("2026-09-01");
   await page.getByLabel("Bitiş").fill("2026-09-14");
-  await page
-    .getByLabel("Drive klasör linki")
-    .fill("https://drive.google.com/drive/folders/1ERCI3_Boyutlandirilmis_abcdef");
   await page.waitForTimeout(200);
   await page.screenshot({ path: shot("y4-yeni-plan") });
   await page.getByRole("button", { name: "Oluştur" }).click();
 
   await expect(page.getByRole("button", { name: "Takvimi üret" })).toBeVisible();
-  await page.screenshot({ path: shot("y5-icerik-yukle") });
   const planUrl = page.url();
   const planId = planUrl.split("/plans/")[1];
+
+  // editor: drive link + reels + prompt all live here now
+  await page
+    .getByLabel("Drive klasör linki")
+    .fill("https://drive.google.com/drive/folders/1ERCI3_Boyutlandirilmis_abcdef");
+  await page
+    .getByLabel("Plan promptu")
+    .fill("2 günde bir post, her gün story, haftada 1 reels. 7 Eylül'e özel post. Story'lere açıklama yazma.");
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: shot("y5-icerik-yukle") });
+
+  await page.getByRole("button", { name: "Plan öner" }).click();
+  await expect(page.getByRole("button", { name: "Uygula" })).toBeVisible({ timeout: 8000 });
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: shot("y5b-plan-oner") });
+  await page.getByRole("button", { name: "Kapat" }).click();
 
   await page.getByRole("button", { name: "Takvimi üret" }).click();
   await expect(page.getByRole("button", { name: /Kurala kadar uzat/ })).toBeVisible();

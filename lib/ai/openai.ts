@@ -6,6 +6,8 @@ import type {
   CaptionRequest,
   CaptionResult,
   RewriteRequest,
+  SuggestPlanRequest,
+  SuggestPlanResult,
 } from "./types";
 
 const MODEL = process.env.OSIRIS_AI_MODEL ?? "gpt-4o-mini";
@@ -96,5 +98,29 @@ export class OpenAIAI implements AIClient {
     const raw = await this.chat(content, { json: true, maxTokens: 600 });
     const parsed = JSON.parse(raw || "{}") as { insights?: string[] };
     return { insights: (parsed.insights ?? []).slice(0, 6) };
+  }
+
+  async suggestPlan(req: SuggestPlanRequest): Promise<SuggestPlanResult> {
+    const { post, story, reel } = req.counts;
+    const content: Part[] = [
+      txt(
+        `${req.brandName} markası için ${req.rangeStart} – ${req.rangeEnd} arası bir sosyal medya ` +
+          `paylaşım planı önerisi hazırla. Elde bu içerik var: ${post} post, ${story} story, ${reel} reels. ` +
+          `Hesaplanan tempo: "${req.cadenceBrief}". Bu tempoyu koru; sadece Türkçe ton cümlesi ekle ` +
+          `(ör. "postlarda sıcak, samimi bir dil ve hafif emoji; story'lere açıklama yazma"). ` +
+          `Aşağıdaki görsellerde tarihli bir kampanya / özel gün grafiği görürsen ve tarih ` +
+          `${req.rangeStart}–${req.rangeEnd} aralığındaysa "<gün> <ay>'e özel post" cümlesini ekle; yoksa ekleme. ` +
+          `\n\nSadece şu JSON'u döndür: {"prompt":"<tam Türkçe brief tek paragraf>","note":"<tek cümle: ne bulundu>"}`,
+      ),
+    ];
+    for (const url of req.imageUrls.slice(0, 8)) if (isRemote(url)) content.push(img(url));
+    const raw = await this.chat(content, { json: true, maxTokens: 500 });
+    const parsed = JSON.parse(raw || "{}") as { prompt?: string; note?: string };
+    return {
+      prompt:
+        parsed.prompt?.trim() ||
+        `${req.rangeStart} – ${req.rangeEnd} arası: ${req.cadenceBrief}. Postlarda sıcak, samimi bir dil, hafif emoji. Story'lere açıklama yazma.`,
+      note: parsed.note?.trim() || `${post} post, ${story} story, ${reel} reels bulundu.`,
+    };
   }
 }

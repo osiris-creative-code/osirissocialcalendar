@@ -5,6 +5,8 @@ import type {
   CaptionRequest,
   CaptionResult,
   RewriteRequest,
+  SuggestPlanRequest,
+  SuggestPlanResult,
 } from "./types";
 
 const POST_LINES = [
@@ -85,5 +87,22 @@ export class MockAI implements AIClient {
         `@${req.handle ?? req.brandName} için insan/behind-the-scenes kareleri eksik.`,
       ],
     };
+  }
+
+  async suggestPlan(req: SuggestPlanRequest): Promise<SuggestPlanResult> {
+    const { post, story, reel } = req.counts;
+    const total = post + story + reel;
+    const prompt =
+      total === 0
+        ? `${req.brandName} için ${req.rangeStart} – ${req.rangeEnd} arası dengeli bir takvim: ` +
+          `2 günde bir post, her gün story, haftada 1 reels. Postlarda sıcak ve samimi bir dil, ` +
+          `hafif emoji. Story'lere açıklama yazma.`
+        : `${req.rangeStart} – ${req.rangeEnd} arası: ${req.cadenceBrief}. ` +
+          `Postlarda sıcak ve samimi bir dil, hafif emoji. Story'lere açıklama yazma.`;
+    const note =
+      total === 0
+        ? "İçerik yok — genel bir şablon önerildi."
+        : `${post} post, ${story} story, ${reel} reels bulundu; aralığa göre dağıtıldı.`;
+    return { prompt, note };
   }
 }

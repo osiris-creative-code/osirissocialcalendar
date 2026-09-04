@@ -33,6 +33,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
         reviseDeadline?: string | null;
         driveFolderUrl?: string | null;
         reelLinks?: string[];
+        prompt?: string;
+        rangeStart?: string;
+        rangeEnd?: string;
       }
     | null;
   if (!body) return json({ error: "body required" }, 400);
@@ -43,6 +46,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const patch: Record<string, unknown> = { version: plan.version + 1 };
   if (body.title?.trim()) patch.title = body.title.trim();
   if (body.theme) patch.theme = body.theme;
+  if (typeof body.prompt === "string") patch.prompt = body.prompt;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(body.rangeStart ?? "")) patch.rangeStart = body.rangeStart;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(body.rangeEnd ?? "")) patch.rangeEnd = body.rangeEnd;
   if (typeof body.visionEnabled === "boolean") patch.visionEnabled = body.visionEnabled;
   if ("reviseDeadline" in body) patch.reviseDeadline = body.reviseDeadline || null;
   if ("driveFolderUrl" in body) patch.driveFolderUrl = body.driveFolderUrl?.trim() || null;

@@ -92,18 +92,22 @@ export default function RehberPage() {
           <Shot src="y3-marka-ayar" alt="Marka ayarları — telefon, logo, renkler" />
         </Step>
 
-        <Step n={3} title="Yeni plan">
+        <Step n={3} title="Yeni plan (sadece başlık + tarih)">
           <p>
-            Marka sayfasında <b>Yeni plan</b> → başlık, başlangıç–bitiş tarihi, kural metni ve{" "}
-            <b>bu çekimin Google Drive klasör linki</b> (opsiyonel).
+            Marka sayfasında <b>Yeni plan</b> → sadece <b>başlık</b> ve tahmini{" "}
+            <b>tarih aralığı</b>. İçerik, Drive linki ve kural metni bir sonraki adımda (editörde) —
+            tarihleri de orada içeriğe göre değiştirebilirsin.
           </p>
-          <p className="rounded-lg bg-[var(--bg)] p-2 font-mono text-[12px] text-[var(--text-dim)]">
-            1–14 Eylül: 2 günde bir post, her gün story, haftada 1 reels. 7 Eylül’e özel post.
-            Story’lere açıklama yazma.
+          <Shot src="y4-yeni-plan" alt="Yeni plan formu — başlık + tarih" />
+        </Step>
+
+        <Step n={4} title="Editörde: içerik → Drive linki → kurallar">
+          <p>
+            Editör açılır. Üstte <b>başlık ve tarihler satır içi düzenlenebilir</b>. Sonra:
           </p>
           <p>
-            Drive linki her çekimde değişir. Klasör “bağlantısı olan herkes”e açık olmalı; içi şöyle
-            olmalı:
+            • <b>Drive klasör linki</b> kutusuna bu çekimin klasör linkini yapıştır (klasör
+            “bağlantısı olan herkes”e açık olmalı) → <b>Drive’dan çek</b>. Klasör şöyle taranır:
           </p>
           <pre className="overflow-x-auto rounded-lg bg-[var(--bg)] p-2 text-[11.5px] leading-5 text-[var(--text-dim)]">{`ERÇİ 3 - Boyutlandırılmış/   ← plan linki bunu gösterir
   POST/
@@ -114,26 +118,23 @@ export default function RehberPage() {
   REELS/          ← video dosyaları
   CROP/           → atlanır (dekupeler)
   ERÇİ EK/        → içine girilir, orada da POST/STORY/REELS`}</pre>
-          <Shot src="y4-yeni-plan" alt="Yeni plan formu — Drive klasör linki alanı" />
-        </Step>
-
-        <Step n={4} title="İçerik yükle veya Drive’dan çek">
           <p>
-            Plan <b>Taslak</b> aşamasındayken:
+            • <b>Reels ayrı geldiyse</b> — Reels linkleri kutusuna reels <b>klasör</b> linkini (ya da
+            tek tek dosya linklerini) yapıştır; “Drive’dan çek” onları da alır.
           </p>
+          <p>• Elle: Post / Story / Reels kutularına dosya bırak. Reels hazır değilse <b>＋ Placeholder</b>.</p>
+          <p>• Video: <b>MP4 (H.264)</b> yükle. MOV/AVI’de “MP4 değil” uyarısı çıkar.</p>
           <p>
-            • <b>Drive’dan çek</b> — plana girdiğin klasörü tarar; POST/STORY/REELS (ve “… EK”) alt
-            klasörlerindeki her şeyi tipiyle içeri alır, CROP’u atlar, “KAYDIRMALI N” klasörlerini
-            carousel yapar. Klasör linkini ve <b>Reels linklerini</b> buradan da değiştirebilirsin.
+            • <b>Plan kuralları</b> kutusuna tempoyu yaz — ya da <b>Plan öner</b>’e bas: yüklü
+            içeriğe bakıp bir öneri çıkarır, <b>Uygula</b> dersen kutuya yazar (sen düzenleyip
+            üretebilirsin, otomatik üretmez).
           </p>
-          <p>
-            • <b>Reels ayrı link geldiyse</b> — Reels linkleri kutusuna her satıra bir Google Drive
-            video-dosyası linki yapıştır; “Drive’dan çek” onları da indirir.
+          <p className="rounded-lg bg-[var(--bg)] p-2 font-mono text-[12px] text-[var(--text-dim)]">
+            2 günde bir post, her gün story, haftada 1 reels. 7 Eylül’e özel post. Story’lere açıklama
+            yazma.
           </p>
-          <p>• Elle: Post / Story / Reels kutularına dosya bırak.</p>
-          <p>• Reels henüz hazır değilse <b>＋ Placeholder</b> — markaya “hazırlanıyor” görünür.</p>
-          <p>• Video: <b>MP4 (H.264)</b> yükle. MOV/AVI’de “MP4 değil” uyarısı çıkar, marka tarafında oynamaz.</p>
-          <Shot src="y5-icerik-yukle" alt="Editör — İçerik bölümü, Drive klasör linki + “Drive’dan çek”" />
+          <Shot src="y5-icerik-yukle" alt="Editör — içerik, Drive linki, Plan kuralları" />
+          <Shot src="y5b-plan-oner" alt="“Plan öner” — içeriğe göre öneri, “Uygula” ile kutuya yazılır" />
         </Step>
 
         <Step n={5} title="Takvimi üret">

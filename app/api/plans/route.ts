@@ -16,19 +16,28 @@ export async function POST(req: Request) {
         reelLinks?: string[];
       }
     | null;
-  if (!body?.brandId || !body.title?.trim() || !body.rangeStart || !body.rangeEnd) {
-    return json({ error: "brandId, title, rangeStart, rangeEnd required" }, 400);
+  if (!body?.brandId || !body.title?.trim()) {
+    return json({ error: "brandId, title required" }, 400);
   }
 
   const store = getStore();
   const brand = await store.getBrand(body.brandId);
   if (!brand) return json({ error: "brand not found" }, 404);
 
+  const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const rangeStart = /^\d{4}-\d{2}-\d{2}$/.test(body.rangeStart ?? "")
+    ? body.rangeStart!
+    : iso(today);
+  const rangeEnd = /^\d{4}-\d{2}-\d{2}$/.test(body.rangeEnd ?? "")
+    ? body.rangeEnd!
+    : iso(new Date(today.getTime() + 13 * 86400000));
+
   const plan = await store.createPlan({
     brandId: brand.id,
     title: body.title.trim(),
-    rangeStart: body.rangeStart,
-    rangeEnd: body.rangeEnd,
+    rangeStart,
+    rangeEnd,
     prompt: body.prompt ?? "",
     theme: { primary: brand.colorPrimary, accent: brand.colorAccent },
     driveFolderUrl: body.driveFolderUrl,

@@ -27,7 +27,8 @@ test("full workflow: create -> generate -> internal approve -> brand view -> rev
   await page.getByLabel("Bitiş").fill("2026-09-11");
   await page.getByRole("button", { name: "Oluştur" }).click();
 
-  // --- generate -> gap modal ---
+  // --- prompt + generate -> gap modal ---
+  await page.getByLabel("Plan promptu").fill("2 günde bir post, her gün story, haftada 1 reels");
   await page.getByRole("button", { name: "Takvimi üret" }).click();
   await page.getByRole("button", { name: /Kurala kadar uzat/ }).click();
   await expect(page.getByText(/POST/).first()).toBeVisible();
@@ -73,6 +74,7 @@ test("publish flow: approve -> yayına al -> mark all -> tamamlandı", async ({ 
   await page.getByLabel("Bitiş").fill("2026-09-07");
   await page.getByRole("button", { name: "Oluştur" }).click();
 
+  await page.getByLabel("Plan promptu").fill("2 günde bir post, her gün story, haftada 1 reels");
   await page.getByRole("button", { name: "Takvimi üret" }).click();
   await page.getByRole("button", { name: /Kurala kadar uzat/ }).click();
   await expect(page.getByText(/POST/).first()).toBeVisible();
