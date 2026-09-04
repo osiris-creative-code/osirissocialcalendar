@@ -192,7 +192,7 @@ export class AnthropicAI implements AIClient {
         text:
           `${req.brandName} markasının çekiminden birkaç görsel grubu aşağıda. Her grup için ` +
           `görsellere bakıp karar ver:\n` +
-          `- "carousel": aynı anın/çekimin kareleri, tek bir kaydırmalı gönderi olmalı.\n` +
+          `- "carousel": aynı anın/çekimin kareleri, tek bir kaydırmalı gönderi olmalı. SADECE "post" tipi bir grup için öner — Instagram'da story ve reels kaydırmalı olamaz.\n` +
           `- "spread": benzer ama ayrı gönderi olmalı; takvimde birbirinden uzak günlere konsun.\n` +
           `- "unrelated": aslında benzemiyorlar, öneri gösterme.\n\n` +
           `Sadece şu JSON'u döndür: ` +

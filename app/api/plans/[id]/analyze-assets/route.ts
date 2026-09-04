@@ -13,6 +13,8 @@ export type AssetSuggestion = {
   kind: "carousel" | "spread";
   assetIds: string[];
   names: string[];
+  /** So the panel can show real thumbnails instead of just file names. */
+  urls: string[];
   reason: string;
 };
 
@@ -57,11 +59,16 @@ export async function POST(_req: Request, ctx: Ctx) {
   for (const c of candidates) {
     const v = verdictById.get(c.id);
     if (!v || v.verdict === "unrelated") continue;
+    // Instagram has no carousel for Story or Reels — only a "post" can become
+    // one. The model is told this, but a run of look-alike stories/reels only
+    // ever gets "spread" here regardless of what it answered.
+    const kind = c.type === "post" ? v.verdict : "spread";
     suggestions.push({
       candidateId: c.id,
-      kind: v.verdict,
+      kind,
       assetIds: c.assetIds,
       names: c.names,
+      urls: c.assetIds.map((aid) => byId.get(aid)?.url).filter((u): u is string => !!u),
       reason: v.reason || c.hint,
     });
   }
