@@ -73,6 +73,24 @@ describe("CalendarView", () => {
     expect(screen.getByText("01")).toBeInTheDocument();
   });
 
+  it("timeline groups same-day items under one date header, not one per item", () => {
+    renderView({
+      items: [
+        items[0], // post, 2026-09-01
+        { ...items[1], id: "i2b", date: "2026-09-01" }, // story, same day
+      ],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Zaman çizelgesi" }));
+    expect(screen.getAllByText("01")).toHaveLength(1);
+  });
+
+  it("timeline 'Kompakt' switches to a multi-column grid", () => {
+    renderView();
+    fireEvent.click(screen.getByRole("button", { name: "Zaman çizelgesi" }));
+    fireEvent.click(screen.getByRole("button", { name: /Kompakt/ }));
+    expect(screen.getByRole("button", { name: /Kompakt/ })).toHaveClass("bg-[var(--brand)]");
+  });
+
   it("doesn't put a pin layer over a reel — clicks must reach the player", () => {
     renderView({
       items: [
