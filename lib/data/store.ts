@@ -80,6 +80,8 @@ export interface DataStore {
   listAssets(planId: string): Promise<PlanAsset[]>;
   addAssets(planId: string, assets: NewAsset[]): Promise<PlanAsset[]>;
   deleteAsset(id: string): Promise<void>;
+  /** Patch several assets at once — used to merge a run into one carousel. */
+  updateAssets(ids: string[], patch: Partial<PlanAsset>): Promise<PlanAsset[]>;
 
   listVersions(planId: string): Promise<PlanVersion[]>;
   snapshotPlan(planId: string, label: string, actorName: string): Promise<PlanVersion>;

@@ -23,9 +23,12 @@ test("full workflow: create -> generate -> internal approve -> brand view -> rev
   // --- new plan ---
   await page.getByRole("button", { name: "Yeni plan" }).click();
   await page.getByLabel("Başlık").fill("Eylül");
+  await page.getByRole("button", { name: "Oluştur" }).click();
+
+  // The range now lives in the editor, next to the prompt — you pick it after
+  // seeing the content, not when the plan is first created.
   await page.getByLabel("Başlangıç").fill("2026-08-28");
   await page.getByLabel("Bitiş").fill("2026-09-11");
-  await page.getByRole("button", { name: "Oluştur" }).click();
 
   // --- prompt + generate -> gap modal ---
   await page.getByLabel("Plan promptu").fill("2 günde bir post, her gün story, haftada 1 reels");
@@ -70,9 +73,10 @@ test("publish flow: approve -> yayına al -> mark all -> tamamlandı", async ({ 
 
   await page.getByRole("button", { name: "Yeni plan" }).click();
   await page.getByLabel("Başlık").fill("Eylül");
+  await page.getByRole("button", { name: "Oluştur" }).click();
+
   await page.getByLabel("Başlangıç").fill("2026-09-01");
   await page.getByLabel("Bitiş").fill("2026-09-07");
-  await page.getByRole("button", { name: "Oluştur" }).click();
 
   await page.getByLabel("Plan promptu").fill("2 günde bir post, her gün story, haftada 1 reels");
   await page.getByRole("button", { name: "Takvimi üret" }).click();

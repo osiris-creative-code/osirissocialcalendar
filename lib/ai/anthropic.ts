@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { captionLanguageRule } from "@/lib/caption-language";
 import type {
   AIClient,
   AnalyzeFeedRequest,
@@ -8,6 +9,11 @@ import type {
   RewriteRequest,
   SuggestPlanRequest,
   SuggestPlanResult,
+  GroupSimilarRequest,
+  GroupSimilarResult,
+  ReviewCalendarRequest,
+  ReviewCalendarResult,
+  ReviewNote,
 } from "./types";
 
 const MODEL = process.env.OSIRIS_AI_MODEL ?? "claude-sonnet-5";
@@ -54,7 +60,7 @@ export class AnthropicAI implements AIClient {
         type: "text",
         text:
           `${req.brandName} markası için sosyal medya açıklamaları (caption) yaz. ` +
-          `Ton: ${req.tone}. Türkçe, 1–3 cümle, sona 1–3 hashtag. Story öğeleri listede yok.` +
+          `Ton: ${req.tone}. ${captionLanguageRule(req.language ?? "tr")} 1–3 cümle, sona 1–3 hashtag. Story öğeleri listede yok.` +
           insights +
           `\n\nÖğeler:\n${lines}` +
           `\n\nSadece şu JSON'u döndür: {"captions":[{"index":<sayı>,"caption":"<metin>"}]}`,
@@ -89,7 +95,7 @@ export class AnthropicAI implements AIClient {
         type: "text",
         text:
           `${req.brandName} (${req.type}) için bu açıklamayı yeniden yaz. Ton: ${req.tone}. ` +
-          `Türkçe, 1–3 cümle, 1–3 hashtag.` +
+          `${captionLanguageRule(req.language ?? "tr")} 1–3 cümle, 1–3 hashtag.` +
           (req.instruction ? ` Yönerge: ${req.instruction}.` : "") +
           insights +
           `\n\nMevcut: ${req.current}\n\nSadece yeni açıklamayı düz metin olarak döndür.`,
@@ -166,6 +172,65 @@ export class AnthropicAI implements AIClient {
         prompt: `${req.rangeStart} – ${req.rangeEnd} arası: ${req.cadenceBrief}. Postlarda sıcak, samimi bir dil, hafif emoji. Story'lere açıklama yazma.`,
         note: `${post} post, ${story} story, ${reel} reels bulundu.`,
       };
+    }
+  }
+
+  async groupSimilar(req: GroupSimilarRequest): Promise<GroupSimilarResult> {
+    const content: Anthropic.ContentBlockParam[] = [
+      {
+        type: "text",
+        text:
+          `${req.brandName} markasının çekiminden birkaç görsel grubu aşağıda. Her grup için ` +
+          `görsellere bakıp karar ver:\n` +
+          `- "carousel": aynı anın/çekimin kareleri, tek bir kaydırmalı gönderi olmalı.\n` +
+          `- "spread": benzer ama ayrı gönderi olmalı; takvimde birbirinden uzak günlere konsun.\n` +
+          `- "unrelated": aslında benzemiyorlar, öneri gösterme.\n\n` +
+          `Sadece şu JSON'u döndür: ` +
+          `{"verdicts":[{"candidateId":"<id>","verdict":"carousel|spread|unrelated","reason":"<tek kısa Türkçe cümle>"}]}`,
+      },
+    ];
+    for (const c of req.candidates) {
+      content.push({ type: "text", text: `Grup ${c.id} (${c.type}) — ${c.names.join(", ")}:` });
+      for (const url of c.imageUrls) if (isRemote(url)) content.push(imageBlock(url));
+    }
+
+    const res = await this.client.messages.create({
+      model: MODEL,
+      max_tokens: 700,
+      messages: [{ role: "user", content }],
+    });
+    const text = res.content.find((b) => b.type === "text")?.text ?? "";
+    const parsed = extractJson<GroupSimilarResult>(text);
+    return { verdicts: parsed.verdicts ?? [] };
+  }
+
+  async reviewCalendar(req: ReviewCalendarRequest): Promise<ReviewCalendarResult> {
+    const lines = req.items
+      .map((i) => `${i.date} · ${i.type}${i.caption ? ` · ${i.caption}` : ""}`)
+      .join("\n");
+    const res = await this.client.messages.create({
+      model: MODEL,
+      max_tokens: 800,
+      messages: [
+        {
+          role: "user",
+          content:
+            `${req.brandName} için ${req.rangeStart} – ${req.rangeEnd} arası üretilmiş takvim aşağıda. ` +
+            `Sunucuda hesaplanmış tespitler de veriliyor — sayıları yeniden hesaplama, sadece ` +
+            `hangileri gerçekten önemli onu seç, önceliklendir ve ekibin anlayacağı dille yaz. ` +
+            `En fazla 5 not döndür; her şey yolundaysa boş liste döndür.\n\n` +
+            `Hesaplanan tespitler:\n- ${req.facts.join("\n- ")}\n\nTakvim:\n${lines}\n\n` +
+            `Sadece şu JSON'u döndür: {"notes":[{"kind":"similar-too-close|balance|caption-repeat|special-day",` +
+            `"severity":"info|warn","message":"<tek kısa Türkçe cümle>"}]}`,
+        },
+      ],
+    });
+    const text = res.content.find((b) => b.type === "text")?.text ?? "";
+    try {
+      const parsed = extractJson<{ notes?: ReviewNote[] }>(text);
+      return { notes: (parsed.notes ?? []).slice(0, 5) };
+    } catch {
+      return { notes: [] };
     }
   }
 }

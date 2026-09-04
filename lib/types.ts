@@ -24,6 +24,10 @@ export type ItemType = (typeof ITEM_TYPES)[number];
 export const COMMENT_STAGES = ["internal", "brand"] as const;
 export type CommentStage = (typeof COMMENT_STAGES)[number];
 
+/** Which language a brand's captions are written in. */
+export const CAPTION_LANGUAGES = ["tr", "en", "mixed"] as const;
+export type CaptionLanguage = (typeof CAPTION_LANGUAGES)[number];
+
 export const COMMENT_STATUSES = ["none", "approved", "changes"] as const;
 export type CommentStatus = (typeof COMMENT_STATUSES)[number];
 
@@ -58,6 +62,8 @@ export type Brand = {
   /** ISO timestamp of that fetch, for the 12h cache guard. */
   feedFetchedAt: string | null;
   status: "active" | "archived";
+  /** Caption language for this brand's plans. Absent on older records ⇒ "tr". */
+  captionLanguage?: CaptionLanguage;
   createdByName: string;
   createdAt: string;
 };
@@ -208,6 +214,7 @@ export const zBrand = z.object({
   feedThumbs: z.array(z.string()).nullable(),
   feedFetchedAt: z.string().nullable(),
   status: z.enum(["active", "archived"]),
+  captionLanguage: z.enum(CAPTION_LANGUAGES).optional(),
   createdByName: z.string(),
   createdAt: z.string(),
 });

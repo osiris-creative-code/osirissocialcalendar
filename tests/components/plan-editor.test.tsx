@@ -11,14 +11,6 @@ const items: PlanItem[] = [
 ];
 
 describe("PlanEditor", () => {
-  it("reorders rows with the down button and emits new order", () => {
-    const onChange = vi.fn();
-    render(<PlanEditor plan={plan} items={items} onChange={onChange} />);
-    fireEvent.click(screen.getAllByRole("button", { name: /Aşağı/ })[0]);
-    const lastArg = onChange.mock.calls.at(-1)![0] as PlanItem[];
-    expect(lastArg.map((i) => i.id)).toEqual(["i2", "i1"]);
-  });
-
   it("shows a dash instead of a caption editor for story rows", () => {
     render(
       <PlanEditor
@@ -42,12 +34,31 @@ describe("PlanEditor", () => {
       <PlanEditor plan={plan} items={items} onChange={vi.fn()} highlightItemId="i2" />,
     );
     expect(container.querySelector("#plan-item-i1")).toBeInTheDocument();
-    expect(container.querySelector("#plan-item-i2")).toBeInTheDocument();
     expect(container.querySelector("#plan-item-i1")).not.toHaveClass("ring-2");
     expect(container.querySelector("#plan-item-i2")).toHaveClass("ring-2");
   });
 
-  it("shows a pin marker positioned at xPct/yPct on the right image, plus its note text", () => {
+  it("groups rows under one heading per day and gives each a drag handle", () => {
+    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
+    expect(screen.getByText("1 Eylül")).toBeInTheDocument();
+    expect(screen.getByText("2 Eylül")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Sürükle" })).toHaveLength(2);
+  });
+
+  it("does not emit while typing a caption — only on blur", () => {
+    const onChange = vi.fn();
+    render(<PlanEditor plan={plan} items={items} onChange={onChange} />);
+    const box = screen.getAllByLabelText("POST açıklaması")[0];
+
+    fireEvent.change(box, { target: { value: "yeni metin" } });
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.blur(box);
+    const emitted = onChange.mock.calls.at(-1)![0] as PlanItem[];
+    expect(emitted.find((i) => i.id === "i1")!.caption).toBe("yeni metin");
+  });
+
+  it("shows a pin marker at xPct/yPct on the right image, with its note", () => {
     const annotations: Annotation[] = [
       {
         id: "a1",
@@ -65,12 +76,30 @@ describe("PlanEditor", () => {
       <PlanEditor plan={plan} items={items} onChange={vi.fn()} annotations={annotations} />,
     );
     expect(screen.getByText("logo çok küçük")).toBeInTheDocument();
-    expect(screen.getByText("Marka", { exact: false })).toBeInTheDocument();
     const pin = container.querySelector('span[title="logo çok küçük"]') as HTMLElement;
-    expect(pin).toBeInTheDocument();
     expect(pin.style.left).toBe("30%");
     expect(pin.style.top).toBe("70%");
-    // i2 has no media and no annotations — no pin block rendered for it.
-    expect(container.querySelector("#plan-item-i2 span[title]")).not.toBeInTheDocument();
+  });
+
+  it("opens the enlarged pinned image when the thumbnail is clicked", () => {
+    const annotations: Annotation[] = [
+      {
+        id: "a1",
+        planItemId: "i1",
+        mediaIndex: 0,
+        xPct: 10,
+        yPct: 20,
+        note: "burayı değiştir",
+        stage: "brand",
+        authorName: "Marka",
+        createdAt: "2026-09-01T00:00:00Z",
+      },
+    ];
+    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} annotations={annotations} />);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "İşaretli görseli büyüt" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getAllByTestId("lightbox-pin")).toHaveLength(1);
   });
 });

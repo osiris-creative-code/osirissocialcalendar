@@ -38,7 +38,25 @@ describe("FeedbackInbox", () => {
       <FeedbackInbox comments={comments} annotations={annotations} items={[item]} onJump={onJump} />,
     );
     fireEvent.click(screen.getByRole("button", { name: /5 Eylül · POST/ }));
-    expect(onJump).toHaveBeenCalledWith("i1");
+    expect(onJump).toHaveBeenCalledWith("i1", { pin: false });
+  });
+
+  it("asks for the marked-up image when the entry is a pin note", () => {
+    const onJump = vi.fn();
+    const pin: Annotation = {
+      id: "an1",
+      planItemId: "i1",
+      mediaIndex: 0,
+      xPct: 20,
+      yPct: 40,
+      note: "burayı büyüt",
+      stage: "brand",
+      authorName: "Marka",
+      createdAt: "2026-09-05T00:00:00Z",
+    };
+    render(<FeedbackInbox comments={[]} annotations={[pin]} items={[item]} onJump={onJump} />);
+    fireEvent.click(screen.getByRole("button", { name: "görselde göster" }));
+    expect(onJump).toHaveBeenCalledWith("i1", { pin: true });
   });
 
   it("renders plain text (no button) when onJump isn't given", () => {

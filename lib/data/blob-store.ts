@@ -114,6 +114,7 @@ export abstract class BlobStore implements DataStore {
       phone: null,
       feedThumbs: null,
       feedFetchedAt: null,
+      captionLanguage: "tr",
       ...input,
     };
     await this.mutate((db) => db.brands.push(brand));
@@ -261,6 +262,18 @@ export abstract class BlobStore implements DataStore {
   async deleteAsset(id: string): Promise<void> {
     await this.mutate((db) => {
       db.assets = db.assets.filter((a) => a.id !== id);
+    });
+  }
+  async updateAssets(ids: string[], patch: Partial<PlanAsset>): Promise<PlanAsset[]> {
+    const wanted = new Set(ids);
+    return this.mutate((db) => {
+      const touched: PlanAsset[] = [];
+      for (const asset of db.assets) {
+        if (!wanted.has(asset.id)) continue;
+        Object.assign(asset, patch, { id: asset.id, planId: asset.planId });
+        touched.push({ ...asset });
+      }
+      return touched;
     });
   }
 

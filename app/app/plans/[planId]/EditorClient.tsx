@@ -14,6 +14,8 @@ import { GapModal } from "@/components/team/GapModal";
 import { StageBadge } from "@/components/team/StageBadge";
 import { PublishPanel } from "@/components/team/PublishPanel";
 import { GenerateProgress } from "@/components/team/GenerateProgress";
+import { ShootAnalysis } from "@/components/team/ShootAnalysis";
+import { CalendarReview } from "@/components/team/CalendarReview";
 import { estimateGenerateMs } from "@/lib/generate-eta";
 import { Toast } from "@/components/ui/Toast";
 
@@ -45,11 +47,13 @@ export function EditorClient({
   const [generating, setGenerating] = useState(false);
   const [genItemCount, setGenItemCount] = useState(0);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
+  const [openPinsFor, setOpenPinsFor] = useState<string | null>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const jumpToItem = (itemId: string) => {
+  const jumpToItem = (itemId: string, opts?: { pin?: boolean }) => {
     setHighlightItemId(itemId);
     document.getElementById(`plan-item-${itemId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (opts?.pin) setOpenPinsFor(itemId);
     if (highlightTimer.current) clearTimeout(highlightTimer.current);
     highlightTimer.current = setTimeout(() => setHighlightItemId(null), 2500);
   };
@@ -262,26 +266,7 @@ export function EditorClient({
                 onBlur={saveMeta}
                 className="w-full max-w-[420px] rounded-lg border border-transparent bg-transparent px-1 py-0.5 font-[family-name:var(--font-display)] text-2xl font-semibold hover:border-[var(--border)] focus:border-[var(--border-strong)] focus:outline-none"
               />
-              <div className="flex items-center gap-2 font-mono text-[12px] text-[var(--text-mute)]">
-                {brand.name} ·
-                <input
-                  aria-label="Başlangıç"
-                  type="date"
-                  value={rangeStart}
-                  onChange={(e) => setRangeStart(e.target.value)}
-                  onBlur={saveMeta}
-                  className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-0.5"
-                />
-                –
-                <input
-                  aria-label="Bitiş"
-                  type="date"
-                  value={rangeEnd}
-                  onChange={(e) => setRangeEnd(e.target.value)}
-                  onBlur={saveMeta}
-                  className="rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 py-0.5"
-                />
-              </div>
+              <div className="font-mono text-[12px] text-[var(--text-mute)]">{brand.name}</div>
             </div>
           ) : (
             <div>
@@ -298,6 +283,8 @@ export function EditorClient({
           <>
             <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} reelLinks={plan.reelLinks} />
 
+            <ShootAnalysis planId={plan.id} />
+
             <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
@@ -312,6 +299,30 @@ export function EditorClient({
                   {suggesting ? "Öneriliyor…" : "Plan öner"}
                 </button>
               </div>
+              <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--bg)] p-2.5 text-[12px] text-[var(--text-dim)]">
+                <span className="font-semibold">Takvim aralığı</span>
+                <input
+                  aria-label="Başlangıç"
+                  type="date"
+                  value={rangeStart}
+                  onChange={(e) => setRangeStart(e.target.value)}
+                  onBlur={saveMeta}
+                  className="rounded border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1 font-mono"
+                />
+                –
+                <input
+                  aria-label="Bitiş"
+                  type="date"
+                  value={rangeEnd}
+                  onChange={(e) => setRangeEnd(e.target.value)}
+                  onBlur={saveMeta}
+                  className="rounded border border-[var(--border)] bg-[var(--surface)] px-1.5 py-1 font-mono"
+                />
+                <span className="text-[11px] text-[var(--text-mute)]">
+                  içeriğini yükledikten sonra buradan ayarla
+                </span>
+              </div>
+
               <textarea
                 aria-label="Plan promptu"
                 value={prompt}
@@ -466,6 +477,8 @@ export function EditorClient({
           </div>
         )}
 
+        {items.length > 0 && plan.stage === "taslak" && <CalendarReview planId={plan.id} />}
+
         <PlanEditor
           plan={plan}
           items={items}
@@ -478,6 +491,8 @@ export function EditorClient({
           onVisionChange={onVisionChange}
           highlightItemId={highlightItemId}
           annotations={annotations}
+          openPinsForItemId={openPinsFor}
+          onPinsOpened={() => setOpenPinsFor(null)}
         />
       </div>
 

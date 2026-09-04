@@ -5,9 +5,7 @@ import { useState } from "react";
 
 export function NewPlanForm({ brandId }: { brandId: string }) {
   const router = useRouter();
-  const [title, setTitle] = useState("Eylül Takvimi");
-  const [rangeStart, setRangeStart] = useState("2026-08-28");
-  const [rangeEnd, setRangeEnd] = useState("2026-09-11");
+  const [title, setTitle] = useState("Yeni takvim");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -15,10 +13,12 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
     e.preventDefault();
     setBusy(true);
     setError("");
+    // No date range here on purpose: you can't sensibly pick one before seeing
+    // the shoot. The API defaults it, and the editor asks once content is in.
     const res = await fetch("/api/plans", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ brandId, title, rangeStart, rangeEnd }),
+      body: JSON.stringify({ brandId, title }),
     });
     setBusy(false);
     if (res.ok) {
@@ -34,8 +34,8 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
       <div>
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Yeni plan</h1>
         <p className="mt-1 text-[13px] text-[var(--text-mute)]">
-          İçerik, prompt ve “Plan öner” bir sonraki adımda. Burada sadece bir başlık ve tahmini tarih
-          aralığı ver — tarihleri sonra içeriğe göre değiştirebilirsin.
+          Sadece bir başlık ver. İçeriği yükleyeceğin, tarih aralığını seçeceğin ve “Plan öner”i
+          kullanacağın ekran bir sonraki adımda — takvimi görselleri gördükten sonra kuracaksın.
         </p>
       </div>
 
@@ -48,29 +48,6 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
           className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[14px]"
         />
       </label>
-
-      <div className="flex gap-3">
-        <label className="flex-1 text-[13px] text-[var(--text-dim)]">
-          Başlangıç
-          <input
-            aria-label="Başlangıç"
-            type="date"
-            value={rangeStart}
-            onChange={(e) => setRangeStart(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[14px]"
-          />
-        </label>
-        <label className="flex-1 text-[13px] text-[var(--text-dim)]">
-          Bitiş
-          <input
-            aria-label="Bitiş"
-            type="date"
-            value={rangeEnd}
-            onChange={(e) => setRangeEnd(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[14px]"
-          />
-        </label>
-      </div>
 
       {error && <p className="text-[12.5px] text-[var(--accent)]">{error}</p>}
 

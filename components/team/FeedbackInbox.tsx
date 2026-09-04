@@ -13,8 +13,12 @@ export function FeedbackInbox({
   comments: Comment[];
   annotations: Annotation[];
   items: PlanItem[];
-  /** Called with the item id when a feedback entry is clicked — jump to & highlight it. */
-  onJump?: (itemId: string) => void;
+  /**
+   * Called when a feedback entry is clicked — jump to & highlight the item.
+   * `pin` asks the editor to also pop the marked-up image open, so a pin note
+   * lands on the actual mark instead of a row full of edit controls.
+   */
+  onJump?: (itemId: string, opts?: { pin?: boolean }) => void;
 }) {
   const byItem = items.map((item) => ({
     item,
@@ -37,7 +41,7 @@ export function FeedbackInbox({
                 {onJump ? (
                   <button
                     type="button"
-                    onClick={() => onJump(item.id)}
+                    onClick={() => onJump(item.id, { pin: as.length > 0 })}
                     className="font-mono text-[11px] text-[var(--brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--text)]"
                   >
                     {trDayMonth(item.date)} · {item.type.toUpperCase()} — göster ↴
@@ -64,6 +68,15 @@ export function FeedbackInbox({
                       {STAGE_TAG[a.stage]} · iğne
                     </span>{" "}
                     <b className="text-[var(--text)]">{a.authorName}</b> {a.note}
+                    {onJump && (
+                      <button
+                        type="button"
+                        onClick={() => onJump(item.id, { pin: true })}
+                        className="ml-1 text-[11px] text-[var(--brand)] underline decoration-dotted underline-offset-2"
+                      >
+                        görselde göster
+                      </button>
+                    )}
                   </p>
                 ))}
               </div>

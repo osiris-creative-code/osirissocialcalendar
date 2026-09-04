@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { captionLanguageRule } from "@/lib/caption-language";
 import type {
   AIClient,
   AnalyzeFeedRequest,
@@ -8,6 +9,11 @@ import type {
   RewriteRequest,
   SuggestPlanRequest,
   SuggestPlanResult,
+  GroupSimilarRequest,
+  GroupSimilarResult,
+  ReviewCalendarRequest,
+  ReviewCalendarResult,
+  ReviewNote,
 } from "./types";
 
 const MODEL = process.env.OSIRIS_AI_MODEL ?? "gpt-4o-mini";
@@ -52,7 +58,7 @@ export class OpenAIAI implements AIClient {
     const content: Part[] = [
       txt(
         `${req.brandName} markası için sosyal medya açıklamaları (caption) yaz. ` +
-          `Ton: ${req.tone}. Türkçe, 1–3 cümle, sona 1–3 hashtag. Story öğeleri listede yok.` +
+          `Ton: ${req.tone}. ${captionLanguageRule(req.language ?? "tr")} 1–3 cümle, sona 1–3 hashtag. Story öğeleri listede yok.` +
           insights +
           `\n\nÖğeler:\n${lines}` +
           `\n\nSadece şu JSON'u döndür: {"captions":[{"index":<sayı>,"caption":"<metin>"}]}`,
@@ -75,7 +81,7 @@ export class OpenAIAI implements AIClient {
     const content: Part[] = [
       txt(
         `${req.brandName} (${req.type}) için bu açıklamayı yeniden yaz. Ton: ${req.tone}. ` +
-          `Türkçe, 1–3 cümle, 1–3 hashtag.` +
+          `${captionLanguageRule(req.language ?? "tr")} 1–3 cümle, 1–3 hashtag.` +
           (req.instruction ? ` Yönerge: ${req.instruction}.` : "") +
           insights +
           `\n\nMevcut: ${req.current}\n\nSadece yeni açıklamayı düz metin olarak döndür.`,
@@ -122,5 +128,48 @@ export class OpenAIAI implements AIClient {
         `${req.rangeStart} – ${req.rangeEnd} arası: ${req.cadenceBrief}. Postlarda sıcak, samimi bir dil, hafif emoji. Story'lere açıklama yazma.`,
       note: parsed.note?.trim() || `${post} post, ${story} story, ${reel} reels bulundu.`,
     };
+  }
+
+  async groupSimilar(req: GroupSimilarRequest): Promise<GroupSimilarResult> {
+    const content: Part[] = [
+      txt(
+        `${req.brandName} markasının çekiminden birkaç görsel grubu aşağıda. Her grup için ` +
+          `görsellere bakıp karar ver:\n` +
+          `- "carousel": aynı anın/çekimin kareleri, tek bir kaydırmalı gönderi olmalı.\n` +
+          `- "spread": benzer ama ayrı gönderi olmalı; takvimde birbirinden uzak günlere konsun.\n` +
+          `- "unrelated": aslında benzemiyorlar, öneri gösterme.\n\n` +
+          `Sadece şu JSON'u döndür: ` +
+          `{"verdicts":[{"candidateId":"<id>","verdict":"carousel|spread|unrelated","reason":"<tek kısa Türkçe cümle>"}]}`,
+      ),
+    ];
+    for (const c of req.candidates) {
+      content.push(txt(`Grup ${c.id} (${c.type}) — ${c.names.join(", ")}:`));
+      for (const url of c.imageUrls) if (isRemote(url)) content.push(img(url));
+    }
+    const raw = await this.chat(content, { json: true, maxTokens: 700 });
+    const parsed = JSON.parse(raw || "{}") as GroupSimilarResult;
+    return { verdicts: parsed.verdicts ?? [] };
+  }
+
+  async reviewCalendar(req: ReviewCalendarRequest): Promise<ReviewCalendarResult> {
+    const lines = req.items
+      .map((i) => `${i.date} · ${i.type}${i.caption ? ` · ${i.caption}` : ""}`)
+      .join("\n");
+    const raw = await this.chat(
+      [
+        txt(
+          `${req.brandName} için ${req.rangeStart} – ${req.rangeEnd} arası üretilmiş takvim aşağıda. ` +
+            `Sunucuda hesaplanmış tespitler de veriliyor — sayıları yeniden hesaplama, sadece ` +
+            `hangileri gerçekten önemli onu seç, önceliklendir ve ekibin anlayacağı dille yaz. ` +
+            `En fazla 5 not döndür; her şey yolundaysa boş liste döndür.\n\n` +
+            `Hesaplanan tespitler:\n- ${req.facts.join("\n- ")}\n\nTakvim:\n${lines}\n\n` +
+            `Sadece şu JSON'u döndür: {"notes":[{"kind":"similar-too-close|balance|caption-repeat|special-day",` +
+            `"severity":"info|warn","message":"<tek kısa Türkçe cümle>"}]}`,
+        ),
+      ],
+      { json: true, maxTokens: 800 },
+    );
+    const parsed = JSON.parse(raw || "{}") as { notes?: ReviewNote[] };
+    return { notes: (parsed.notes ?? []).slice(0, 5) };
   }
 }

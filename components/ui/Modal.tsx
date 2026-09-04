@@ -7,11 +7,14 @@ export function Modal({
   onClose,
   children,
   labelledBy,
+  size = "sm",
 }: {
   open: boolean;
   onClose: () => void;
   children: React.ReactNode;
   labelledBy?: string;
+  /** "lg" is for content that has to be looked at, e.g. an annotated image. */
+  size?: "sm" | "lg";
 }) {
   useEffect(() => {
     if (!open) return;
@@ -36,7 +39,9 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
-        className="w-[min(420px,100%)] rounded-[var(--r-lg)] border border-[var(--border-strong)] bg-[var(--surface)] p-6"
+        className={`${
+          size === "lg" ? "w-[min(560px,100%)] max-h-[88vh] overflow-y-auto p-4" : "w-[min(420px,100%)] p-6"
+        } rounded-[var(--r-lg)] border border-[var(--border-strong)] bg-[var(--surface)]`}
         style={{ boxShadow: "var(--shadow-lg)" }}
       >
         {children}

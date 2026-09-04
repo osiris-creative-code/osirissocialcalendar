@@ -4,7 +4,12 @@ import type {
   AnalyzeFeedResult,
   CaptionRequest,
   CaptionResult,
+  GroupSimilarRequest,
+  GroupSimilarResult,
   RewriteRequest,
+  ReviewCalendarRequest,
+  ReviewCalendarResult,
+  ReviewNote,
   SuggestPlanRequest,
   SuggestPlanResult,
 } from "./types";
@@ -104,5 +109,38 @@ export class MockAI implements AIClient {
         ? "İçerik yok — genel bir şablon önerildi."
         : `${post} post, ${story} story, ${reel} reels bulundu; aralığa göre dağıtıldı.`;
     return { prompt, note };
+  }
+
+  /** Offline stand-in: posts shot back to back become a carousel, stories get spread. */
+  async groupSimilar(req: GroupSimilarRequest): Promise<GroupSimilarResult> {
+    return {
+      verdicts: req.candidates.map((c) => ({
+        candidateId: c.id,
+        verdict: c.type === "post" ? ("carousel" as const) : ("spread" as const),
+        reason:
+          c.type === "post"
+            ? `${c.assetIds.length} kare aynı seriden — tek kaydırmalı gönderi olabilir.`
+            : `${c.assetIds.length} benzer kare — takvimde birbirinden uzak günlere konabilir.`,
+      })),
+    };
+  }
+
+  /** Offline stand-in: pass the computed facts through as plain notes. */
+  async reviewCalendar(req: ReviewCalendarRequest): Promise<ReviewCalendarResult> {
+    const kindOf = (fact: string): ReviewNote["kind"] => {
+      if (/özel içerik yok/.test(fact)) return "special-day";
+      if (/caption/i.test(fact)) return "caption-repeat";
+      if (/gün arayla|benzeyen kare/.test(fact)) return "similar-too-close";
+      return "balance";
+    };
+    const notes = req.facts
+      .filter((f) => !f.startsWith("İçerik dağılımı:"))
+      .slice(0, 5)
+      .map((fact) => ({
+        kind: kindOf(fact),
+        severity: /boş|yok/.test(fact) ? ("warn" as const) : ("info" as const),
+        message: fact,
+      }));
+    return { notes };
   }
 }

@@ -39,11 +39,14 @@ test("capture guide screenshots", async ({ page, context }) => {
 
   await page.getByRole("button", { name: "Yeni plan" }).click();
   await page.getByLabel("Başlık").fill("Eylül Takvimi");
-  await page.getByLabel("Başlangıç").fill("2026-09-01");
-  await page.getByLabel("Bitiş").fill("2026-09-14");
   await page.waitForTimeout(200);
   await page.screenshot({ path: shot("y4-yeni-plan") });
   await page.getByRole("button", { name: "Oluştur" }).click();
+
+  // Range now lives in the editor, next to the prompt.
+  await page.getByLabel("Başlangıç").fill("2026-09-01");
+  await page.getByLabel("Bitiş").fill("2026-09-14");
+  await page.getByLabel("Plan promptu").click();
 
   await expect(page.getByRole("button", { name: "Takvimi üret" })).toBeVisible();
   const planUrl = page.url();

@@ -1,7 +1,7 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
 import { deleteUploads, isWebPlayableVideo } from "@/lib/uploads";
-import { slideOrderFromName } from "@/lib/sources/slide-order";
+import { isCarouselName, slideOrderFromName } from "@/lib/sources/slide-order";
 import { ITEM_TYPES, type ItemType } from "@/lib/types";
 import type { NewAsset } from "@/lib/data/store";
 
@@ -37,7 +37,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const staged: NewAsset[] = incoming.map((a) => {
     if (!(ITEM_TYPES as readonly string[]).includes(a.type)) throw new Error("bad type");
     const order = slideOrderFromName(a.name);
-    const carousel = order != null && a.type !== "story" && a.type !== "reel";
+    const carousel = isCarouselName(a.name) && a.type !== "story" && a.type !== "reel";
     const kind = a.kind === "video" ? "video" : "image";
     return {
       type: a.type,

@@ -15,6 +15,7 @@ const EDITABLE: (keyof Brand)[] = [
   "feedThumbs",
   "feedFetchedAt",
   "status",
+  "captionLanguage",
 ];
 
 export async function PATCH(req: Request, ctx: Ctx) {

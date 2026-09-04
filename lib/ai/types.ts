@@ -1,4 +1,4 @@
-import type { ItemType } from "@/lib/types";
+import type { CaptionLanguage, ItemType } from "@/lib/types";
 
 export type CaptionItem = {
   date: string;
@@ -16,6 +16,8 @@ export type CaptionRequest = {
   feedInsights?: string[] | null;
   /** When true, image URLs are sent to the model as vision input. */
   vision?: boolean;
+  /** Brand's caption language; defaults to Turkish when absent. */
+  language?: CaptionLanguage;
 };
 
 export type CaptionResult = {
@@ -33,6 +35,7 @@ export type RewriteRequest = {
   imageUrl?: string | null;
   vision?: boolean;
   feedInsights?: string[] | null;
+  language?: CaptionLanguage;
 };
 
 export type AnalyzeFeedRequest = {
@@ -65,9 +68,67 @@ export type SuggestPlanResult = {
   note: string;
 };
 
+/* ------------------------------------------------------------------ *
+ * Shoot analysis — "these look alike, make them a carousel"
+ * ------------------------------------------------------------------ */
+
+/** One candidate group found by the cheap server-side pass, sent for judgement. */
+export type SimilarCandidate = {
+  id: string;
+  type: ItemType;
+  /** Asset ids in the group, in upload order. */
+  assetIds: string[];
+  /** One image URL per asset, same order (may be empty when not remote). */
+  imageUrls: string[];
+  names: string[];
+};
+
+export type GroupSimilarRequest = {
+  brandName: string;
+  candidates: SimilarCandidate[];
+};
+
+export type GroupSimilarVerdict = {
+  candidateId: string;
+  /** "carousel" ⇒ same shoot, merge into one carousel post.
+   *  "spread"   ⇒ alike but separate posts — keep apart on the calendar.
+   *  "unrelated" ⇒ false alarm, drop the suggestion. */
+  verdict: "carousel" | "spread" | "unrelated";
+  /** One short Turkish sentence explaining the call. */
+  reason: string;
+};
+
+export type GroupSimilarResult = { verdicts: GroupSimilarVerdict[] };
+
+/* ------------------------------------------------------------------ *
+ * Calendar review — the pass before it goes to internal approval
+ * ------------------------------------------------------------------ */
+
+export type ReviewCalendarRequest = {
+  brandName: string;
+  rangeStart: string;
+  rangeEnd: string;
+  /** Compact per-item lines: date · type · caption. */
+  items: { date: string; type: ItemType; caption: string | null }[];
+  /** Deterministic findings computed server-side, for the model to judge and phrase. */
+  facts: string[];
+  language?: CaptionLanguage;
+};
+
+export type ReviewNote = {
+  kind: "similar-too-close" | "balance" | "caption-repeat" | "special-day";
+  severity: "info" | "warn";
+  /** One short Turkish sentence the team can act on. */
+  message: string;
+};
+
+export type ReviewCalendarResult = { notes: ReviewNote[] };
+
 export interface AIClient {
   captions(req: CaptionRequest): Promise<CaptionResult>;
   rewriteCaption(req: RewriteRequest): Promise<{ caption: string }>;
   analyzeFeed(req: AnalyzeFeedRequest): Promise<AnalyzeFeedResult>;
   suggestPlan(req: SuggestPlanRequest): Promise<SuggestPlanResult>;
+  groupSimilar(req: GroupSimilarRequest): Promise<GroupSimilarResult>;
+  reviewCalendar(req: ReviewCalendarRequest): Promise<ReviewCalendarResult>;
 }

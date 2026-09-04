@@ -6,6 +6,7 @@ import { MockDriveSource } from "@/lib/sources/mock-drive";
 import type { Asset } from "@/lib/sources/types";
 import type { Brand, Plan } from "@/lib/types";
 import type { NewItem } from "@/lib/data/store";
+import { captionLanguageOf } from "@/lib/caption-language";
 
 /** Fixed demo asset counts, used only when a plan has no uploaded content. */
 export const DEMO_SOURCE_CONFIG = { postCount: 5, storyCount: 8, reelCount: 2 };
@@ -75,6 +76,7 @@ export async function runGenerate(
   const { captions } = await getAI().captions({
     brandName: brand.name,
     tone: "sıcak",
+    language: captionLanguageOf(brand),
     feedInsights: plan.feedInsights,
     vision,
     items: drafts.map((x) => ({

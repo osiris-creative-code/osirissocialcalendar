@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import type { Brand, Plan } from "@/lib/types";
+import type { Brand, CaptionLanguage, Plan } from "@/lib/types";
+import { CAPTION_LANGUAGE_LABELS, captionLanguageOf } from "@/lib/caption-language";
 import { trRange } from "@/lib/format";
 import { StageBadge } from "./StageBadge";
 import { LogoUpload } from "./LogoUpload";
@@ -21,6 +22,7 @@ export function BrandDetail({
   const [colorPrimary, setColorPrimary] = useState(brand.colorPrimary);
   const [colorAccent, setColorAccent] = useState(brand.colorAccent);
   const [handle, setHandle] = useState(brand.instagramHandle ?? "");
+  const [captionLanguage, setCaptionLanguage] = useState<CaptionLanguage>(captionLanguageOf(brand));
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -35,6 +37,7 @@ export function BrandDetail({
         colorPrimary,
         colorAccent,
         instagramHandle: handle,
+        captionLanguage,
       }),
     });
     setBusy(false);
@@ -75,6 +78,24 @@ export function BrandDetail({
           <label className="text-[13px] text-[var(--text-dim)]">
             Instagram kullanıcı adı
             <input value={handle} onChange={(e) => setHandle(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]" />
+          </label>
+          <label className="text-[13px] text-[var(--text-dim)]">
+            Caption dili
+            <select
+              aria-label="Caption dili"
+              value={captionLanguage}
+              onChange={(e) => setCaptionLanguage(e.target.value as CaptionLanguage)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
+            >
+              {(Object.keys(CAPTION_LANGUAGE_LABELS) as CaptionLanguage[]).map((lang) => (
+                <option key={lang} value={lang}>
+                  {CAPTION_LANGUAGE_LABELS[lang]}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
+              Bu markanın tüm planlarında geçerli. Tek bir planda istisna istersen plan promptuna yaz.
+            </span>
           </label>
           <label className="flex items-center gap-2 text-[13px] text-[var(--text-dim)]">
             Ana renk

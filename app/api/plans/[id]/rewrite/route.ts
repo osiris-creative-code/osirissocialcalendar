@@ -2,6 +2,7 @@ import { getStore } from "@/lib/db";
 import { getAI } from "@/lib/ai";
 import { visionSafeUrl } from "@/lib/ai/vision-safe";
 import { json, requireEditor } from "@/lib/api/session";
+import { captionLanguageOf } from "@/lib/caption-language";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,6 +28,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const { caption } = await getAI().rewriteCaption({
     brandName: brand.name,
     tone: "sıcak",
+    language: captionLanguageOf(brand),
     type: item.type,
     current: item.caption ?? "",
     instruction: body.instruction?.trim() || undefined,
