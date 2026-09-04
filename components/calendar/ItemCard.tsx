@@ -133,9 +133,10 @@ export function ItemCard({
 
       <div
         className={`relative mx-3.5 mt-2.5 overflow-hidden rounded-[var(--r-md)] border border-[var(--border)] ${
-          // Reels are shot vertical (9:16) — matching that box keeps Drive's embed from
-          // letterboxing/shifting the frame the way a squarer box forces it to.
-          item.type === "reel" ? "aspect-[9/16]" : "aspect-[4/5]"
+          // Reels and stories are both shot vertical (9:16) — matching that box keeps
+          // Drive's reel embed from letterboxing/shifting the frame the way a squarer
+          // box forces it to, and stops story images from being cropped to a feed shape.
+          item.type === "reel" || item.type === "story" ? "aspect-[9/16]" : "aspect-[4/5]"
         }`}
       >
         {media}
