@@ -291,13 +291,13 @@ export function ContentUploader({
             value={reelText}
             onChange={(e) => setReelText(e.target.value)}
             onBlur={persistDrive}
-            placeholder="Reels linkleri — her satıra bir Google Drive video-dosyası linki (opsiyonel)"
+            placeholder="Reels linkleri — Drive klasör ya da dosya linki, her satıra bir (opsiyonel)"
             className="min-h-[52px] w-full resize-y rounded-md border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1.5 text-[12px]"
           />
           <p className="text-[11px] text-[var(--text-mute)]">
             Klasördeki POST / STORY / REELS (ve “… EK”) alt klasörlerinden çekilir; CROP atlanır.
-            “KAYDIRMALI 1/2/3” alt klasörleri tek bir carousel olur. Reels ayrı link geldiyse
-            yukarıya yapıştır.
+            “KAYDIRMALI 1/2/3” alt klasörleri tek bir carousel olur. Reels ayrı klasör/link geldiyse
+            yukarıdaki kutuya yapıştır — içindeki tüm videolar reels olarak alınır.
             {driveSaved && <span className="text-[var(--ok)]"> · kaydedildi</span>}
             {driveMsg && <span className="text-[var(--text-dim)]"> · {driveMsg}</span>}
           </p>

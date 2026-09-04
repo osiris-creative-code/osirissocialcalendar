@@ -101,12 +101,12 @@ export function NewPlanForm({ brandId }: { brandId: string }) {
           aria-label="Reels linkleri"
           value={reelLinksText}
           onChange={(e) => setReelLinksText(e.target.value)}
-          placeholder={"https://drive.google.com/file/d/…/view\nher satıra bir link"}
+          placeholder={"https://drive.google.com/drive/folders/…  (reels klasörü)\nher satıra bir link"}
           className="mt-1 min-h-[72px] w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--bg)] p-3 text-[12px] leading-5"
         />
         <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
-          Reels ayrı link olarak geldiyse buraya yapıştır — her satıra bir Google Drive video-dosyası
-          linki. “Drive’dan çek” bunları da indirir.
+          Reels ayrı geldiyse buraya yapıştır — Drive <b>klasör</b> linki (içindeki tüm videolar
+          reels olur) ya da tek tek dosya linkleri. “Drive’dan çek” bunları da indirir.
         </span>
       </label>
 

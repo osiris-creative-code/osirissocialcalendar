@@ -102,23 +102,36 @@ describe("import-drive", () => {
     expect(res.status).toBe(400);
   });
 
-  it("imports separately-delivered reels from Drive file links, flags non-Drive ones", async () => {
+  it("imports separately-delivered reels from a Drive folder link + file links, flags junk", async () => {
     const plan = await planWithDrive();
     await patchPlan(
       j(`/api/plans/${plan.id}`, "PATCH", {
         reelLinks: [
+          "https://drive.google.com/drive/folders/REELFOLDER?usp=sharing",
           "https://drive.google.com/file/d/REELFILEID12345678901/view?usp=sharing",
           "https://wetransfer.com/whatever",
         ],
       }),
       ctx(plan.id),
     );
+    // add REELFOLDER to the mocked tree — two videos, one in a subfolder
+    (TREE as Record<string, unknown>).REELFOLDER = {
+      files: [
+        { id: "rv1", name: "reel-a.mp4", mimeType: "video/mp4" },
+        { id: "rsub", name: "gün 2", mimeType: FOLDER },
+      ],
+    };
+    (TREE as Record<string, unknown>)["rsub"] = {
+      files: [{ id: "rv2", name: "reel-b.mp4", mimeType: "video/mp4" }],
+    };
+
     const res = await importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id));
     const data = await res.json();
-    expect(data.imported).toBe(1);
-    expect(data.failed.some((f: { reason: string }) => /Drive dosya linki değil/.test(f.reason))).toBe(true);
+    expect(data.imported).toBe(3); // folder(2) + file(1)
+    expect(data.failed.some((f: { reason: string }) => /klasör\/dosya linki değil/.test(f.reason))).toBe(true);
 
     const assets = await (await listAssets(j(`/api/plans/${plan.id}/assets`, "GET"), ctx(plan.id))).json();
-    expect(assets.filter((a: { type: string }) => a.type === "reel")).toHaveLength(1);
+    expect(assets.filter((a: { type: string }) => a.type === "reel")).toHaveLength(3);
+    expect(assets.every((a: { type: string; kind: string }) => a.kind === "video")).toBe(true);
   });
 });

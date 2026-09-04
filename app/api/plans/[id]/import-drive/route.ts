@@ -59,24 +59,39 @@ export async function POST(req: Request, ctx: Ctx) {
       }
     }
 
-    // 2) reels delivered as separate Drive file links
+    // 2) reels delivered separately — a Drive folder link (a bag of videos) or single file links
     const reelAssets: Asset[] = [];
     const linkFailed: { name: string; reason: string }[] = [];
-    reelLinks.forEach((link, i) => {
+    let reelIdx = 0;
+    for (const link of reelLinks) {
+      const asFolder = /\/folders\//.test(link) ? parseDriveFolderId(link) : null;
+      if (asFolder) {
+        try {
+          const found = await new DriveFolderSource(asFolder, apiKey).list("reel");
+          if (found.length === 0) {
+            linkFailed.push({ name: link.slice(0, 60), reason: "reels klasöründe video bulunamadı" });
+          }
+          reelAssets.push(...found);
+        } catch (e) {
+          linkFailed.push({ name: link.slice(0, 60), reason: `reels klasörü okunamadı: ${(e as Error).message}` });
+        }
+        continue;
+      }
       const fileId = parseDriveFileId(link);
       if (!fileId) {
-        linkFailed.push({ name: link.slice(0, 60), reason: "Google Drive dosya linki değil" });
-        return;
+        linkFailed.push({ name: link.slice(0, 60), reason: "Google Drive klasör/dosya linki değil" });
+        continue;
       }
+      reelIdx += 1;
       reelAssets.push({
         id: fileId,
-        name: `reels-link-${i + 1}.mp4`,
+        name: `reels-link-${reelIdx}.mp4`,
         type: "reel",
         kind: "video",
         url: driveDownloadUrl(fileId, apiKey),
         slideOrder: 1,
       });
-    });
+    }
 
     const all = [...listed, ...reelAssets];
     const key = (a: { name: string; slideGroup?: string | null }) => `${a.slideGroup ?? ""}::${a.name}`;

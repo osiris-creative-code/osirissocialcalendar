@@ -89,7 +89,11 @@ export class DriveFolderSource implements Source {
     return out;
   }
 
-  async list(): Promise<Asset[]> {
+  /**
+   * @param forceType when given, every non-CROP media file found (at any depth) is
+   *   that type — used for a stand-alone "reels" folder that's just a bag of videos.
+   */
+  async list(forceType?: ItemType): Promise<Asset[]> {
     const assets: Asset[] = [];
     let carouselSeq = 0;
 
@@ -122,6 +126,10 @@ export class DriveFolderSource implements Source {
 
       for (const folder of folders) {
         if (isCrop(folder.name)) continue;
+        if (forceType) {
+          await walk(folder.id, forceType, null, depth + 1);
+          continue;
+        }
         const ft = folderType(folder.name);
         if (ft) {
           await walk(folder.id, ft, null, depth + 1);
@@ -134,7 +142,7 @@ export class DriveFolderSource implements Source {
       }
     };
 
-    await walk(this.folderId, null, null, 0);
+    await walk(this.folderId, forceType ?? null, null, 0);
     return assets;
   }
 }
