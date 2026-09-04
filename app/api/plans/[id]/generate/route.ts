@@ -31,7 +31,14 @@ export async function POST(req: Request, ctx: Ctx) {
   }
 
   // With mode = build the chosen set (one AI call) and persist.
-  const { items, gap } = await runGenerate(plan, brand, body.mode);
+  let items, gap;
+  try {
+    ({ items, gap } = await runGenerate(plan, brand, body.mode));
+  } catch (e) {
+    // Never let an AI/vision failure surface as an opaque platform 500 — say
+    // what actually went wrong, the way analyze-assets/suggest already do.
+    return json({ error: `Üretilemedi: ${(e as Error).message}` }, 502);
+  }
   await store.replaceItems(id, items);
   await store.updatePlan(id, { version: plan.version + 1 });
   await store.snapshotPlan(id, "AI üretimi", actor.name);

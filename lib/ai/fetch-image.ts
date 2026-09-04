@@ -13,6 +13,19 @@ export type ImageBytes = { mediaType: string; base64: string };
 const MAX_BYTES = 5 * 1024 * 1024; // stay well under both providers' per-image limits
 const TIMEOUT_MS = 12_000;
 
+/**
+ * Both providers only accept an exact media_type from a short fixed list
+ * (image/jpeg, image/png, image/webp, image/gif). A server or an older browser
+ * can send the non-standard "image/jpg" — normalize it here, once, so neither
+ * adapter has to and a stray header never turns into a hard API rejection.
+ */
+function normalizeMediaType(contentType: string): string | null {
+  const base = contentType.split(";")[0].trim().toLowerCase();
+  if (base === "image/jpg") return "image/jpeg";
+  if (/^image\/(jpeg|png|webp|gif)$/.test(base)) return base;
+  return null;
+}
+
 export async function fetchImageBytes(url: string): Promise<ImageBytes | null> {
   try {
     const controller = new AbortController();
@@ -21,8 +34,8 @@ export async function fetchImageBytes(url: string): Promise<ImageBytes | null> {
     clearTimeout(timer);
     if (!res.ok) return null;
 
-    const mediaType = (res.headers.get("content-type") || "").split(";")[0].trim();
-    if (!/^image\/(png|jpe?g|webp|gif)$/i.test(mediaType)) return null;
+    const mediaType = normalizeMediaType(res.headers.get("content-type") || "");
+    if (!mediaType) return null;
 
     const buf = Buffer.from(await res.arrayBuffer());
     if (buf.byteLength === 0 || buf.byteLength > MAX_BYTES) return null;

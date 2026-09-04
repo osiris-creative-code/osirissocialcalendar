@@ -66,3 +66,22 @@ describe("fetchImageBytesMany", () => {
     ]);
   });
 });
+
+describe("fetchImageBytes — media_type normalization", () => {
+  it("normalizes the non-standard image/jpg to image/jpeg, which both providers actually accept", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => mockResponse({ contentType: "image/jpg" })));
+    const img = await fetchImageBytes("https://cdn.example.com/a.jpg");
+    expect(img?.mediaType).toBe("image/jpeg");
+  });
+
+  it("passes through a content-type with charset/boundary params", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => mockResponse({ contentType: "image/png; charset=binary" })));
+    const img = await fetchImageBytes("https://cdn.example.com/a.png");
+    expect(img?.mediaType).toBe("image/png");
+  });
+
+  it("rejects a media type neither provider's API accepts (e.g. svg)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => mockResponse({ contentType: "image/svg+xml" })));
+    expect(await fetchImageBytes("https://cdn.example.com/a.svg")).toBeNull();
+  });
+});
