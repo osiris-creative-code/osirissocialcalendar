@@ -117,7 +117,7 @@ export function Carousel({
               e.stopPropagation();
               go(-1);
             }}
-            className="absolute left-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+            className="absolute left-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm"
           >
             ‹
           </button>
@@ -128,11 +128,11 @@ export function Carousel({
               e.stopPropagation();
               go(1);
             }}
-            className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+            className="absolute right-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-white backdrop-blur-sm"
           >
             ›
           </button>
-          <div className="absolute inset-x-0 bottom-2 flex justify-center gap-1.5">
+          <div className="absolute inset-x-0 bottom-2 z-10 flex justify-center gap-1.5">
             {media.map((_, i) => (
               <button
                 key={i}

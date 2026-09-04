@@ -123,4 +123,15 @@ describe("Carousel", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /slayta git/ })[2]);
     expect(onIndexChange).toHaveBeenCalledWith(2);
   });
+
+  // ItemCard stacks a full-frame PinLayer (for pin annotations) on top of this
+  // carousel — being later in the DOM, it painted over the arrows/dots and
+  // silently ate clicks meant for them, opening a note popover instead of
+  // advancing the slide. These controls need to sit above that layer.
+  it("stacks the arrows and dots above a sibling overlay like the pin layer", () => {
+    render(<Carousel media={media} />);
+    expect(screen.getByRole("button", { name: "Önceki" })).toHaveClass("z-10");
+    expect(screen.getByRole("button", { name: "Sonraki" })).toHaveClass("z-10");
+    expect(screen.getAllByRole("button", { name: /slayta git/ })[0].parentElement).toHaveClass("z-10");
+  });
 });
