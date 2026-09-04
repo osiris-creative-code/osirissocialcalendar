@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { PlanEditor } from "@/components/team/PlanEditor";
-import type { Plan, PlanItem } from "@/lib/types";
+import type { Annotation, Plan, PlanItem } from "@/lib/types";
 
 const plan = { id: "p", theme: { primary: "#000000", accent: "#111111" } } as Plan;
 
 const items: PlanItem[] = [
-  { id: "i1", planId: "p", date: "2026-09-01", type: "post", sort: 0, caption: "A", specialLabel: null, media: [], isGap: false, hidden: false, publishedAt: null },
+  { id: "i1", planId: "p", date: "2026-09-01", type: "post", sort: 0, caption: "A", specialLabel: null, media: [{ url: "/img1.jpg", kind: "image", slideOrder: 1 }], isGap: false, hidden: false, publishedAt: null },
   { id: "i2", planId: "p", date: "2026-09-02", type: "post", sort: 1, caption: "B", specialLabel: null, media: [], isGap: false, hidden: false, publishedAt: null },
 ];
 
@@ -45,5 +45,32 @@ describe("PlanEditor", () => {
     expect(container.querySelector("#plan-item-i2")).toBeInTheDocument();
     expect(container.querySelector("#plan-item-i1")).not.toHaveClass("ring-2");
     expect(container.querySelector("#plan-item-i2")).toHaveClass("ring-2");
+  });
+
+  it("shows a pin marker positioned at xPct/yPct on the right image, plus its note text", () => {
+    const annotations: Annotation[] = [
+      {
+        id: "a1",
+        planItemId: "i1",
+        mediaIndex: 0,
+        xPct: 30,
+        yPct: 70,
+        note: "logo çok küçük",
+        stage: "brand",
+        authorName: "Marka",
+        createdAt: "2026-09-01T00:00:00Z",
+      },
+    ];
+    const { container } = render(
+      <PlanEditor plan={plan} items={items} onChange={vi.fn()} annotations={annotations} />,
+    );
+    expect(screen.getByText("logo çok küçük")).toBeInTheDocument();
+    expect(screen.getByText("Marka", { exact: false })).toBeInTheDocument();
+    const pin = container.querySelector('span[title="logo çok küçük"]') as HTMLElement;
+    expect(pin).toBeInTheDocument();
+    expect(pin.style.left).toBe("30%");
+    expect(pin.style.top).toBe("70%");
+    // i2 has no media and no annotations — no pin block rendered for it.
+    expect(container.querySelector("#plan-item-i2 span[title]")).not.toBeInTheDocument();
   });
 });

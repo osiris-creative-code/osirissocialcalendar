@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ItemType, Plan, PlanItem, PlanTheme } from "@/lib/types";
+import type { Annotation, ItemType, Plan, PlanItem, PlanTheme } from "@/lib/types";
 
 const TYPE_LABEL: Record<ItemType, string> = {
   post: "POST",
@@ -18,6 +18,7 @@ export function PlanEditor({
   onRewrite,
   onVisionChange,
   highlightItemId,
+  annotations,
 }: {
   plan: Plan;
   items: PlanItem[];
@@ -27,6 +28,8 @@ export function PlanEditor({
   onVisionChange?: (enabled: boolean) => void;
   /** Briefly ring-highlights this row and is expected to already be scrolled into view. */
   highlightItemId?: string | null;
+  /** Pin annotations left on specific images — rendered per-row so the team can see which image and where. */
+  annotations?: Annotation[];
 }) {
   const [rows, setRows] = useState<PlanItem[]>(items);
   const [theme, setTheme] = useState<PlanTheme>(plan.theme);
@@ -90,7 +93,13 @@ export function PlanEditor({
   return (
     <div className="flex flex-col gap-4">
       <ul className="flex flex-col gap-2">
-        {rows.map((row, i) => (
+        {rows.map((row, i) => {
+          const rowPins = (annotations ?? []).filter((a) => a.planItemId === row.id);
+          const pinsByMedia = new Map<number, Annotation[]>();
+          for (const a of rowPins) {
+            pinsByMedia.set(a.mediaIndex, [...(pinsByMedia.get(a.mediaIndex) ?? []), a]);
+          }
+          return (
           <li
             key={row.id}
             id={`plan-item-${row.id}`}
@@ -176,8 +185,45 @@ export function PlanEditor({
                </button>
              </div>
            )}
+
+           {rowPins.length > 0 && (
+             <div className="flex flex-col gap-2 pl-[80px]">
+               {[...pinsByMedia.entries()].map(([mediaIndex, pins]) => {
+                 const media = row.media[mediaIndex];
+                 return (
+                   <div key={mediaIndex} className="flex gap-3">
+                     {media && (
+                       <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded border border-[var(--border-strong)]">
+                         {/* eslint-disable-next-line @next/next/no-img-element */}
+                         <img src={media.url} alt="" className="h-full w-full object-cover" />
+                         {pins.map((a, pi) => (
+                           <span
+                             key={a.id}
+                             title={a.note}
+                             className="absolute grid h-4 w-4 -translate-x-1/2 -translate-y-full place-items-center rounded-[50%_50%_50%_2px] bg-[var(--accent)] text-[9px] font-bold text-white"
+                             style={{ left: `${a.xPct}%`, top: `${a.yPct}%` }}
+                           >
+                             {pi + 1}
+                           </span>
+                         ))}
+                       </div>
+                     )}
+                     <ul className="flex flex-1 flex-col justify-center gap-1 text-[12px] text-[var(--text-dim)]">
+                       {pins.map((a, pi) => (
+                         <li key={a.id}>
+                           <b className="text-[var(--accent)]">#{pi + 1}</b> {a.note}
+                           <span className="text-[var(--text-mute)]"> — {a.authorName}</span>
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+                 );
+               })}
+             </div>
+           )}
           </li>
-        ))}
+          );
+        })}
         {rows.length === 0 && (
           <li className="rounded-[10px] border border-dashed border-[var(--border-strong)] px-4 py-8 text-center text-[13px] text-[var(--text-mute)]">
             Henüz öğe yok. “Takvimi üret”e bas.

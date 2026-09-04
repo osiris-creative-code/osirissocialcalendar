@@ -477,6 +477,7 @@ export function EditorClient({
           onRewrite={onRewrite}
           onVisionChange={onVisionChange}
           highlightItemId={highlightItemId}
+          annotations={annotations}
         />
       </div>
 
