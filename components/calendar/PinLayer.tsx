@@ -26,6 +26,7 @@ export function PinLayer({
 
   return (
     <div
+      data-testid="pin-layer"
       className="absolute inset-0"
       onClick={(e) => {
         if (readOnly) return;

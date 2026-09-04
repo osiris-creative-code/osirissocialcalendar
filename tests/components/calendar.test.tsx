@@ -73,6 +73,32 @@ describe("CalendarView", () => {
     expect(screen.getByText("01")).toBeInTheDocument();
   });
 
+  it("doesn't put a pin layer over a reel — clicks must reach the player", () => {
+    renderView({
+      items: [
+        {
+          id: "i3",
+          planId: "p",
+          date: "2026-09-03",
+          type: "reel" as const,
+          sort: 2,
+          caption: "Bir reel",
+          specialLabel: null,
+          media: [{ url: "https://cdn/x/reel.mp4", kind: "video" as const, slideOrder: 1 }],
+          isGap: false,
+          hidden: false,
+          publishedAt: null,
+        },
+      ],
+    });
+    expect(screen.queryByTestId("pin-layer")).not.toBeInTheDocument();
+  });
+
+  it("still puts a pin layer over an image post", () => {
+    renderView();
+    expect(screen.getAllByTestId("pin-layer").length).toBeGreaterThan(0);
+  });
+
   it("never renders gap items", () => {
     renderView({
       items: [

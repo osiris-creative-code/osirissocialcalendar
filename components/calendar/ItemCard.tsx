@@ -81,12 +81,15 @@ export function ItemCard({
 
       <div className="relative mx-3.5 mt-2.5 aspect-[4/5] overflow-hidden rounded-[var(--r-md)] border border-[var(--border)]">
         {media}
-        <PinLayer
-          annotations={itemAnnotations}
-          mediaIndex={mediaIndex}
-          onAdd={(mi, x, y, note) => onAnnotate(item.id, mi, x, y, note)}
-          onDelete={onDeleteAnnotation}
-        />
+        {/* Reels play with a click — a pin layer on top would eat that click. */}
+        {item.type !== "reel" && (
+          <PinLayer
+            annotations={itemAnnotations}
+            mediaIndex={mediaIndex}
+            onAdd={(mi, x, y, note) => onAnnotate(item.id, mi, x, y, note)}
+            onDelete={onDeleteAnnotation}
+          />
+        )}
       </div>
 
       {item.caption ? (
