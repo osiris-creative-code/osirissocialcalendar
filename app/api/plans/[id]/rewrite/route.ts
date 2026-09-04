@@ -1,5 +1,6 @@
 import { getStore } from "@/lib/db";
 import { getAI } from "@/lib/ai";
+import { visionSafeUrl } from "@/lib/ai/vision-safe";
 import { json, requireEditor } from "@/lib/api/session";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -29,7 +30,7 @@ export async function POST(req: Request, ctx: Ctx) {
     type: item.type,
     current: item.caption ?? "",
     instruction: body.instruction?.trim() || undefined,
-    imageUrl: item.media[0]?.url ?? null,
+    imageUrl: visionSafeUrl(item.media[0]?.url),
     vision: plan.visionEnabled,
     feedInsights: plan.feedInsights,
   });

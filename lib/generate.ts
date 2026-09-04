@@ -1,4 +1,5 @@
 import { getAI } from "@/lib/ai";
+import { visionSafeUrl } from "@/lib/ai/vision-safe";
 import { getStore } from "@/lib/db";
 import { planFromPrompt, type DraftItem } from "@/lib/planner";
 import { MockDriveSource } from "@/lib/sources/mock-drive";
@@ -75,7 +76,7 @@ export async function runGenerate(
       date: x.date,
       type: x.type,
       specialLabel: x.specialLabel,
-      imageUrl: d.assetById.get(x.assetIds[0] ?? "")?.url ?? null,
+      imageUrl: visionSafeUrl(d.assetById.get(x.assetIds[0] ?? "")?.url),
     })),
   });
 

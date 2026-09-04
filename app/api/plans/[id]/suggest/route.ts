@@ -2,6 +2,7 @@ import { getStore } from "@/lib/db";
 import { getAI } from "@/lib/ai";
 import { json, requireEditor } from "@/lib/api/session";
 import { shootCounts, daySpan, cadenceBrief } from "@/lib/planner/suggest";
+import { visionSafeUrl } from "@/lib/ai/vision-safe";
 
 export const maxDuration = 30;
 
@@ -25,9 +26,10 @@ export async function POST(req: Request, ctx: Ctx) {
   const brief = cadenceBrief(days, counts);
 
   const imageUrls = assets
-    .filter((a) => !a.placeholder && a.kind === "image" && /^https?:\/\//.test(a.url))
-    .slice(0, 6)
-    .map((a) => a.url);
+    .filter((a) => !a.placeholder && a.kind === "image")
+    .map((a) => visionSafeUrl(a.url))
+    .filter((u): u is string => !!u)
+    .slice(0, 6);
 
   // Local, always-works baseline from the counts + date range.
   const total = counts.post + counts.story + counts.reel;
