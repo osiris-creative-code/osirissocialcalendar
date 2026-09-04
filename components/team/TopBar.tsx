@@ -47,7 +47,7 @@ export function TopBar({
         </Link>
         {showDeveloper && (
           <Link href="/app/developer" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
-            Developer
+            Geliştirici
           </Link>
         )}
       </nav>

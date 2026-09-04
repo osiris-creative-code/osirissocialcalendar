@@ -26,6 +26,7 @@ import { ITEM_TYPE_LABELS } from "@/lib/labels";
 import { groupByDate, moveItem, normalize } from "@/lib/planner/reorder";
 import { calendarWeeks } from "@/lib/planner/calendar";
 import { popIn, riseIn, slideIn, spring, stagger } from "@/lib/motion";
+import { GripIcon } from "@/components/ui/icons";
 import { PinLightbox } from "./PinLightbox";
 import { CalendarGrid } from "./CalendarGrid";
 import { CaptionField } from "./CaptionField";
@@ -499,9 +500,9 @@ const PlanRow = memo(function PlanRow({
           aria-label="Sürükle"
           {...attributes}
           {...listeners}
-          className="cursor-grab touch-none text-center text-[13px] text-[var(--text-mute)] active:cursor-grabbing"
+          className="grid h-8 w-6 cursor-grab touch-none place-items-center rounded text-[var(--text-mute)] hover:bg-[var(--surface-2)] hover:text-[var(--text-dim)] active:cursor-grabbing"
         >
-          ⠿
+          <GripIcon size={14} />
         </button>
         <span className="text-center font-mono text-[11px] leading-tight text-[var(--text-dim)]">
           {row.date.slice(5)}

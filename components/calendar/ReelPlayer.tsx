@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { Media } from "@/lib/types";
+import { driveThumbnailUrl, parseDriveFileId } from "@/lib/sources/drive-folder";
 
 function FullscreenButton({ target }: { target: React.RefObject<HTMLElement | null> }) {
   const [full, setFull] = useState(false);
@@ -55,6 +56,34 @@ export function ReelPlayer({ media }: { media: Media }) {
   // (Drive serves higher resolution the larger the player is), which is as close to "always
   // source quality" as an unauthenticated embed can get.
   if (driveEmbed) {
+    const fileId = parseDriveFileId(media.url);
+    const still = poster || (fileId ? driveThumbnailUrl(fileId) : null);
+
+    // Until someone asks to play it, show a real still cropped to the card.
+    // The embed player letterboxes a portrait reel inside its own chrome, which
+    // is what made the preview look broken.
+    if (still && !playing) {
+      return (
+        <div className="relative h-full w-full overflow-hidden bg-black">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={still} alt="Reel önizleme" className="h-full w-full object-cover" />
+          <button
+            type="button"
+            aria-label="Oynat"
+            onClick={(e) => {
+              e.stopPropagation();
+              setPlaying(true);
+            }}
+            className="absolute inset-0 m-auto grid h-14 w-14 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:scale-105"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div ref={boxRef} className="relative h-full w-full bg-black">
         <iframe

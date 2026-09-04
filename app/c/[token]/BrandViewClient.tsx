@@ -10,6 +10,8 @@ import { Splash } from "@/components/Splash";
 import { DiffList } from "@/components/DiffList";
 import { FeedbackCalendar } from "@/components/calendar/FeedbackCalendar";
 import type { ItemStatus } from "@/components/calendar/ItemCard";
+import { waLink } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/ui/icons";
 
 const CONFIRM_TEXT =
   "Revizeleriniz ekibe iletildi. En kısa sürede görülmesi için lütfen WhatsApp grubundan kısa bir not bırakın.";
@@ -95,6 +97,17 @@ export function BrandViewClient({
           </div>
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Teşekkürler</h1>
           <p className="mx-auto mt-2 max-w-sm text-[14px] text-[var(--text-dim)]">{CONFIRM_TEXT}</p>
+          <a
+            href={waLink({
+              text: `${brand.name} — takvim için revizelerimizi gönderdik, bakabilir misiniz?`,
+            })}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-auto mt-4 inline-flex items-center gap-2 rounded-[10px] border border-[var(--ok)] px-4 py-2 text-[13px] font-semibold text-[var(--ok)]"
+          >
+            <WhatsAppIcon size={16} />
+            WhatsApp&apos;tan haber ver
+          </a>
         </div>
       </main>
     );

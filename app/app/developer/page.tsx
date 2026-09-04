@@ -22,7 +22,7 @@ export default async function DeveloperPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Developer</h1>
+      <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Geliştirici</h1>
 
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
@@ -34,7 +34,7 @@ export default async function DeveloperPage() {
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5 text-[12.5px] text-[var(--text-dim)]">
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">Ayarlar</h2>
         <p>Ekip kodu: <code className="font-mono">OSIRIS_TEAM_TOKEN</code> (env)</p>
-        <p>Developer şifresi: <code className="font-mono">OSIRIS_DEV_PASSWORD</code> (env)</p>
+        <p>Geliştirici şifresi: <code className="font-mono">OSIRIS_DEV_PASSWORD</code> (env)</p>
         <p>
           AI:{" "}
           {process.env.OPENAI_API_KEY

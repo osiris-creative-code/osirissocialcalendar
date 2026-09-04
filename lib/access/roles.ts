@@ -1,8 +1,8 @@
 import { ROLES, type Role } from "@/lib/types";
 
 export const ROLE_LABELS: Record<Role, string> = {
-  developer: "Developer",
-  yonetici: "Yönetici",
+  developer: "Geliştirici",
+  yonetici: "Sosyal Medya Yöneticisi",
   onaylayan: "In-house onaylayan",
   marka: "Marka",
 };

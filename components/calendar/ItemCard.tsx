@@ -1,19 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import type { Annotation, Comment, ItemType, PlanItem } from "@/lib/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import type { Annotation, Comment, PlanItem } from "@/lib/types";
 import { trDayMonth } from "@/lib/format";
 import { ITEM_TYPE_LABELS as CHIP_LABEL } from "@/lib/labels";
+import { ITEM_TYPE_CHIP } from "@/lib/item-type";
+import { ITEM_TYPE_ICONS, CheckIcon, ReviseIcon } from "@/components/ui/icons";
+import { spring } from "@/lib/motion";
 import { Carousel } from "./Carousel";
 import { ReelPlayer } from "./ReelPlayer";
 import { PinLayer } from "./PinLayer";
-
-const CHIP_CLASS: Record<ItemType, string> = {
-  post: "bg-[var(--brand-soft)] text-[var(--brand)]",
-  story: "bg-[var(--surface-2)] text-[var(--text-dim)]",
-  reel: "bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent)]",
-  special: "bg-[color-mix(in_srgb,var(--gold)_20%,transparent)] text-[var(--warn)]",
-};
 
 export type ItemStatus = "none" | "approved" | "changes";
 
@@ -46,6 +43,22 @@ export function ItemCard({
   );
   const itemComments = comments.filter((c) => c.planItemId === item.id);
 
+  const TypeIcon = ITEM_TYPE_ICONS[item.type];
+
+  // A one-shot reaction when the verdict changes, so approving feels like
+  // something happened to the content rather than to a button.
+  const [flash, setFlash] = useState<ItemStatus | null>(null);
+  const prevStatus = useRef(status);
+  useEffect(() => {
+    if (status !== prevStatus.current && status !== "none") {
+      setFlash(status);
+      const t = setTimeout(() => setFlash(null), 900);
+      prevStatus.current = status;
+      return () => clearTimeout(t);
+    }
+    prevStatus.current = status;
+  }, [status]);
+
   const noFile = item.placeholder || (item.media[0]?.kind === "video" && !item.media[0].url);
 
   const media = noFile ? (
@@ -70,9 +83,48 @@ export function ItemCard({
   );
 
   return (
-    <article className="w-full min-w-0 overflow-hidden rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)]">
+    <motion.article
+      animate={
+        status === "approved"
+          ? { borderColor: "color-mix(in srgb, var(--ok) 55%, transparent)" }
+          : status === "changes"
+            ? { borderColor: "color-mix(in srgb, var(--accent) 55%, transparent)" }
+            : { borderColor: "var(--border)" }
+      }
+      transition={spring}
+      className="relative w-full min-w-0 overflow-hidden rounded-[var(--r-lg)] border bg-[var(--surface)]">
+      <AnimatePresence>
+        {flash && (
+          <motion.div
+            key={flash}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="pointer-events-none absolute inset-0 z-20 grid place-items-center"
+            style={{
+              background:
+                flash === "approved"
+                  ? "color-mix(in srgb, var(--ok) 22%, transparent)"
+                  : "color-mix(in srgb, var(--accent) 22%, transparent)",
+            }}
+          >
+            <motion.span
+              initial={{ scale: 0.4, opacity: 0, rotate: flash === "changes" ? -25 : 0 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 420, damping: 18 }}
+              className={`grid h-14 w-14 place-items-center rounded-full text-white shadow-lg ${
+                flash === "approved" ? "bg-[var(--ok)]" : "bg-[var(--accent)]"
+              }`}
+            >
+              {flash === "approved" ? <CheckIcon size={26} /> : <ReviseIcon size={26} />}
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="flex items-center justify-between px-3.5 pt-3">
-        <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${CHIP_CLASS[item.type]}`}>
+        <span className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${ITEM_TYPE_CHIP[item.type]}`}>
+          <TypeIcon size={13} />
           {CHIP_LABEL[item.type]}
           {item.type === "special" && item.specialLabel ? ` · ${item.specialLabel}` : ""}
         </span>
@@ -161,6 +213,6 @@ export function ItemCard({
           )}
         </div>
       ) : null}
-    </article>
+    </motion.article>
   );
 }

@@ -29,6 +29,17 @@ export function driveResizedImageUrl(id: string, width = 2000): string {
   return `https://lh3.googleusercontent.com/d/${id}=w${width}`;
 }
 
+/**
+ * A poster frame for a Drive-hosted video, served as plain bytes.
+ *
+ * The embed player letterboxes a portrait reel inside its own chrome, so
+ * parking an iframe in the card makes the preview look broken. This gives a
+ * real still to crop, and the iframe only loads once someone hits play.
+ */
+export function driveThumbnailUrl(id: string, width = 800): string {
+  return `https://drive.google.com/thumbnail?id=${id}&sz=w${width}`;
+}
+
 /** Pull a Drive *file* id out of a share link (…/file/d/<id>/view, ?id=<id>, /uc?id=<id>). */
 export function parseDriveFileId(url: string): string | null {
   const s = url.trim();

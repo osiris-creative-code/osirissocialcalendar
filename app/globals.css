@@ -35,6 +35,16 @@
   --r-sm: 7px;
   --r-md: 12px;
   --r-lg: 18px;
+  /* Content types — each reads as its own colour at a glance. */
+  --type-post: #2f6fb5;
+  --type-post-soft: #e2edf9;
+  --type-story: #3c8b57;
+  --type-story-soft: #e2f0e7;
+  --type-reel: #b23048;
+  --type-reel-soft: #f7e1e4;
+  --type-special: #b07216;
+  --type-special-soft: #f8ecd6;
+
 }
 
 @media (prefers-color-scheme: dark) {
@@ -93,6 +103,15 @@
   --ring: #ce9067;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
   --shadow-lg: 0 24px 70px -24px rgba(0, 0, 0, 0.7);
+  --type-post: #7ab6ee;
+  --type-post-soft: #1e2c3b;
+  --type-story: #6bbe8a;
+  --type-story-soft: #1f3328;
+  --type-reel: #e27189;
+  --type-reel-soft: #3b2229;
+  --type-special: #e3a94a;
+  --type-special-soft: #382a17;
+
 }
 
 @theme inline {

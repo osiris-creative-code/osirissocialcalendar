@@ -5,17 +5,12 @@ import { motion } from "framer-motion";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Annotation, ItemType, PlanItem } from "@/lib/types";
+import type { Annotation, PlanItem } from "@/lib/types";
 import { ITEM_TYPE_LABELS } from "@/lib/labels";
+import { ITEM_TYPE_CHIP } from "@/lib/item-type";
+import { ITEM_TYPE_ICONS } from "@/components/ui/icons";
 import { WEEKDAY_HEADERS, type DayCell } from "@/lib/planner/calendar";
 import { spring } from "@/lib/motion";
-
-const CHIP_CLASS: Record<ItemType, string> = {
-  post: "bg-[var(--brand-soft)] text-[var(--brand)]",
-  story: "bg-[var(--surface-2)] text-[var(--text-dim)]",
-  reel: "bg-[color-mix(in_srgb,var(--accent)_18%,transparent)] text-[var(--accent)]",
-  special: "bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] text-[var(--warn)]",
-};
 
 /**
  * The plan as a month grid — seven columns, a row per week, nothing off screen
@@ -135,6 +130,7 @@ const DayItem = memo(function DayItem({
     id: item.id,
   });
   const media = item.media[0];
+  const TypeIcon = ITEM_TYPE_ICONS[item.type];
 
   return (
     <motion.div
@@ -165,8 +161,9 @@ const DayItem = memo(function DayItem({
           )}
         </span>
         <span
-          className={`block truncate px-1 py-0.5 text-left text-[9.5px] font-bold uppercase tracking-wide ${CHIP_CLASS[item.type]}`}
+          className={`flex items-center gap-1 truncate px-1 py-0.5 text-left text-[9.5px] font-bold uppercase tracking-wide ${ITEM_TYPE_CHIP[item.type]}`}
         >
+          <TypeIcon size={11} className="shrink-0" />
           {ITEM_TYPE_LABELS[item.type]}
         </span>
       </button>

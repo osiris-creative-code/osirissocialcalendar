@@ -20,6 +20,7 @@ export function PinLayer({
 }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [hoverId, setHoverId] = useState<string | null>(null);
   const [text, setText] = useState("");
 
   const pins = annotations.filter((a) => a.mediaIndex === mediaIndex);
@@ -39,20 +40,39 @@ export function PinLayer({
       }}
     >
       {pins.map((a, i) => (
-        <button
+        <span
           key={a.id}
-          type="button"
-          aria-label={`Not ${i + 1}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpenId(openId === a.id ? null : a.id);
-            setDraft(null);
-          }}
-          className="absolute grid h-5 w-5 -translate-x-1/2 -translate-y-full place-items-center rounded-[50%_50%_50%_2px] bg-[var(--accent)] text-[11px] font-bold text-white shadow"
+          className="absolute -translate-x-1/2 -translate-y-full"
           style={{ left: `${a.xPct}%`, top: `${a.yPct}%` }}
         >
-          {i + 1}
-        </button>
+          <button
+            type="button"
+            aria-label={`Not ${i + 1}`}
+            onMouseEnter={() => setHoverId(a.id)}
+            onMouseLeave={() => setHoverId((h) => (h === a.id ? null : h))}
+            onFocus={() => setHoverId(a.id)}
+            onBlur={() => setHoverId((h) => (h === a.id ? null : h))}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenId(openId === a.id ? null : a.id);
+              setDraft(null);
+            }}
+            className="grid h-5 w-5 place-items-center rounded-[50%_50%_50%_2px] bg-[var(--accent)] text-[11px] font-bold text-white shadow"
+          >
+            {i + 1}
+          </button>
+
+          {/* Hovering a pin should read its note without opening anything. */}
+          {hoverId === a.id && openId !== a.id && (
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-[calc(100%+6px)] left-1/2 z-20 w-44 -translate-x-1/2 rounded-[8px] border border-[var(--border-strong)] bg-[var(--surface)] px-2 py-1.5 text-[11.5px] leading-snug text-[var(--text)] shadow-lg"
+            >
+              {a.note}
+              <span className="mt-0.5 block text-[10px] text-[var(--text-mute)]">{a.authorName}</span>
+            </span>
+          )}
+        </span>
       ))}
 
       {openId && (
