@@ -279,12 +279,14 @@ export function EditorClient({
           <StageBadge stage={plan.stage} />
         </div>
 
+        {/* Uploading stays open at every stage — a revision can bring a new photo,
+            or a video that wasn't ready at "Takvimi üret" time can show up days
+            later, even after the plan has gone to the brand. */}
+        <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} reelLinks={plan.reelLinks} />
+
+        <ShootAnalysis planId={plan.id} />
+
         {plan.stage === "taslak" && (
-          <>
-            <ContentUploader planId={plan.id} initialAssets={assets} driveEnabled={driveEnabled} driveFolderUrl={plan.driveFolderUrl} reelLinks={plan.reelLinks} />
-
-            <ShootAnalysis planId={plan.id} />
-
             <div className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
@@ -354,7 +356,6 @@ export function EditorClient({
                 </div>
               )}
             </div>
-          </>
         )}
 
         <div className="flex flex-wrap items-center gap-3">

@@ -28,6 +28,7 @@ import { calendarWeeks } from "@/lib/planner/calendar";
 import { popIn, riseIn, slideIn, spring, stagger } from "@/lib/motion";
 import { GripIcon } from "@/components/ui/icons";
 import { Thumb } from "@/components/ui/Thumb";
+import { AssetPicker } from "./AssetPicker";
 import { PinLightbox } from "./PinLightbox";
 import { CalendarGrid } from "./CalendarGrid";
 import { CaptionField } from "./CaptionField";
@@ -82,6 +83,7 @@ export function PlanEditor({
   const [vision, setVision] = useState(plan.visionEnabled);
   const [dragId, setDragId] = useState<string | null>(null);
   const [pinTarget, setPinTarget] = useState<PinTarget | null>(null);
+  const [pickerFor, setPickerFor] = useState<{ itemId: string; type: ItemType } | null>(null);
   const [view, setView] = useState<PlanView>(defaultView);
   const [merging, setMerging] = useState(false);
   const [mergeSelection, setMergeSelection] = useState<Set<string>>(new Set());
@@ -133,20 +135,13 @@ export function PlanEditor({
     [commit],
   );
 
-  const fillGap = useCallback(
-    (id: string) =>
-      commit((prev) =>
-        prev.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                isGap: false,
-                media: [{ url: "/demo/ph-3.svg", kind: "image" as const, slideOrder: 1 }],
-                caption: r.type === "story" ? null : "Yeni görsel — açıklama ekleyin.",
-              }
-            : r,
-        ),
-      ),
+  const pickAsset = useCallback(
+    (id: string, type: ItemType) => setPickerFor({ itemId: id, type }),
+    [],
+  );
+
+  const assetAttached = useCallback(
+    (updated: PlanItem) => commit((prev) => prev.map((r) => (r.id === updated.id ? updated : r))),
     [commit],
   );
 
@@ -367,7 +362,7 @@ export function PlanEditor({
                               onCaption={setCaption}
                               onDate={setDate}
                               onRemove={remove}
-                              onFillGap={fillGap}
+                              onPickAsset={pickAsset}
                               onRewrite={rewrite}
                               onOpenPins={openPins}
                             />
@@ -447,6 +442,17 @@ export function PlanEditor({
         pins={pinTarget?.pins ?? []}
         title={pinTarget?.title ?? ""}
       />
+
+      {pickerFor && (
+        <AssetPicker
+          planId={plan.id}
+          itemId={pickerFor.itemId}
+          itemType={pickerFor.type}
+          open
+          onClose={() => setPickerFor(null)}
+          onAttached={assetAttached}
+        />
+      )}
     </div>
   );
 }
@@ -540,7 +546,7 @@ const PlanRow = memo(function PlanRow({
   onCaption,
   onDate,
   onRemove,
-  onFillGap,
+  onPickAsset,
   onRewrite,
   onOpenPins,
 }: {
@@ -552,7 +558,7 @@ const PlanRow = memo(function PlanRow({
   onCaption: (id: string, caption: string) => void;
   onDate: (id: string, date: string) => void;
   onRemove: (id: string) => void;
-  onFillGap: (id: string) => void;
+  onPickAsset: (id: string, type: ItemType) => void;
   onRewrite: (id: string, instruction: string) => void;
   onOpenPins: (id: string, mediaIndex: number) => void;
 }) {
@@ -594,20 +600,29 @@ const PlanRow = memo(function PlanRow({
           <br />
           {TYPE_LABEL[row.type]}
         </span>
-        <Thumb
-          media={row.media[0]}
-          className="h-14 w-11 rounded border border-[var(--border)] object-cover"
-        />
+        <button
+          type="button"
+          onClick={() => onPickAsset(row.id, row.type)}
+          aria-label="Görseli değiştir"
+          className="group relative h-14 w-11 overflow-hidden rounded border border-[var(--border)]"
+        >
+          <Thumb media={row.media[0]} className="h-full w-full object-cover" />
+          {!row.isGap && (
+            <span className="absolute inset-0 hidden items-center justify-center bg-black/55 text-[9px] font-semibold text-white group-hover:flex">
+              değiştir
+            </span>
+          )}
+        </button>
 
         {row.isGap ? (
           <span className="flex items-center gap-2 text-[12.5px] text-[var(--warn)]">
             İçerik eksik
             <button
               type="button"
-              onClick={() => onFillGap(row.id)}
+              onClick={() => onPickAsset(row.id, row.type)}
               className="rounded-[7px] border border-[var(--warn)] px-2 py-1 text-[11.5px] font-semibold"
             >
-              Drive&apos;dan seç
+              İçerikten seç
             </button>
           </span>
         ) : row.type === "story" ? (

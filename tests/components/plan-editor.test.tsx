@@ -148,6 +148,52 @@ describe("PlanEditor — list view", () => {
   });
 });
 
+describe("PlanEditor — filling or replacing content from the asset pool", () => {
+  const gapItem: PlanItem = { ...items[1], isGap: true };
+  const asset = { id: "asset1", planId: "p", type: "post", kind: "image", url: "/new.jpg", name: "new.jpg", slideGroup: null, slideOrder: 1, sort: 0 };
+
+  function stubFetch() {
+    return vi.fn(async (url: string) => {
+      if (url === "/api/plans/p/assets") return { ok: true, json: async () => [asset] };
+      if (url === "/api/plans/p") return { ok: true, json: async () => ({ plan: {}, items: [items[0], gapItem] }) };
+      if (url === "/api/plans/p/items/i2/attach-asset") {
+        return {
+          ok: true,
+          json: async () => ({ ...gapItem, isGap: false, media: [{ url: "/new.jpg", kind: "image", slideOrder: 1 }] }),
+        };
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("opens the asset picker for a gap item and fills it on selection", async () => {
+    vi.stubGlobal("fetch", stubFetch());
+    const onChange = vi.fn();
+    render(<PlanEditor plan={plan} items={[items[0], gapItem]} onChange={onChange} defaultView="list" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "İçerikten seç" }));
+    await waitFor(() => expect(screen.getByRole("img", { name: "new.jpg" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("img", { name: "new.jpg" }).closest("button")!);
+
+    await waitFor(() => {
+      const emitted = onChange.mock.calls.at(-1)![0] as PlanItem[];
+      const updated = emitted.find((i) => i.id === "i2")!;
+      expect(updated.isGap).toBe(false);
+      expect(updated.media[0].url).toBe("/new.jpg");
+    });
+  });
+
+  it("lets an already-filled item's media be replaced via the thumbnail", async () => {
+    vi.stubGlobal("fetch", stubFetch());
+    render(<PlanEditor plan={plan} items={[items[0], gapItem]} onChange={vi.fn()} defaultView="list" />);
+    // items[0] (i1) is the already-filled row — its thumbnail is the replace trigger.
+    fireEvent.click(screen.getAllByRole("button", { name: "Görseli değiştir" })[0]);
+    await waitFor(() => expect(screen.getByText("Post seç")).toBeInTheDocument());
+  });
+});
+
 describe("PlanEditor — manual carousel in the calendar", () => {
   afterEach(() => vi.unstubAllGlobals());
 
