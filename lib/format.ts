@@ -1,4 +1,5 @@
 const DAY_MONTH = new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "long" });
+const WEEKDAY_LONG = new Intl.DateTimeFormat("tr-TR", { weekday: "long", timeZone: "UTC" });
 const DAY_SHORT = new Intl.DateTimeFormat("tr-TR", { month: "short" });
 const WEEKDAY = new Intl.DateTimeFormat("tr-TR", { weekday: "short" });
 
@@ -9,6 +10,11 @@ function atUtc(iso: string): Date {
 /** "2026-09-07" -> "7 Eylül" */
 export function trDayMonth(iso: string): string {
   return DAY_MONTH.format(atUtc(iso));
+}
+
+/** "2026-09-07" -> "Pazartesi" — the day name, for calendar column headers. */
+export function trWeekday(iso: string): string {
+  return WEEKDAY_LONG.format(atUtc(iso));
 }
 
 /** "2026-09-07" -> { day: "07", month: "Eyl", weekday: "Pzt" } */

@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LayoutGroup, motion } from "framer-motion";
 import {
   DndContext,
   DragOverlay,
@@ -20,9 +21,14 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Annotation, ItemType, Media, Plan, PlanItem, PlanTheme } from "@/lib/types";
-import { trDayMonth } from "@/lib/format";
+import { trDayMonth, trWeekday } from "@/lib/format";
+import { ITEM_TYPE_LABELS } from "@/lib/labels";
 import { groupByDate, moveItem, normalize } from "@/lib/planner/reorder";
+import { popIn, riseIn, slideIn, spring, stagger } from "@/lib/motion";
 import { PinLightbox } from "./PinLightbox";
+import { ContentCard } from "./ContentCard";
+import { CaptionField } from "./CaptionField";
+import { PlanSummary } from "./PlanSummary";
 
 const TYPE_LABEL: Record<ItemType, string> = {
   post: "POST",
@@ -31,6 +37,7 @@ const TYPE_LABEL: Record<ItemType, string> = {
   special: "GÜNE ÖZEL",
 };
 
+export type PlanView = "board" | "list";
 type PinTarget = { title: string; media: Media | null; pins: Annotation[] };
 
 export function PlanEditor({
@@ -44,6 +51,7 @@ export function PlanEditor({
   annotations,
   openPinsForItemId,
   onPinsOpened,
+  defaultView = "board",
 }: {
   plan: Plan;
   items: PlanItem[];
@@ -53,11 +61,12 @@ export function PlanEditor({
   onVisionChange?: (enabled: boolean) => void;
   /** Briefly ring-highlights this row and is expected to already be scrolled into view. */
   highlightItemId?: string | null;
-  /** Pin annotations left on specific images — shown per row, click to enlarge. */
+  /** Pin annotations left on specific images — shown per item, click to enlarge. */
   annotations?: Annotation[];
   /** Set by the feedback inbox to pop the pinned image open straight away. */
   openPinsForItemId?: string | null;
   onPinsOpened?: () => void;
+  defaultView?: PlanView;
 }) {
   const [rows, setRows] = useState<PlanItem[]>(items);
   const [theme, setTheme] = useState<PlanTheme>(plan.theme);
@@ -65,9 +74,10 @@ export function PlanEditor({
   const [vision, setVision] = useState(plan.visionEnabled);
   const [dragId, setDragId] = useState<string | null>(null);
   const [pinTarget, setPinTarget] = useState<PinTarget | null>(null);
+  const [view, setView] = useState<PlanView>(defaultView);
 
-  // Keeping the latest values in refs lets every row callback stay referentially
-  // stable, so typing in one caption no longer re-renders all the other rows.
+  // Keeping the latest values in refs lets every item callback stay referentially
+  // stable, so typing in one caption no longer re-renders all the others.
   const rowsRef = useRef(rows);
   const onChangeRef = useRef(onChange);
   const lastEmitted = useRef<PlanItem[] | null>(null);
@@ -193,6 +203,13 @@ export function PlanEditor({
 
   return (
     <div className="flex flex-col gap-4">
+      {rows.length > 0 && (
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <PlanSummary items={rows} rangeStart={plan.rangeStart} rangeEnd={plan.rangeEnd} />
+          <ViewToggle view={view} onChange={setView} />
+        </div>
+      )}
+
       <DndContext
         // Without a fixed id, dnd-kit's auto-incrementing ids differ between the
         // server render and hydration, which React flags as a mismatch.
@@ -203,53 +220,97 @@ export function PlanEditor({
         onDragEnd={onDragEnd}
         onDragCancel={() => setDragId(null)}
       >
-        <div className="flex flex-col gap-4">
-          {groups.map((group) => (
-            <section key={group.date} className="flex flex-col gap-1.5">
-              <h3 className="px-1 font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-mute)]">
-                {trDayMonth(group.date)}
-              </h3>
-              <SortableContext
-                items={group.items.map((i) => i.id)}
-                strategy={verticalListSortingStrategy}
+        <LayoutGroup>
+          {view === "board" ? (
+              <motion.div
+                key="board"
+                variants={stagger(0.05, 0.06)}
+                initial="hidden"
+                animate="visible"
+                className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2"
               >
-                <ul className="flex flex-col gap-2">
-                  {group.items.map((row) => (
-                    <PlanRow
-                      key={row.id}
-                      row={row}
-                      pins={pinsByItem.get(row.id) ?? []}
-                      highlighted={row.id === highlightItemId}
-                      busy={busyId === row.id}
-                      canRewrite={!!onRewrite}
-                      onCaption={setCaption}
-                      onDate={setDate}
-                      onRemove={remove}
-                      onFillGap={fillGap}
-                      onRewrite={rewrite}
-                      onOpenPins={openPins}
-                    />
-                  ))}
-                </ul>
-              </SortableContext>
-            </section>
-          ))}
-        </div>
+                {groups.map((group) => (
+                  <motion.section
+                    key={group.date}
+                    variants={slideIn}
+                    className="flex w-[220px] shrink-0 flex-col gap-2"
+                  >
+                    <DayHeading date={group.date} count={group.items.length} />
+                    <SortableContext
+                      items={group.items.map((i) => i.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <motion.ul variants={stagger(0.02, 0.035)} className="flex flex-col gap-2">
+                        {group.items.map((row) => (
+                            <ContentCard
+                              key={row.id}
+                              row={row}
+                              pins={pinsByItem.get(row.id) ?? []}
+                              highlighted={row.id === highlightItemId}
+                              onCaption={setCaption}
+                              onRemove={remove}
+                              onOpenPins={openPins}
+                            />
+                          ))}
+                      </motion.ul>
+                    </SortableContext>
+                  </motion.section>
+                ))}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="list"
+                variants={stagger(0.04, 0.05)}
+                initial="hidden"
+                animate="visible"
+                className="flex flex-col gap-4"
+              >
+                {groups.map((group) => (
+                  <motion.section key={group.date} variants={slideIn} className="flex flex-col gap-1.5">
+                    <DayHeading date={group.date} count={group.items.length} />
+                    <SortableContext
+                      items={group.items.map((i) => i.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <motion.ul variants={stagger(0.02, 0.03)} className="flex flex-col gap-2">
+                        {group.items.map((row) => (
+                            <PlanRow
+                              key={row.id}
+                              row={row}
+                              pins={pinsByItem.get(row.id) ?? []}
+                              highlighted={row.id === highlightItemId}
+                              busy={busyId === row.id}
+                              canRewrite={!!onRewrite}
+                              onCaption={setCaption}
+                              onDate={setDate}
+                              onRemove={remove}
+                              onFillGap={fillGap}
+                              onRewrite={rewrite}
+                              onOpenPins={openPins}
+                            />
+                          ))}
+                      </motion.ul>
+                    </SortableContext>
+                  </motion.section>
+                ))}
+              </motion.div>
+            )}
+        </LayoutGroup>
 
         <DragOverlay>
           {dragging ? (
-            <div className="rounded-[10px] border border-[var(--accent)] bg-[var(--surface)] px-3 py-2 text-[12.5px] font-semibold shadow">
-              {trDayMonth(dragging.date)} · {TYPE_LABEL[dragging.type]}
-            </div>
+            <motion.div
+              initial={{ scale: 1 }}
+              animate={{ scale: 1.04, rotate: -1.5 }}
+              className="rounded-[var(--r-md)] border border-[var(--brand)] bg-[var(--surface)] px-3 py-2 text-[12.5px] font-semibold shadow-[var(--shadow-lg)]"
+            >
+              {trDayMonth(dragging.date)} · {ITEM_TYPE_LABELS[dragging.type]}
+            </motion.div>
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      {rows.length === 0 && (
-        <p className="rounded-[10px] border border-dashed border-[var(--border-strong)] px-4 py-8 text-center text-[13px] text-[var(--text-mute)]">
-          Henüz öğe yok. “Takvimi üret”e bas.
-        </p>
-      )}
+      {rows.length === 0 && <EmptyPlan />}
 
       <div className="flex flex-wrap items-center gap-4 rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3">
         <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">Tema</span>
@@ -307,8 +368,85 @@ export function PlanEditor({
   );
 }
 
+/* ------------------------------------------------------------------ */
+
+function DayHeading({ date, count }: { date: string; count: number }) {
+  return (
+    <div className="flex items-baseline gap-2 px-1">
+      <h3 className="font-[family-name:var(--font-display)] text-[15px] font-semibold">
+        {trDayMonth(date)}
+      </h3>
+      <span className="text-[11px] uppercase tracking-[0.06em] text-[var(--text-mute)]">
+        {trWeekday(date)}
+      </span>
+      <span className="ml-auto rounded-full bg-[var(--surface-2)] px-1.5 text-[11px] text-[var(--text-mute)]">
+        {count}
+      </span>
+    </div>
+  );
+}
+
+/** Board ↔ list, with the active pill sliding between the two. */
+function ViewToggle({ view, onChange }: { view: PlanView; onChange: (v: PlanView) => void }) {
+  const options: { id: PlanView; label: string }[] = [
+    { id: "board", label: "Pano" },
+    { id: "list", label: "Liste" },
+  ];
+  return (
+    <div className="flex rounded-full border border-[var(--border)] bg-[var(--surface)] p-0.5">
+      {options.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          onClick={() => onChange(opt.id)}
+          aria-pressed={view === opt.id}
+          className="relative rounded-full px-3 py-1 text-[12px] font-semibold"
+        >
+          {view === opt.id && (
+            <motion.span
+              layoutId="view-toggle-pill"
+              transition={spring}
+              className="absolute inset-0 rounded-full bg-[var(--brand)]"
+            />
+          )}
+          <span
+            className={`relative ${
+              view === opt.id ? "text-[var(--brand-ink)]" : "text-[var(--text-mute)]"
+            }`}
+          >
+            {opt.label}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function EmptyPlan() {
+  return (
+    <motion.div
+      variants={popIn}
+      initial="hidden"
+      animate="visible"
+      className="rounded-[var(--r-lg)] border border-dashed border-[var(--border-strong)] px-6 py-12 text-center"
+    >
+      <motion.div
+        animate={{ y: [0, -6, 0] }}
+        transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+        className="text-3xl"
+      >
+        🗓️
+      </motion.div>
+      <p className="mt-2 text-[13.5px] text-[var(--text-dim)]">Henüz öğe yok.</p>
+      <p className="text-[12.5px] text-[var(--text-mute)]">
+        İçeriği yükle, tarih aralığını seç, sonra “Takvimi üret”e bas.
+      </p>
+    </motion.div>
+  );
+}
+
 /* ------------------------------------------------------------------ *
- * One row. memo'd so editing a caption doesn't repaint the whole plan.
+ * List row — the dense view, with every control visible.
  * ------------------------------------------------------------------ */
 const PlanRow = memo(function PlanRow({
   row,
@@ -347,11 +485,13 @@ const PlanRow = memo(function PlanRow({
   }, [pins]);
 
   return (
-    <li
+    <motion.li
       ref={setNodeRef}
       id={`plan-item-${row.id}`}
+      layout
+      variants={riseIn}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 transition-shadow ${
+      className={`flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 ${
         row.isGap
           ? "border-l-[3px] border-[color-mix(in_srgb,var(--gold)_45%,transparent)] border-l-[var(--warn)] bg-[var(--warn-soft)]"
           : "border-[var(--border)] bg-[var(--bg)]"
@@ -377,10 +517,10 @@ const PlanRow = memo(function PlanRow({
           <img
             src={row.media[0].url}
             alt=""
-            className="h-10 w-8 rounded border border-[var(--border)] object-cover"
+            className="h-14 w-11 rounded border border-[var(--border)] object-cover"
           />
         ) : (
-          <span className="h-10 w-8 rounded border border-[var(--border)] bg-[var(--surface-2)]" />
+          <span className="h-14 w-11 rounded border border-[var(--border)] bg-[var(--surface-2)]" />
         )}
 
         {row.isGap ? (
@@ -399,9 +539,10 @@ const PlanRow = memo(function PlanRow({
         ) : (
           <CaptionField
             id={row.id}
-            label={`${TYPE_LABEL[row.type]} açıklaması`}
+            label={`${ITEM_TYPE_LABELS[row.type]} açıklaması`}
             value={row.caption ?? ""}
             onCommit={onCaption}
+            className="w-full resize-y rounded border border-transparent bg-transparent px-1 py-0.5 text-[12.5px] focus:border-[var(--border)] focus:bg-[var(--surface)]"
           />
         )}
 
@@ -451,10 +592,12 @@ const PlanRow = memo(function PlanRow({
             return (
               <div key={mediaIndex} className="flex gap-3">
                 {media && (
-                  <button
+                  <motion.button
                     type="button"
                     aria-label="İşaretli görseli büyüt"
                     onClick={() => onOpenPins(row.id, mediaIndex)}
+                    whileHover={{ scale: 1.04 }}
+                    transition={spring}
                     className="relative h-24 w-20 shrink-0 overflow-hidden rounded border border-[var(--border-strong)] hover:border-[var(--accent)]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -469,7 +612,7 @@ const PlanRow = memo(function PlanRow({
                         {i + 1}
                       </span>
                     ))}
-                  </button>
+                  </motion.button>
                 )}
                 <ul className="flex flex-1 flex-col justify-center gap-1 text-[12px] text-[var(--text-dim)]">
                   {mediaPins.map((pin, i) => (
@@ -484,51 +627,6 @@ const PlanRow = memo(function PlanRow({
           })}
         </div>
       )}
-    </li>
+    </motion.li>
   );
 });
-
-/**
- * Caption box that keeps its own draft and only tells the plan about it on blur
- * (with an idle safety net). Propagating every keystroke re-rendered every row
- * in the plan, which is what made typing feel laggy.
- */
-function CaptionField({
-  id,
-  label,
-  value,
-  onCommit,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onCommit: (id: string, caption: string) => void;
-}) {
-  const [draft, setDraft] = useState(value);
-  const idle = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Adopt changes that came from elsewhere (e.g. "Yeniden yaz").
-  useEffect(() => setDraft(value), [value]);
-  useEffect(() => () => void (idle.current && clearTimeout(idle.current)), []);
-
-  const flush = (text: string) => {
-    if (idle.current) clearTimeout(idle.current);
-    if (text !== value) onCommit(id, text);
-  };
-
-  return (
-    <textarea
-      aria-label={label}
-      value={draft}
-      rows={2}
-      onChange={(e) => {
-        const text = e.target.value;
-        setDraft(text);
-        if (idle.current) clearTimeout(idle.current);
-        idle.current = setTimeout(() => flush(text), 1500);
-      }}
-      onBlur={() => flush(draft)}
-      className="w-full resize-y rounded border border-transparent bg-transparent px-1 py-0.5 text-[12.5px] focus:border-[var(--border)] focus:bg-[var(--surface)]"
-    />
-  );
-}
