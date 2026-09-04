@@ -35,6 +35,7 @@ async function buildDrafts(plan: Plan) {
         slideOrder: a.slideOrder,
         posterUrl: a.posterUrl,
         webPlayable: a.webPlayable,
+        driveEmbed: a.driveEmbed,
       }))
     : await new MockDriveSource(DEMO_SOURCE_CONFIG).list();
 
@@ -92,6 +93,7 @@ export async function runGenerate(
         slideOrder: a.slideOrder,
         ...(a.posterUrl ? { posterUrl: a.posterUrl } : {}),
         ...(a.webPlayable === false ? { webPlayable: false } : {}),
+        ...(a.driveEmbed ? { driveEmbed: true } : {}),
       };
     }),
     isGap: x.isGap,

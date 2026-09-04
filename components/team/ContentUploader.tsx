@@ -160,6 +160,13 @@ export function ContentUploader({
       }[] = [];
       for (let i = 0; i < list.length; i++) {
         const file = list[i];
+        if (file.size > 48 * 1024 * 1024) {
+          setError(
+            `${file.name} çok büyük (${Math.round(file.size / 1048576)} MB). Depo sınırı 50 MB — ` +
+              `bu videoyu Drive'a koyup yukarıdaki "Reels linkleri" kutusuna klasör/dosya linkini yapıştır.`,
+          );
+          return;
+        }
         const signRes = await fetch(`/api/plans/${planId}/assets/sign`, {
           method: "POST",
           headers: { "content-type": "application/json" },

@@ -83,7 +83,8 @@ describe("import-drive", () => {
     expect(assets.find((a: { name: string }) => a.name === "story-a.jpg").type).toBe("story");
     const mov = assets.find((a: { name: string }) => a.name === "reel-clip.mov");
     expect(mov.type).toBe("story"); // it's inside STORY/, folder wins over name
-    expect(mov.webPlayable).toBe(false);
+    expect(mov.driveEmbed).toBe(true); // videos aren't re-hosted — played from Drive
+    expect(mov.url).toMatch(/drive\.google\.com\/file\/d\/s2\/preview/);
 
     const second = await importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id));
     expect(await second.json()).toMatchObject({ imported: 0, skipped: 3 });

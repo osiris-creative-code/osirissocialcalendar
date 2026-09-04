@@ -38,6 +38,8 @@ export type Media = {
   posterUrl?: string;
   /** false ⇒ browser likely can't play this file (MOV/AVI/…). Absent ⇒ playable. */
   webPlayable?: boolean;
+  /** url is a Google Drive /preview link — play in an iframe, not <video>. */
+  driveEmbed?: boolean;
 };
 
 export type Brand = {
@@ -141,6 +143,8 @@ export type PlanAsset = {
   webPlayable?: boolean;
   /** Captured poster frame for a video asset. */
   posterUrl?: string;
+  /** url is a Google Drive /preview link — play in an iframe, not <video>. */
+  driveEmbed?: boolean;
 };
 
 export type Comment = {
@@ -189,6 +193,7 @@ const zMedia = z.object({
   slideOrder: z.number(),
   posterUrl: z.string().optional(),
   webPlayable: z.boolean().optional(),
+  driveEmbed: z.boolean().optional(),
 });
 
 export const zBrand = z.object({

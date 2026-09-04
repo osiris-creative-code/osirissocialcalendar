@@ -19,6 +19,11 @@ export function driveDownloadUrl(id: string, apiKey: string): string {
   return `${API}/${id}?alt=media&key=${apiKey}`;
 }
 
+/** Google Drive's own in-browser player for a link-shared file — embeddable in an iframe. */
+export function drivePreviewUrl(id: string): string {
+  return `https://drive.google.com/file/d/${id}/preview`;
+}
+
 /** Pull a Drive *file* id out of a share link (…/file/d/<id>/view, ?id=<id>, /uc?id=<id>). */
 export function parseDriveFileId(url: string): string | null {
   const s = url.trim();

@@ -123,7 +123,10 @@ export default function RehberPage() {
             tek tek dosya linklerini) yapıştır; “Drive’dan çek” onları da alır.
           </p>
           <p>• Elle: Post / Story / Reels kutularına dosya bırak. Reels hazır değilse <b>＋ Placeholder</b>.</p>
-          <p>• Video: <b>MP4 (H.264)</b> yükle. MOV/AVI’de “MP4 değil” uyarısı çıkar.</p>
+          <p>
+            • Video: “Drive’dan çek” ile gelen videolar Drive’ın oynatıcısıyla oynar (boyut derdi
+            yok). <b>Elle</b> yüklerken sınır <b>50 MB</b> — büyük reels’i Drive linkiyle ekle.
+          </p>
           <p>
             • <b>Plan kuralları</b> kutusuna tempoyu yaz — ya da <b>Plan öner</b>’e bas: yüklü
             içeriğe bakıp bir öneri çıkarır, <b>Uygula</b> dersen kutuya yazar (sen düzenleyip

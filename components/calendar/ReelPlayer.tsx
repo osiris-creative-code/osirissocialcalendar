@@ -6,8 +6,25 @@ import type { Media } from "@/lib/types";
 export function ReelPlayer({ media }: { media: Media }) {
   const [playing, setPlaying] = useState(false);
   const poster = media.posterUrl || undefined;
-  const notPlayable = media.kind === "video" && media.webPlayable === false;
-  const isVideo = media.kind === "video" && !!media.url && !notPlayable;
+  const driveEmbed =
+    media.kind === "video" &&
+    !!media.url &&
+    (media.driveEmbed || /drive\.google\.com\/file\//.test(media.url));
+  const notPlayable = media.kind === "video" && media.webPlayable === false && !driveEmbed;
+  const isVideo = media.kind === "video" && !!media.url && !notPlayable && !driveEmbed;
+
+  // Big video kept on Google Drive → play through Drive's own embed.
+  if (driveEmbed) {
+    return (
+      <iframe
+        src={media.url}
+        title="Reel"
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+        className="h-full w-full border-0 bg-black"
+      />
+    );
+  }
 
   // Real uploaded video → a proper player.
   if (isVideo) {

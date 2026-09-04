@@ -1,11 +1,12 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
-import { putUpload, isWebPlayableVideo } from "@/lib/uploads";
+import { putUpload } from "@/lib/uploads";
 import {
   DriveFolderSource,
   parseDriveFolderId,
   parseDriveFileId,
   driveDownloadUrl,
+  drivePreviewUrl,
 } from "@/lib/sources/drive-folder";
 import type { Asset } from "@/lib/sources/types";
 import type { NewAsset } from "@/lib/data/store";
@@ -103,6 +104,22 @@ export async function POST(req: Request, ctx: Ctx) {
 
     for (const a of fresh) {
       try {
+        // Videos are big — don't copy them into Storage (50 MB cap). Play them
+        // straight from Drive's own embed instead. `a.id` is the Drive file id.
+        if (a.kind === "video") {
+          staged.push({
+            type: a.type,
+            kind: "video",
+            url: drivePreviewUrl(a.id),
+            name: a.name,
+            slideGroup: a.slideGroup ?? null,
+            slideOrder: a.slideOrder,
+            webPlayable: true,
+            driveEmbed: true,
+          });
+          continue;
+        }
+
         const res = await fetch(a.url);
         if (!res.ok) {
           const body = await res.text().catch(() => "");
@@ -118,7 +135,6 @@ export async function POST(req: Request, ctx: Ctx) {
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,
-          ...(a.kind === "video" ? { webPlayable: isWebPlayableVideo(a.name) } : {}),
         });
       } catch (e) {
         failed.push({ name: a.name, reason: (e as Error).message });
