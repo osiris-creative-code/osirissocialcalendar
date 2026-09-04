@@ -55,7 +55,7 @@ export function FeedbackInbox({
   const total = comments.length + annotations.length;
 
   return (
-    <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+    <section className="glass rounded-[var(--r-lg)] p-4">
       <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
         Geri bildirim {total > 0 ? `· ${total}` : ""}
       </h2>

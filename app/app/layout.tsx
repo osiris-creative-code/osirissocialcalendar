@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { resolveActor } from "@/lib/access/roles";
 import { getStore } from "@/lib/db";
 import { AppBackground } from "@/components/team/AppBackground";
+import { CursorGlow } from "@/components/team/CursorGlow";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { GateForm } from "@/components/team/GateForm";
 import { TopBar } from "@/components/team/TopBar";
@@ -20,6 +21,7 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
   return (
     <LanguageProvider defaultLanguage={settings.defaultLanguage}>
       <AppBackground background={settings.background} />
+      <CursorGlow />
       <TopBar actor={actor} isDeveloper={isDeveloper} logoUrl={settings.logoUrl} />
       <div className="relative mx-auto max-w-[1120px] px-5 py-8">{children}</div>
     </LanguageProvider>

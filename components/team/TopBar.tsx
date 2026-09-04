@@ -35,7 +35,7 @@ export function TopBar({
   const { lang, setLang, t } = useLanguage();
 
   return (
-    <header className="sticky top-0 z-40 flex flex-wrap items-center gap-4 border-b border-[var(--border)] bg-[var(--bg)]/85 px-5 py-3 backdrop-blur">
+    <header className="sticky top-0 z-40 flex flex-wrap items-center gap-4 border-b border-[color-mix(in_srgb,var(--border-strong)_60%,transparent)] bg-[color-mix(in_srgb,var(--bg)_72%,transparent)] px-5 py-3 backdrop-blur-xl">
       <Link href="/app/brands" className="flex items-center font-[family-name:var(--font-display)] text-xl font-semibold">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

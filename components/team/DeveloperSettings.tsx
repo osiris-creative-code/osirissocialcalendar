@@ -186,7 +186,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+    <section className="glass rounded-[var(--r-lg)] p-4">
       <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">{title}</h2>
       {hint && <p className="mb-3 mt-1 text-[11.5px] text-[var(--text-mute)]">{hint}</p>}
       <div className={hint ? "" : "mt-3"}>{children}</div>

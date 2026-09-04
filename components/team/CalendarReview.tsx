@@ -40,7 +40,7 @@ export function CalendarReview({ planId }: { planId: string }) {
   };
 
   return (
-    <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
+    <section className="glass rounded-[var(--r-lg)] p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
           Takvim kontrolü
