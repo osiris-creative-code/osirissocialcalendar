@@ -12,11 +12,14 @@ export function QueueRow({
   brandName,
   actor,
   stats,
+  feedbackCount,
 }: {
   plan: Plan;
   brandName: string;
   actor: { name: string; role: Role };
   stats?: { published: number; total: number };
+  /** Comments + pin annotations waiting on this plan (revize_istendi only). */
+  feedbackCount?: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -61,6 +64,11 @@ export function QueueRow({
         {overdue && (
           <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">
             ⏰ süre doldu
+          </span>
+        )}
+        {!!feedbackCount && (
+          <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">
+            💬 {feedbackCount} not
           </span>
         )}
       </button>

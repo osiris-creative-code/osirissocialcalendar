@@ -23,6 +23,20 @@ export default async function QueuePage() {
     ),
   );
 
+  const feedbackByPlan = new Map(
+    await Promise.all(
+      plans
+        .filter((p) => p.stage === "revize_istendi")
+        .map(async (p) => {
+          const [comments, annotations] = await Promise.all([
+            store.listComments(p.id),
+            store.listAnnotations(p.id),
+          ]);
+          return [p.id, comments.length + annotations.length] as const;
+        }),
+    ),
+  );
+
   const jar = await cookies();
   const actor = resolveActor(jar.get("ritim_actor")?.value) ?? { name: "Ekip", role: "yonetici" as const };
 
@@ -39,7 +53,9 @@ export default async function QueuePage() {
             className={`rounded-[var(--r-lg)] border p-4 ${
               stage === "ic_onayda"
                 ? "border-[color-mix(in_srgb,var(--warn)_45%,transparent)] bg-[var(--warn-soft)]"
-                : "border-[var(--border)] bg-[var(--surface)]"
+                : stage === "revize_istendi"
+                  ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)] bg-[var(--accent-soft)]"
+                  : "border-[var(--border)] bg-[var(--surface)]"
             }`}
           >
             <h2 className="mb-3 flex items-center gap-2 text-[13px] font-semibold">
@@ -54,6 +70,7 @@ export default async function QueuePage() {
                   brandName={brandName.get(p.brandId) ?? "—"}
                   actor={actor}
                   stats={statsByPlan.get(p.id)}
+                  feedbackCount={feedbackByPlan.get(p.id)}
                 />
               ))}
             </div>
