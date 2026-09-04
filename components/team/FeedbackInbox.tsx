@@ -9,6 +9,7 @@ import { ITEM_TYPE_CHIP } from "@/lib/item-type";
 import { ITEM_TYPE_ICONS, PinIcon } from "@/components/ui/icons";
 import { spring } from "@/lib/motion";
 import { Modal } from "@/components/ui/Modal";
+import { Thumb } from "@/components/ui/Thumb";
 
 type Entry = {
   item: PlanItem;
@@ -96,14 +97,7 @@ function FeedbackThumb({ entry, onOpen }: { entry: Entry; onOpen: () => void }) 
       className="group overflow-hidden rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg)] text-left hover:border-[var(--accent)]"
     >
       <span className="relative block aspect-square w-full overflow-hidden">
-        {media ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={media.url} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <span className="grid h-full w-full place-items-center bg-[var(--surface-2)] text-[10px] text-[var(--text-mute)]">
-            görsel yok
-          </span>
-        )}
+        <Thumb media={media} className="h-full w-full object-cover" />
         <span className="absolute right-1 top-1 flex items-center gap-0.5 rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold text-white">
           {annotations.length > 0 && <PinIcon size={10} />}
           {count}
@@ -165,8 +159,7 @@ function FeedbackDetail({
 
           {media && (
             <div className="relative overflow-hidden rounded-[var(--r-md)] border border-[var(--border)]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={media.url} alt="" className="block w-full" />
+              <Thumb media={media} className="block w-full min-h-[220px]" />
               {pins.map((pin, i) => (
                 <PinMarker key={pin.id} pin={pin} index={i} />
               ))}

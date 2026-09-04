@@ -2,6 +2,7 @@
 
 import type { Annotation, Media } from "@/lib/types";
 import { Modal } from "@/components/ui/Modal";
+import { Thumb } from "@/components/ui/Thumb";
 
 /**
  * The marked-up image at a size you can actually read — the row thumbnail is
@@ -40,8 +41,7 @@ export function PinLightbox({
 
         {media ? (
           <div className="relative overflow-hidden rounded-[var(--r-md)] border border-[var(--border)]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={media.url} alt="" className="block w-full" />
+            <Thumb media={media} className="block w-full min-h-[220px]" />
             {pins.map((pin, i) => (
               <span
                 key={pin.id}

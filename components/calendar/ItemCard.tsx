@@ -11,6 +11,7 @@ import { spring } from "@/lib/motion";
 import { Carousel } from "./Carousel";
 import { ReelPlayer } from "./ReelPlayer";
 import { PinLayer } from "./PinLayer";
+import { Thumb } from "@/components/ui/Thumb";
 
 export type ItemStatus = "none" | "approved" | "changes";
 
@@ -73,8 +74,7 @@ export function ItemCard({
     ) : item.media.length > 1 ? (
       <Carousel media={item.media} onIndexChange={setMediaIndex} />
     ) : (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={item.media[0].url} alt="" className="h-full w-full object-cover" />
+      <Thumb media={item.media[0]} className="h-full w-full object-cover" />
     )
   ) : (
     <div className="grid h-full w-full place-items-center bg-[var(--surface-2)] text-[12px] text-[var(--text-mute)]">

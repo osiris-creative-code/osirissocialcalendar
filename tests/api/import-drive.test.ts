@@ -96,6 +96,9 @@ describe("import-drive", () => {
     expect(mov.type).toBe("story"); // it's inside STORY/, folder wins over name
     expect(mov.driveEmbed).toBe(true); // videos aren't re-hosted — played from Drive
     expect(mov.url).toMatch(/drive\.google\.com\/file\/d\/s2\/preview/);
+    // the preview url is an iframe page, not an image — every thumbnail needs
+    // this poster instead, or it renders as a permanently broken <img>
+    expect(mov.posterUrl).toMatch(/drive\.google\.com\/thumbnail\?id=s2/);
 
     const second = await importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id));
     expect(await second.json()).toMatchObject({ imported: 0, skipped: 4 });
@@ -145,5 +148,8 @@ describe("import-drive", () => {
     const assets = await (await listAssets(j(`/api/plans/${plan.id}/assets`, "GET"), ctx(plan.id))).json();
     expect(assets.filter((a: { type: string }) => a.type === "reel")).toHaveLength(3);
     expect(assets.every((a: { type: string; kind: string }) => a.kind === "video")).toBe(true);
+    // pasted reel links go through the same video path as folder-listed ones —
+    // they need a poster too, not just the drive-folder-listed reels above
+    expect(assets.every((a: { posterUrl?: string }) => !!a.posterUrl)).toBe(true);
   });
 });

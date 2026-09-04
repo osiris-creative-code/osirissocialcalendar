@@ -9,6 +9,7 @@ import {
   driveDownloadUrl,
   drivePreviewUrl,
   driveResizedImageUrl,
+  driveThumbnailUrl,
 } from "@/lib/sources/drive-folder";
 import type { Asset } from "@/lib/sources/types";
 import type { NewAsset } from "@/lib/data/store";
@@ -116,10 +117,14 @@ export async function POST(req: Request, ctx: Ctx) {
       if (a.kind === "video") {
         // Videos are big — don't copy them into Storage (50 MB cap). Play them
         // straight from Drive's own embed instead. `a.id` is the Drive file id.
+        // The embed url is an iframe page, not an image — every thumbnail spot
+        // (calendar, feedback, pins) needs a real still instead, so it gets one
+        // here rather than each caller having to know to special-case reels.
         return {
           type: a.type,
           kind: "video",
           url: drivePreviewUrl(a.id),
+          posterUrl: driveThumbnailUrl(a.id),
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,

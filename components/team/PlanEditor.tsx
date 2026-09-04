@@ -27,6 +27,7 @@ import { groupByDate, moveItem, normalize } from "@/lib/planner/reorder";
 import { calendarWeeks } from "@/lib/planner/calendar";
 import { popIn, riseIn, slideIn, spring, stagger } from "@/lib/motion";
 import { GripIcon } from "@/components/ui/icons";
+import { Thumb } from "@/components/ui/Thumb";
 import { PinLightbox } from "./PinLightbox";
 import { CalendarGrid } from "./CalendarGrid";
 import { CaptionField } from "./CaptionField";
@@ -593,16 +594,10 @@ const PlanRow = memo(function PlanRow({
           <br />
           {TYPE_LABEL[row.type]}
         </span>
-        {row.media[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={row.media[0].url}
-            alt=""
-            className="h-14 w-11 rounded border border-[var(--border)] object-cover"
-          />
-        ) : (
-          <span className="h-14 w-11 rounded border border-[var(--border)] bg-[var(--surface-2)]" />
-        )}
+        <Thumb
+          media={row.media[0]}
+          className="h-14 w-11 rounded border border-[var(--border)] object-cover"
+        />
 
         {row.isGap ? (
           <span className="flex items-center gap-2 text-[12.5px] text-[var(--warn)]">
@@ -681,8 +676,7 @@ const PlanRow = memo(function PlanRow({
                     transition={spring}
                     className="relative h-24 w-20 shrink-0 overflow-hidden rounded border border-[var(--border-strong)] hover:border-[var(--accent)]"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={media.url} alt="" className="h-full w-full object-cover" />
+                    <Thumb media={media} className="h-full w-full object-cover" />
                     {mediaPins.map((pin, i) => (
                       <span
                         key={pin.id}

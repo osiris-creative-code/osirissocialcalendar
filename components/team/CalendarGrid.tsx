@@ -9,6 +9,7 @@ import type { Annotation, PlanItem } from "@/lib/types";
 import { ITEM_TYPE_LABELS } from "@/lib/labels";
 import { ITEM_TYPE_CHIP } from "@/lib/item-type";
 import { ITEM_TYPE_ICONS } from "@/components/ui/icons";
+import { Thumb } from "@/components/ui/Thumb";
 import { WEEKDAY_HEADERS, type DayCell } from "@/lib/planner/calendar";
 import { spring } from "@/lib/motion";
 
@@ -200,12 +201,7 @@ const DayItem = memo(function DayItem({
         className="block w-full cursor-grab touch-none active:cursor-grabbing"
       >
         <span className="relative block h-11 w-full">
-          {media ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={media.url} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="block h-full w-full bg-[var(--surface-2)]" />
-          )}
+          <Thumb media={media} className="h-full w-full object-cover" />
         </span>
         <span
           className={`flex items-center gap-1 truncate px-1 py-0.5 text-left text-[9.5px] font-bold uppercase tracking-wide ${ITEM_TYPE_CHIP[item.type]}`}

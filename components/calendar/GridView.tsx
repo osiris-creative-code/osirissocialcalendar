@@ -3,6 +3,7 @@
 import type { Annotation, Comment, PlanItem } from "@/lib/types";
 import { trDayMonth } from "@/lib/format";
 import { ItemCard, type ItemStatus } from "./ItemCard";
+import { Thumb } from "@/components/ui/Thumb";
 
 export function GridView({
   items,
@@ -37,14 +38,7 @@ export function GridView({
             {stories.map((s) => (
               <div key={s.id} className="w-24 shrink-0 text-center">
                 <div className="relative aspect-[9/16] overflow-hidden rounded-[14px] border border-[var(--border)]">
-                  {s.media[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={s.media[0].url} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="grid h-full place-items-center bg-[var(--surface-2)] text-[10px] text-[var(--text-mute)]">
-                      görsel yok
-                    </div>
-                  )}
+                  <Thumb media={s.media[0]} className="h-full w-full object-cover" />
                   <span className="absolute left-1 top-1 rounded bg-black/45 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide text-white">
                     STORY
                   </span>
