@@ -87,7 +87,16 @@ function extractEvery(clause: string): number | null {
  * Unparseable clauses are ignored, never thrown.
  */
 export function parseCadence(prompt: string, rangeYear: number): CadenceRule[] {
-  const clauses = prompt.split(/[,.;\n]/).map((c) => c.trim()).filter(Boolean);
+  // Turkish drops the comma before "ve" in a plain list ("her gün story ve 5
+  // günde bir reels") — splitting on punctuation alone left the last two
+  // items fused into one clause. detectType() only returns its first match,
+  // so "reel" won the whole fused clause and swallowed story's "her gün" as
+  // its own cadence — a real prompt from the live "Plan öner" produced this
+  // exact sentence and silently dropped every story from the calendar.
+  const clauses = prompt
+    .split(/[,.;\n]|\s+ve\s+/)
+    .map((c) => c.trim())
+    .filter(Boolean);
   const rules: CadenceRule[] = [];
 
   for (const clause of clauses) {
