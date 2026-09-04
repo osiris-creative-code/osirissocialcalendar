@@ -84,11 +84,14 @@ describe("CalendarView", () => {
     expect(screen.getAllByText("01")).toHaveLength(1);
   });
 
-  it("timeline 'Kompakt' switches to a multi-column grid", () => {
+  it("timeline zoom +/- resizes the column without leaving the single-column layout", () => {
     renderView();
     fireEvent.click(screen.getByRole("button", { name: "Zaman çizelgesi" }));
-    fireEvent.click(screen.getByRole("button", { name: /Kompakt/ }));
-    expect(screen.getByRole("button", { name: /Kompakt/ })).toHaveClass("bg-[var(--brand)]");
+    expect(screen.getByText("100%")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Uzaklaştır" }));
+    expect(screen.getByText("80%")).toBeInTheDocument();
+    // still one card per row — no grid columns introduced
+    expect(screen.getByText("Merhaba")).toBeInTheDocument();
   });
 
   it("doesn't put a pin layer over a reel — clicks must reach the player", () => {

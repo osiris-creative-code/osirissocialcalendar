@@ -27,7 +27,6 @@ export function ItemCard({
   onDeleteAnnotation,
   onStatus,
   showActions = true,
-  compact = false,
 }: {
   item: PlanItem;
   annotations: Annotation[];
@@ -38,8 +37,6 @@ export function ItemCard({
   onDeleteAnnotation: (annotationId: string) => void;
   onStatus: (itemId: string, status: ItemStatus) => void;
   showActions?: boolean;
-  /** Zoomed-out grid layout — smaller type, tighter actions, caption clipped. */
-  compact?: boolean;
 }) {
   const [mediaIndex, setMediaIndex] = useState(0);
   const [draft, setDraft] = useState("");
@@ -73,28 +70,20 @@ export function ItemCard({
   );
 
   return (
-    <article className="overflow-hidden rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)]">
-      <div className={`flex items-center justify-between ${compact ? "px-2.5 pt-2" : "px-3.5 pt-3"}`}>
-        <span
-          className={`rounded-md font-semibold uppercase tracking-wide ${CHIP_CLASS[item.type]} ${
-            compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-[11px]"
-          }`}
-        >
+    <article className="w-full min-w-0 overflow-hidden rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)]">
+      <div className="flex items-center justify-between px-3.5 pt-3">
+        <span className={`rounded-md px-2 py-1 text-[11px] font-semibold uppercase tracking-wide ${CHIP_CLASS[item.type]}`}>
           {CHIP_LABEL[item.type]}
           {item.type === "special" && item.specialLabel ? ` · ${item.specialLabel}` : ""}
         </span>
-        {!compact && (
-          <span className="font-mono text-[11.5px] text-[var(--text-mute)]">{trDayMonth(item.date)}</span>
-        )}
+        <span className="font-mono text-[11.5px] text-[var(--text-mute)]">{trDayMonth(item.date)}</span>
       </div>
 
       <div
-        className={`relative mt-2 overflow-hidden rounded-[var(--r-md)] border border-[var(--border)] ${
-          compact ? "mx-2.5" : "mx-3.5"
-        } ${
+        className={`relative mx-3.5 mt-2.5 overflow-hidden rounded-[var(--r-md)] border border-[var(--border)] ${
           // Reels are shot vertical (9:16) — matching that box keeps Drive's embed from
           // letterboxing/shifting the frame the way a squarer box forces it to.
-          item.type === "reel" ? "aspect-[9/16]" : compact ? "aspect-square" : "aspect-[4/5]"
+          item.type === "reel" ? "aspect-[9/16]" : "aspect-[4/5]"
         }`}
       >
         {media}
@@ -110,81 +99,65 @@ export function ItemCard({
       </div>
 
       {item.caption ? (
-        <p
-          className={
-            compact
-              ? "line-clamp-2 px-2.5 pt-2 text-[11.5px] text-[var(--text-dim)]"
-              : "px-3.5 pt-3 text-[14px] text-[var(--text)]"
-          }
-        >
-          {item.caption}
-        </p>
+        <p className="px-3.5 pt-3 text-[14px] text-[var(--text)]">{item.caption}</p>
       ) : null}
 
       {showActions ? (
-        <div className={compact ? "mt-2 border-t border-[var(--border)] px-2.5 py-2" : "mt-3 border-t border-[var(--border)] px-3.5 py-3"}>
-          <div className={compact ? "flex gap-1.5" : "mb-2.5 flex gap-2"}>
+        <div className="mt-3 min-w-0 border-t border-[var(--border)] px-3.5 py-3">
+          <div className="mb-2.5 flex gap-2">
             <button
               type="button"
               onClick={() => onStatus(item.id, status === "approved" ? "none" : "approved")}
-              className={`flex-1 rounded-lg border font-semibold transition ${
-                compact ? "px-1.5 py-1.5 text-[11px]" : "px-2 py-2 text-[12.5px]"
-              } ${
+              className={`flex-1 rounded-lg border px-2 py-2 text-[12.5px] font-semibold transition ${
                 status === "approved"
                   ? "border-[color-mix(in_srgb,var(--ok)_45%,transparent)] bg-[var(--ok-soft)] text-[var(--ok)]"
                   : "border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-dim)]"
               }`}
             >
-              {compact ? "✓" : "✓ Onayla"}
+              ✓ Onayla
             </button>
             <button
               type="button"
               onClick={() => onStatus(item.id, status === "changes" ? "none" : "changes")}
-              className={`flex-1 rounded-lg border font-semibold transition ${
-                compact ? "px-1.5 py-1.5 text-[11px]" : "px-2 py-2 text-[12.5px]"
-              } ${
+              className={`flex-1 rounded-lg border px-2 py-2 text-[12.5px] font-semibold transition ${
                 status === "changes"
                   ? "border-[color-mix(in_srgb,var(--accent)_45%,transparent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                   : "border-[var(--border-strong)] bg-[var(--surface)] text-[var(--text-dim)]"
               }`}
             >
-              {compact ? "↺" : "↺ Revize iste"}
+              ↺ Revize iste
             </button>
           </div>
 
-          {!compact && (
-            <>
-              <form
-                className="mt-2.5 flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!draft.trim()) return;
-                  onComment(item.id, draft.trim());
-                  setDraft("");
-                }}
-              >
-                <input
-                  aria-label="Yorum"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Yorum ekle…"
-                  className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
-                />
-                <button type="submit" className="rounded-lg bg-[var(--brand)] px-3.5 py-2 text-[13px] font-semibold text-[var(--brand-ink)]">
-                  Gönder
-                </button>
-              </form>
+          <form
+            className="flex min-w-0 gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!draft.trim()) return;
+              onComment(item.id, draft.trim());
+              setDraft("");
+            }}
+          >
+            <input
+              aria-label="Yorum"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Yorum ekle…"
+              className="min-w-0 flex-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
+            />
+            <button type="submit" className="shrink-0 rounded-lg bg-[var(--brand)] px-3.5 py-2 text-[13px] font-semibold text-[var(--brand-ink)]">
+              Gönder
+            </button>
+          </form>
 
-              {itemComments.length > 0 && (
-                <ul className="mt-2.5 flex flex-col gap-1.5">
-                  {itemComments.map((c) => (
-                    <li key={c.id} className="border-l-2 border-[var(--brand-soft)] pl-3 text-[12.5px] text-[var(--text-dim)]">
-                      <b className="text-[var(--text)]">{c.authorName}</b> {c.body}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </>
+          {itemComments.length > 0 && (
+            <ul className="mt-2.5 flex flex-col gap-1.5">
+              {itemComments.map((c) => (
+                <li key={c.id} className="border-l-2 border-[var(--brand-soft)] pl-3 text-[12.5px] text-[var(--text-dim)]">
+                  <b className="text-[var(--text)]">{c.authorName}</b> {c.body}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       ) : null}

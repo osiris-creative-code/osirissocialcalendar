@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import type { Annotation, Comment, Plan, PlanItem, PlanVersion, Brand } from "@/lib/types";
 import { deadlineLabel } from "@/lib/format";
 import { diffPlanItems } from "@/lib/diff";
-import { waLink } from "@/lib/whatsapp";
 import { publishStats } from "@/lib/publish";
 import { PublishProgress } from "@/components/team/PublishProgress";
 import { Splash } from "@/components/Splash";
@@ -96,18 +95,6 @@ export function BrandViewClient({
           </div>
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Teşekkürler</h1>
           <p className="mx-auto mt-2 max-w-sm text-[14px] text-[var(--text-dim)]">{CONFIRM_TEXT}</p>
-          <a
-            className="mx-auto mt-4 inline-block rounded-lg px-4 py-2 text-[13px] font-semibold text-white"
-            style={{ background: brand.colorPrimary }}
-            target="_blank"
-            rel="noopener noreferrer"
-            href={waLink({
-              phone: brand.phone,
-              text: `${brand.name} — paylaşım takvimi için notlarımı/revizeleri gönderdim, kontrol edebilir misiniz?`,
-            })}
-          >
-            WhatsApp'tan haber ver
-          </a>
         </div>
       </main>
     );

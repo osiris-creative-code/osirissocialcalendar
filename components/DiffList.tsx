@@ -1,7 +1,6 @@
 import type { ItemDiff } from "@/lib/diff";
 import { trDayMonth } from "@/lib/format";
-
-const TYPE: Record<string, string> = { post: "Post", story: "Story", reel: "Reel", special: "Güne Özel" };
+import { ITEM_TYPE_LABELS as TYPE } from "@/lib/labels";
 
 export function DiffList({ diff }: { diff: ItemDiff[] }) {
   if (diff.length === 0) {
@@ -12,7 +11,7 @@ export function DiffList({ diff }: { diff: ItemDiff[] }) {
       {diff.map((d, i) => (
         <li key={i} className="text-[12.5px] text-[var(--text-dim)]">
           <span className="font-mono text-[11px] text-[var(--text-mute)]">
-            {trDayMonth(d.kind === "moved" ? d.toDate : d.date)} · {TYPE[d.type] ?? d.type}
+            {trDayMonth(d.kind === "moved" ? d.toDate : d.date)} · {TYPE[d.type as keyof typeof TYPE] ?? d.type}
           </span>{" "}
           {d.kind === "added" && <span className="text-[var(--ok)]">＋ eklendi</span>}
           {d.kind === "removed" && <span className="text-[var(--accent)]">－ çıkarıldı</span>}
