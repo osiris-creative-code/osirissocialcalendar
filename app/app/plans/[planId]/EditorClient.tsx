@@ -13,6 +13,8 @@ import { VersionHistory } from "@/components/team/VersionHistory";
 import { GapModal } from "@/components/team/GapModal";
 import { StageBadge } from "@/components/team/StageBadge";
 import { PublishPanel } from "@/components/team/PublishPanel";
+import { GenerateProgress } from "@/components/team/GenerateProgress";
+import { estimateGenerateMs } from "@/lib/generate-eta";
 import { Toast } from "@/components/ui/Toast";
 
 export function EditorClient({
@@ -41,6 +43,7 @@ export function EditorClient({
   const [gap, setGap] = useState<{ extendCount: number; stopCount: number } | null>(null);
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [genItemCount, setGenItemCount] = useState(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [title, setTitle] = useState(initialPlan.title);
@@ -105,12 +108,13 @@ export function EditorClient({
       setGenerating(false);
       setGap(preview.preview);
     } else {
-      await applyGenerate("extend");
+      await applyGenerate("extend", preview.preview.extendCount);
     }
   };
 
-  const applyGenerate = async (mode: "extend" | "stopAtAssets") => {
+  const applyGenerate = async (mode: "extend" | "stopAtAssets", itemCount: number) => {
     setBusy(true);
+    setGenItemCount(itemCount);
     setGenerating(true);
     const res = await fetch(`/api/plans/${plan.id}/generate`, {
       method: "POST",
@@ -368,15 +372,7 @@ export function EditorClient({
         )}
 
         {generating && (
-          <div className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] p-3">
-            <div className="mb-2 flex items-center gap-2 text-[12.5px] text-[var(--text-dim)]">
-              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
-              Takvim üretiliyor — kurallar çözülüyor, görseller dağıtılıyor, açıklamalar yazılıyor…
-            </div>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
-              <div className="h-full w-1/3 animate-[osiris-slide_1.2s_ease-in-out_infinite] rounded-full bg-[var(--brand)]" />
-            </div>
-          </div>
+          <GenerateProgress estimatedMs={estimateGenerateMs(genItemCount, plan.visionEnabled)} />
         )}
 
         {plan.stage !== "taslak" && (
@@ -469,7 +465,7 @@ export function EditorClient({
       <GapModal
         open={gap !== null}
         preview={gap ?? { extendCount: 0, stopCount: 0 }}
-        onPick={applyGenerate}
+        onPick={(mode) => applyGenerate(mode, mode === "extend" ? gap!.extendCount : gap!.stopCount)}
         onClose={() => setGap(null)}
       />
     </div>

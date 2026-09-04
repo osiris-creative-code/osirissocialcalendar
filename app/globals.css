@@ -146,15 +146,6 @@ h3 {
   border-radius: 4px;
 }
 
-@keyframes osiris-slide {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(400%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
