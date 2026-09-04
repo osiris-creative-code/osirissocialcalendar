@@ -1,6 +1,7 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
 import { putUpload } from "@/lib/uploads";
+import { processInChunks } from "@/lib/concurrency";
 import {
   DriveFolderSource,
   parseDriveFolderId,
@@ -15,6 +16,8 @@ import type { NewAsset } from "@/lib/data/store";
 export const maxDuration = 60;
 
 const MAX_REHOST_BYTES = 40 * 1024 * 1024; // stay well under Supabase's 50 MB cap
+const CONCURRENCY = 5; // files downloaded+uploaded in parallel per chunk
+const MAX_PER_RUN = 60; // cap so one click stays well inside the 60s function limit
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -100,77 +103,96 @@ export async function POST(req: Request, ctx: Ctx) {
     const all = [...listed, ...reelAssets];
     const key = (a: { name: string; slideGroup?: string | null }) => `${a.slideGroup ?? ""}::${a.name}`;
     const have = new Set((await store.listAssets(id)).map(key));
-    const fresh = all.filter((a) => !have.has(key(a)));
+    const allFresh = all.filter((a) => !have.has(key(a)));
+    const fresh = allFresh.slice(0, MAX_PER_RUN);
+    const remaining = allFresh.length - fresh.length;
 
-    const staged: NewAsset[] = [];
     const failed = [...linkFailed];
+    let imported = 0;
 
-    for (const a of fresh) {
-      try {
+    // One file: download (unless it's a video or an oversized image — those play/link
+    // straight from Drive) and re-host to Storage. Never throws — failures are reported.
+    const processOne = async (a: Asset): Promise<NewAsset | null> => {
+      if (a.kind === "video") {
         // Videos are big — don't copy them into Storage (50 MB cap). Play them
         // straight from Drive's own embed instead. `a.id` is the Drive file id.
-        if (a.kind === "video") {
-          staged.push({
-            type: a.type,
-            kind: "video",
-            url: drivePreviewUrl(a.id),
-            name: a.name,
-            slideGroup: a.slideGroup ?? null,
-            slideOrder: a.slideOrder,
-            webPlayable: true,
-            driveEmbed: true,
-          });
-          continue;
-        }
-
-        const driveImage = (url: string) => ({
+        return {
           type: a.type,
-          kind: "image" as const,
-          url,
+          kind: "video",
+          url: drivePreviewUrl(a.id),
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,
-        });
-
-        // Oversized image → skip re-hosting, use a Google-resized copy from Drive.
-        if (a.sizeBytes && a.sizeBytes > MAX_REHOST_BYTES) {
-          staged.push(driveImage(driveResizedImageUrl(a.id)));
-          continue;
-        }
-
-        try {
-          const res = await fetch(a.url);
-          if (!res.ok) {
-            const body = await res.text().catch(() => "");
-            throw new Error(`indirilemedi ${res.status} ${body.slice(0, 120)}`);
-          }
-          const bytes = Buffer.from(await res.arrayBuffer());
-          const contentType = res.headers.get("content-type") || "application/octet-stream";
-          const { url } = await putUpload({ name: a.name, contentType, bytes });
-          staged.push({ ...driveImage(url), kind: a.kind });
-        } catch (e) {
-          // Storage rejected it (size) or download failed → fall back to the Drive copy.
-          if (/size|exceed|too large|413/i.test((e as Error).message)) {
-            staged.push(driveImage(driveResizedImageUrl(a.id)));
-          } else {
-            throw e;
-          }
-        }
-      } catch (e) {
-        failed.push({ name: a.name, reason: (e as Error).message });
+          webPlayable: true,
+          driveEmbed: true,
+        };
       }
-    }
 
-    if (staged.length) await store.addAssets(id, staged);
+      const driveImage = (url: string) => ({
+        type: a.type,
+        kind: "image" as const,
+        url,
+        name: a.name,
+        slideGroup: a.slideGroup ?? null,
+        slideOrder: a.slideOrder,
+      });
+
+      // Oversized image → skip re-hosting, use a Google-resized copy from Drive.
+      if (a.sizeBytes && a.sizeBytes > MAX_REHOST_BYTES) {
+        return driveImage(driveResizedImageUrl(a.id));
+      }
+
+      try {
+        const res = await fetch(a.url);
+        if (!res.ok) {
+          const body = await res.text().catch(() => "");
+          throw new Error(`indirilemedi ${res.status} ${body.slice(0, 120)}`);
+        }
+        const bytes = Buffer.from(await res.arrayBuffer());
+        const contentType = res.headers.get("content-type") || "application/octet-stream";
+        const { url } = await putUpload({ name: a.name, contentType, bytes });
+        return { ...driveImage(url), kind: a.kind };
+      } catch (e) {
+        // Storage rejected it (size) or download failed → fall back to the Drive copy.
+        if (/size|exceed|too large|413/i.test((e as Error).message)) {
+          return driveImage(driveResizedImageUrl(a.id));
+        }
+        throw e;
+      }
+    };
+
+    // Chunks of CONCURRENCY, saved to the store as each chunk finishes — a timeout mid-run
+    // only loses the chunk in flight, not everything already processed.
+    await processInChunks(fresh, CONCURRENCY, processOne, async (results, chunk) => {
+      const chunkStaged: NewAsset[] = [];
+      results.forEach((r, i) => {
+        if (r.status === "fulfilled" && r.value) chunkStaged.push(r.value);
+        else if (r.status === "rejected") {
+          failed.push({ name: chunk[i].name, reason: (r.reason as Error).message });
+        }
+      });
+      if (chunkStaged.length) {
+        await store.addAssets(id, chunkStaged);
+        imported += chunkStaged.length;
+      }
+    });
+
     await store.logActivity({
       planId: id,
       actorName: actor.name,
       actorRole: actor.role,
       action: "drive_iceri_aktarildi",
-      meta: { imported: staged.length, skipped: all.length - fresh.length, failed: failed.length },
+      meta: { imported, skipped: all.length - allFresh.length, failed: failed.length, remaining },
     });
 
-    return json({ imported: staged.length, skipped: all.length - fresh.length, failed });
+    return json({
+      imported,
+      skipped: all.length - allFresh.length,
+      failed,
+      ...(remaining > 0
+        ? { note: `${remaining} dosya daha var — devam etmek için "Drive'dan çek"e tekrar bas.` }
+        : {}),
+    });
   } catch (e) {
     return json({ error: `beklenmeyen hata: ${(e as Error).message}` }, 500);
   }
