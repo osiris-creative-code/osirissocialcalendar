@@ -90,7 +90,11 @@ export function ItemCard({
 
       <div
         className={`relative mt-2 overflow-hidden rounded-[var(--r-md)] border border-[var(--border)] ${
-          compact ? "mx-2.5 aspect-square" : "mx-3.5 aspect-[4/5]"
+          compact ? "mx-2.5" : "mx-3.5"
+        } ${
+          // Reels are shot vertical (9:16) — matching that box keeps Drive's embed from
+          // letterboxing/shifting the frame the way a squarer box forces it to.
+          item.type === "reel" ? "aspect-[9/16]" : compact ? "aspect-square" : "aspect-[4/5]"
         }`}
       >
         {media}
