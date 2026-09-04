@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { resolveActor } from "@/lib/access/roles";
 import { getStore } from "@/lib/db";
 import { AppBackground } from "@/components/team/AppBackground";
+import { LanguageProvider } from "@/lib/i18n/context";
 import { GateForm } from "@/components/team/GateForm";
 import { TopBar } from "@/components/team/TopBar";
 
@@ -17,10 +18,10 @@ export default async function TeamLayout({ children }: { children: React.ReactNo
   const settings = await getStore().getSettings();
 
   return (
-    <>
+    <LanguageProvider defaultLanguage={settings.defaultLanguage}>
       <AppBackground background={settings.background} />
       <TopBar actor={actor} isDeveloper={isDeveloper} logoUrl={settings.logoUrl} />
       <div className="relative mx-auto max-w-[1120px] px-5 py-8">{children}</div>
-    </>
+    </LanguageProvider>
   );
 }

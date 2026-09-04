@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ROLE_LABELS } from "@/lib/access/roles";
+import { useLanguage } from "@/lib/i18n/context";
 import type { Role } from "@/lib/types";
 
 function toggleTheme() {
@@ -31,6 +32,7 @@ export function TopBar({
   logoUrl?: string | null;
 }) {
   const showDeveloper = isDeveloper || actor.role === "developer";
+  const { lang, setLang, t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-40 flex flex-wrap items-center gap-4 border-b border-[var(--border)] bg-[var(--bg)]/85 px-5 py-3 backdrop-blur">
@@ -45,17 +47,17 @@ export function TopBar({
 
       <nav className="flex items-center gap-1 text-[13px]">
         <Link href="/app/brands" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
-          Markalar
+          {t("nav.brands")}
         </Link>
         <Link href="/app/queue" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
-          Onay kuyruğu
+          {t("nav.queue")}
         </Link>
         <Link href="/app/rehber" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
-          Rehber
+          {t("nav.guide")}
         </Link>
         {showDeveloper && (
           <Link href="/app/developer" className="rounded-lg px-3 py-1.5 text-[var(--text-dim)] hover:bg-[var(--surface-2)]">
-            Geliştirici
+            {t("nav.developer")}
           </Link>
         )}
       </nav>
@@ -72,8 +74,16 @@ export function TopBar({
         </span>
         <button
           type="button"
+          onClick={() => setLang(lang === "tr" ? "en" : "tr")}
+          aria-label={t("lang.toggle")}
+          className="grid h-8 w-10 place-items-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[11px] font-bold uppercase"
+        >
+          {lang}
+        </button>
+        <button
+          type="button"
           onClick={toggleTheme}
-          aria-label="Tema değiştir"
+          aria-label={t("theme.toggle")}
           className="grid h-8 w-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--surface)]"
         >
           ◐
