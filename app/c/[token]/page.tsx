@@ -2,6 +2,7 @@ import { getStore } from "@/lib/db";
 import { trRange } from "@/lib/format";
 import { InvalidLink } from "@/components/InvalidLink";
 import { BrandViewClient } from "./BrandViewClient";
+import { brandFonts, fontFaceCss } from "@/lib/fonts";
 
 export default async function BrandCalendarPage({
   params,
@@ -22,6 +23,13 @@ export default async function BrandCalendarPage({
   ]);
   if (!brand) return <InvalidLink />;
 
+  const settings = await store.getSettings();
+  const { heading, body } = brandFonts(settings, brand);
+  const faceCss = fontFaceCss([heading, body]);
+  const fontVars: Record<string, string> = {};
+  if (heading) fontVars["--font-display"] = `"${heading.family}"`;
+  if (body) fontVars["--font-sans"] = `"${body.family}"`;
+
   const splashTitle = `${trRange(plan.rangeStart, plan.rangeEnd)} Sosyal Medya Paylaşım Takvimi`;
   const published = versions
     .filter((v) => v.label === "İlk yayın" || v.label === "Revizyon yayını")
@@ -37,6 +45,8 @@ export default async function BrandCalendarPage({
       annotations={annotations}
       splashTitle={splashTitle}
       publishedVersions={published}
+      fontFaceCss={faceCss || undefined}
+      fontVars={fontVars}
     />
   );
 }

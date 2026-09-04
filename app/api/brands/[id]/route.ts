@@ -17,6 +17,8 @@ const EDITABLE: (keyof Brand)[] = [
   "status",
   "captionLanguage",
   "contentRules",
+  "headingFontId",
+  "bodyFontId",
 ];
 
 export async function PATCH(req: Request, ctx: Ctx) {

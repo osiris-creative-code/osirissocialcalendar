@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
-import type { Brand, CaptionLanguage, Plan } from "@/lib/types";
+import type { Brand, CaptionLanguage, FontAsset, Plan } from "@/lib/types";
 import { CAPTION_LANGUAGE_LABELS, captionLanguageOf } from "@/lib/caption-language";
 import { trRange } from "@/lib/format";
 import { StageBadge } from "./StageBadge";
@@ -12,9 +12,12 @@ import { LogoUpload } from "./LogoUpload";
 export function BrandDetail({
   brand,
   plans,
+  fonts = [],
 }: {
   brand: Brand;
   plans: Plan[];
+  /** The shared library uploaded in Geliştirici Ayarları. */
+  fonts?: FontAsset[];
 }) {
   const router = useRouter();
   const [name, setName] = useState(brand.name);
@@ -24,6 +27,8 @@ export function BrandDetail({
   const [handle, setHandle] = useState(brand.instagramHandle ?? "");
   const [captionLanguage, setCaptionLanguage] = useState<CaptionLanguage>(captionLanguageOf(brand));
   const [contentRules, setContentRules] = useState(brand.contentRules ?? "");
+  const [headingFontId, setHeadingFontId] = useState(brand.headingFontId ?? "");
+  const [bodyFontId, setBodyFontId] = useState(brand.bodyFontId ?? "");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -40,6 +45,8 @@ export function BrandDetail({
         instagramHandle: handle,
         captionLanguage,
         contentRules: contentRules.trim() || null,
+        headingFontId: headingFontId || null,
+        bodyFontId: bodyFontId || null,
       }),
     });
     setBusy(false);
@@ -112,6 +119,40 @@ export function BrandDetail({
             <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
               “Plan öner” bunu esas alır — her plan için tempoyu yeniden yazmana gerek kalmaz.
             </span>
+          </label>
+          <label className="text-[13px] text-[var(--text-dim)]">
+            Başlık fontu
+            <select
+              aria-label="Başlık fontu"
+              value={headingFontId}
+              onChange={(e) => setHeadingFontId(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
+            >
+              <option value="">Varsayılan</option>
+              {fonts.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                  {f.supportsTurkish ? "" : " (Türkçe harf yok)"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-[13px] text-[var(--text-dim)]">
+            Metin fontu
+            <select
+              aria-label="Metin fontu"
+              value={bodyFontId}
+              onChange={(e) => setBodyFontId(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px]"
+            >
+              <option value="">Varsayılan</option>
+              {fonts.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                  {f.supportsTurkish ? "" : " (Türkçe harf yok)"}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="flex items-center gap-2 text-[13px] text-[var(--text-dim)]">
             Ana renk

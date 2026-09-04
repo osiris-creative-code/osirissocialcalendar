@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AppSettings, Language } from "@/lib/types";
 import { Toast } from "@/components/ui/Toast";
 import { LogoUpload } from "./LogoUpload";
+import { FontLibrary } from "./FontLibrary";
 
 /** Recommended source size, so an uploaded photo is not upscaled on a big screen. */
 const BG_ADVICE = "Önerilen: 2560 × 1440 px (16:9), JPG ya da WebP, 1 MB altı.";
@@ -125,6 +126,10 @@ export function DeveloperSettings({ initial }: { initial: AppSettings }) {
           )}
           <span className="absolute bottom-2 left-3 text-[11px] text-white/80">önizleme</span>
         </div>
+      </Section>
+
+      <Section title="Font kütüphanesi" hint="Bir kez yükle, marka ayarlarından başlık ve metin fontu olarak ata.">
+        <FontLibrary fonts={settings.fonts} onChange={(fonts) => patch({ fonts })} />
       </Section>
 
       <Section title="Genel">

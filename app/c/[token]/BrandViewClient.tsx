@@ -24,6 +24,8 @@ export function BrandViewClient({
   annotations,
   splashTitle,
   publishedVersions = [],
+  fontFaceCss,
+  fontVars,
 }: {
   plan: Plan;
   brand: Brand;
@@ -31,6 +33,10 @@ export function BrandViewClient({
   comments: Comment[];
   annotations: Annotation[];
   splashTitle: string;
+  /** @font-face rules for the brand's own faces, if any were assigned. */
+  fontFaceCss?: string;
+  /** CSS variables pointing the display/body families at those faces. */
+  fontVars?: Record<string, string>;
   publishedVersions?: PlanVersion[];
 }) {
   const [showSplash, setShowSplash] = useState(true);
@@ -119,8 +125,10 @@ export function BrandViewClient({
       style={{
         ["--brand" as string]: brand.colorPrimary,
         ["--accent" as string]: brand.colorAccent,
+        ...(fontVars ?? {}),
       }}
     >
+      {fontFaceCss ? <style dangerouslySetInnerHTML={{ __html: fontFaceCss }} /> : null}
       <header
         className="px-5 py-6"
         style={{

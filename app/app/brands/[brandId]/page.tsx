@@ -13,6 +13,7 @@ export default async function BrandDetailPage({
   if (!brand) notFound();
 
   const plans = await store.listPlans({ brandId });
+  const settings = await store.getSettings();
 
-  return <BrandDetail brand={brand} plans={plans} />;
+  return <BrandDetail brand={brand} plans={plans} fonts={settings.fonts} />;
 }
