@@ -9,65 +9,87 @@ const item: PlanItem = {
   date: "2026-09-05",
   type: "post",
   sort: 0,
-  caption: "A",
+  caption: "Eski açıklama",
   specialLabel: null,
-  media: [],
+  media: [{ url: "/img.jpg", kind: "image", slideOrder: 1 }],
   isGap: false,
   hidden: false,
   publishedAt: null,
 };
 
-const comments: Comment[] = [
-  {
-    id: "c1",
-    planItemId: "i1",
-    stage: "internal",
-    authorName: "Mert",
-    authorRole: "onaylayan",
-    body: "notlara bakalım",
-    status: "changes",
-    createdAt: "2026-09-05T00:00:00Z",
-  },
-];
-const annotations: Annotation[] = [];
+const comment: Comment = {
+  id: "c1",
+  planItemId: "i1",
+  stage: "internal",
+  authorName: "Mert",
+  authorRole: "onaylayan",
+  body: "notlara bakalım",
+  status: "changes",
+  createdAt: "2026-09-05T00:00:00Z",
+};
+
+const pin: Annotation = {
+  id: "a1",
+  planItemId: "i1",
+  mediaIndex: 0,
+  xPct: 20,
+  yPct: 40,
+  note: "marul çıksın",
+  stage: "brand",
+  authorName: "İrem",
+  createdAt: "2026-09-05T00:00:00Z",
+};
+
+const openDetail = () => fireEvent.click(screen.getByRole("button", { name: /5 Eylül Post/ }));
 
 describe("FeedbackInbox", () => {
-  it("jumps to the item when an entry with onJump is clicked", () => {
-    const onJump = vi.fn();
-    render(
-      <FeedbackInbox comments={comments} annotations={annotations} items={[item]} onJump={onJump} />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /5 Eylül · POST/ }));
-    expect(onJump).toHaveBeenCalledWith("i1", { pin: false });
+  it("shows one thumbnail per item with feedback, counting the notes", () => {
+    render(<FeedbackInbox comments={[comment]} annotations={[pin]} items={[item]} />);
+    expect(screen.getByRole("button", { name: /5 Eylül Post/ })).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
   });
 
-  it("asks for the marked-up image when the entry is a pin note", () => {
-    const onJump = vi.fn();
-    const pin: Annotation = {
-      id: "an1",
-      planItemId: "i1",
-      mediaIndex: 0,
-      xPct: 20,
-      yPct: 40,
-      note: "burayı büyüt",
-      stage: "brand",
-      authorName: "Marka",
-      createdAt: "2026-09-05T00:00:00Z",
-    };
-    render(<FeedbackInbox comments={[]} annotations={[pin]} items={[item]} onJump={onJump} />);
-    fireEvent.click(screen.getByRole("button", { name: "görselde göster" }));
-    expect(onJump).toHaveBeenCalledWith("i1", { pin: true });
+  it("says so plainly when there is nothing to review", () => {
+    render(<FeedbackInbox comments={[]} annotations={[]} items={[item]} />);
+    expect(screen.getByText("Henüz yorum yok.")).toBeInTheDocument();
   });
 
-  it("renders plain text (no button) when onJump isn't given", () => {
-    render(<FeedbackInbox comments={comments} annotations={annotations} items={[item]} />);
-    expect(screen.queryByRole("button", { name: /5 Eylül/ })).not.toBeInTheDocument();
-    expect(screen.getByText(/5 Eylül · POST/)).toBeInTheDocument();
-  });
+  it("opens the image with its pins and every note", () => {
+    render(<FeedbackInbox comments={[comment]} annotations={[pin]} items={[item]} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-  it("shows the comment body and author regardless", () => {
-    render(<FeedbackInbox comments={comments} annotations={annotations} items={[item]} />);
+    openDetail();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getAllByTestId("feedback-pin")).toHaveLength(1);
+    expect(screen.getByText(/marul çıksın/)).toBeInTheDocument();
     expect(screen.getByText(/notlara bakalım/)).toBeInTheDocument();
-    expect(screen.getByText("Mert")).toBeInTheDocument();
+  });
+
+  it("reveals a pin's note on hover", () => {
+    render(<FeedbackInbox comments={[]} annotations={[pin]} items={[item]} />);
+    openDetail();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByRole("button", { name: "Not 1" }));
+    expect(screen.getByRole("tooltip")).toHaveTextContent("marul çıksın");
+  });
+
+  it("edits the caption without leaving the panel", () => {
+    const onCaption = vi.fn();
+    render(
+      <FeedbackInbox comments={[comment]} annotations={[]} items={[item]} onCaption={onCaption} />,
+    );
+    openDetail();
+    fireEvent.click(screen.getByRole("button", { name: "düzenle" }));
+    fireEvent.change(screen.getByLabelText("Açıklama"), { target: { value: "Yeni açıklama" } });
+    fireEvent.click(screen.getByRole("button", { name: "Kaydet" }));
+    expect(onCaption).toHaveBeenCalledWith("i1", "Yeni açıklama");
+  });
+
+  it("offers a jump to the calendar, flagging that it has pins", () => {
+    const onJump = vi.fn();
+    render(<FeedbackInbox comments={[]} annotations={[pin]} items={[item]} onJump={onJump} />);
+    openDetail();
+    fireEvent.click(screen.getByRole("button", { name: /takvimde göster/ }));
+    expect(onJump).toHaveBeenCalledWith("i1", { pin: true });
   });
 });

@@ -506,7 +506,17 @@ export function EditorClient({
           initialThumbs={brand.feedThumbs}
         />
         <VersionHistory planId={plan.id} currentItems={items} />
-        <FeedbackInbox comments={comments} annotations={annotations} items={items} onJump={jumpToItem} />
+        <FeedbackInbox
+          comments={comments}
+          annotations={annotations}
+          items={items}
+          onJump={jumpToItem}
+          onCaption={(itemId, caption) => {
+            const next = items.map((i) => (i.id === itemId ? { ...i, caption } : i));
+            setItems(next);
+            persist(next);
+          }}
+        />
       </aside>
 
       <GapModal
