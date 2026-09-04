@@ -44,6 +44,15 @@ export function EditorClient({
   const [busy, setBusy] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [genItemCount, setGenItemCount] = useState(0);
+  const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const jumpToItem = (itemId: string) => {
+    setHighlightItemId(itemId);
+    document.getElementById(`plan-item-${itemId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (highlightTimer.current) clearTimeout(highlightTimer.current);
+    highlightTimer.current = setTimeout(() => setHighlightItemId(null), 2500);
+  };
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [title, setTitle] = useState(initialPlan.title);
@@ -467,6 +476,7 @@ export function EditorClient({
           }}
           onRewrite={onRewrite}
           onVisionChange={onVisionChange}
+          highlightItemId={highlightItemId}
         />
       </div>
 
@@ -480,7 +490,7 @@ export function EditorClient({
           initialThumbs={brand.feedThumbs}
         />
         <VersionHistory planId={plan.id} currentItems={items} />
-        <FeedbackInbox comments={comments} annotations={annotations} items={items} />
+        <FeedbackInbox comments={comments} annotations={annotations} items={items} onJump={jumpToItem} />
       </aside>
 
       <GapModal

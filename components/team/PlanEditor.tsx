@@ -17,6 +17,7 @@ export function PlanEditor({
   onThemeChange,
   onRewrite,
   onVisionChange,
+  highlightItemId,
 }: {
   plan: Plan;
   items: PlanItem[];
@@ -24,6 +25,8 @@ export function PlanEditor({
   onThemeChange?: (theme: PlanTheme) => void;
   onRewrite?: (itemId: string, instruction: string) => Promise<void> | void;
   onVisionChange?: (enabled: boolean) => void;
+  /** Briefly ring-highlights this row and is expected to already be scrolled into view. */
+  highlightItemId?: string | null;
 }) {
   const [rows, setRows] = useState<PlanItem[]>(items);
   const [theme, setTheme] = useState<PlanTheme>(plan.theme);
@@ -90,11 +93,12 @@ export function PlanEditor({
         {rows.map((row, i) => (
           <li
             key={row.id}
-            className={`flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 ${
+            id={`plan-item-${row.id}`}
+            className={`flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 transition-shadow ${
               row.isGap
                 ? "border-l-[3px] border-[color-mix(in_srgb,var(--gold)_45%,transparent)] border-l-[var(--warn)] bg-[var(--warn-soft)]"
                 : "border-[var(--border)] bg-[var(--bg)]"
-            }`}
+            } ${row.id === highlightItemId ? "ring-2 ring-[var(--accent)]" : ""}`}
           >
            <div className="grid grid-cols-[22px_58px_auto_1fr_auto] items-center gap-3">
             <span className="text-center text-[13px] text-[var(--text-mute)]">⠿</span>

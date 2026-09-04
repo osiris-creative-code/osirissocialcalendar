@@ -36,4 +36,14 @@ describe("PlanEditor", () => {
     fireEvent.input(screen.getByLabelText("Vurgu"), { target: { value: "#abcdef" } });
     expect(onThemeChange).toHaveBeenCalledWith({ primary: "#000000", accent: "#abcdef" });
   });
+
+  it("gives each row a stable id and rings the highlighted one", () => {
+    const { container } = render(
+      <PlanEditor plan={plan} items={items} onChange={vi.fn()} highlightItemId="i2" />,
+    );
+    expect(container.querySelector("#plan-item-i1")).toBeInTheDocument();
+    expect(container.querySelector("#plan-item-i2")).toBeInTheDocument();
+    expect(container.querySelector("#plan-item-i1")).not.toHaveClass("ring-2");
+    expect(container.querySelector("#plan-item-i2")).toHaveClass("ring-2");
+  });
 });

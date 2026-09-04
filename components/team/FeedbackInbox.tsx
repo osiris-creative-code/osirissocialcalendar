@@ -8,10 +8,13 @@ export function FeedbackInbox({
   comments,
   annotations,
   items,
+  onJump,
 }: {
   comments: Comment[];
   annotations: Annotation[];
   items: PlanItem[];
+  /** Called with the item id when a feedback entry is clicked — jump to & highlight it. */
+  onJump?: (itemId: string) => void;
 }) {
   const byItem = items.map((item) => ({
     item,
@@ -31,9 +34,19 @@ export function FeedbackInbox({
           ({ item, comments: cs, annotations: as }) =>
             (cs.length > 0 || as.length > 0) && (
               <div key={item.id} className="border-l-2 border-[var(--brand-soft)] pl-3">
-                <div className="font-mono text-[11px] text-[var(--text-mute)]">
-                  {trDayMonth(item.date)} · {item.type.toUpperCase()}
-                </div>
+                {onJump ? (
+                  <button
+                    type="button"
+                    onClick={() => onJump(item.id)}
+                    className="font-mono text-[11px] text-[var(--brand)] underline decoration-dotted underline-offset-2 hover:text-[var(--text)]"
+                  >
+                    {trDayMonth(item.date)} · {item.type.toUpperCase()} — göster ↴
+                  </button>
+                ) : (
+                  <div className="font-mono text-[11px] text-[var(--text-mute)]">
+                    {trDayMonth(item.date)} · {item.type.toUpperCase()}
+                  </div>
+                )}
                 {cs.map((c) => (
                   <p key={c.id} className="mt-1 text-[12.5px] text-[var(--text-dim)]">
                     <span className="rounded bg-[var(--surface-2)] px-1 text-[10px] font-semibold">
