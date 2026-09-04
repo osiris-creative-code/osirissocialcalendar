@@ -24,9 +24,10 @@ import type { Annotation, ItemType, Media, Plan, PlanItem, PlanTheme } from "@/l
 import { trDayMonth, trWeekday } from "@/lib/format";
 import { ITEM_TYPE_LABELS } from "@/lib/labels";
 import { groupByDate, moveItem, normalize } from "@/lib/planner/reorder";
+import { calendarWeeks } from "@/lib/planner/calendar";
 import { popIn, riseIn, slideIn, spring, stagger } from "@/lib/motion";
 import { PinLightbox } from "./PinLightbox";
-import { ContentCard } from "./ContentCard";
+import { CalendarGrid } from "./CalendarGrid";
 import { CaptionField } from "./CaptionField";
 import { PlanSummary } from "./PlanSummary";
 
@@ -37,7 +38,12 @@ const TYPE_LABEL: Record<ItemType, string> = {
   special: "GÜNE ÖZEL",
 };
 
-export type PlanView = "board" | "list";
+/* Built once — a new variants object on each render replays every entrance. */
+const CALENDAR_FADE = stagger(0.05, 0.06);
+const LIST_STAGGER = stagger(0.04, 0.05);
+const LIST_GROUP_STAGGER = stagger(0.02, 0.03);
+
+export type PlanView = "calendar" | "list";
 type PinTarget = { title: string; media: Media | null; pins: Annotation[] };
 
 export function PlanEditor({
@@ -51,7 +57,7 @@ export function PlanEditor({
   annotations,
   openPinsForItemId,
   onPinsOpened,
-  defaultView = "board",
+  defaultView = "calendar",
 }: {
   plan: Plan;
   items: PlanItem[];
@@ -199,6 +205,18 @@ export function PlanEditor({
   };
 
   const groups = useMemo(() => groupByDate(rows), [rows]);
+  const weeks = useMemo(
+    () => calendarWeeks(plan.rangeStart, plan.rangeEnd, rows),
+    [plan.rangeStart, plan.rangeEnd, rows],
+  );
+
+  /** Calendar cells are for scanning; editing happens in the list. */
+  const openItem = useCallback((itemId: string) => {
+    setView("list");
+    requestAnimationFrame(() =>
+      document.getElementById(`plan-item-${itemId}`)?.scrollIntoView({ block: "center" }),
+    );
+  }, []);
   const dragging = dragId ? rows.find((r) => r.id === dragId) ?? null : null;
 
   return (
@@ -221,46 +239,25 @@ export function PlanEditor({
         onDragCancel={() => setDragId(null)}
       >
         <LayoutGroup>
-          {view === "board" ? (
-              <motion.div
-                key="board"
-                variants={stagger(0.05, 0.06)}
-                initial="hidden"
-                animate="visible"
-                className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2"
-              >
-                {groups.map((group) => (
-                  <motion.section
-                    key={group.date}
-                    variants={slideIn}
-                    className="flex w-[220px] shrink-0 flex-col gap-2"
-                  >
-                    <DayHeading date={group.date} count={group.items.length} />
-                    <SortableContext
-                      items={group.items.map((i) => i.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <motion.ul variants={stagger(0.02, 0.035)} className="flex flex-col gap-2">
-                        {group.items.map((row) => (
-                            <ContentCard
-                              key={row.id}
-                              row={row}
-                              pins={pinsByItem.get(row.id) ?? []}
-                              highlighted={row.id === highlightItemId}
-                              onCaption={setCaption}
-                              onRemove={remove}
-                              onOpenPins={openPins}
-                            />
-                          ))}
-                      </motion.ul>
-                    </SortableContext>
-                  </motion.section>
-                ))}
-              </motion.div>
+          {view === "calendar" ? (
+            <motion.div
+              key="calendar"
+              variants={CALENDAR_FADE}
+              initial="hidden"
+              animate="visible"
+            >
+              <CalendarGrid
+                weeks={weeks}
+                pinsByItem={pinsByItem}
+                highlightItemId={highlightItemId}
+                onOpenItem={openItem}
+                onOpenPins={openPins}
+              />
+            </motion.div>
             ) : (
               <motion.div
                 key="list"
-                variants={stagger(0.04, 0.05)}
+                variants={LIST_STAGGER}
                 initial="hidden"
                 animate="visible"
                 className="flex flex-col gap-4"
@@ -272,7 +269,7 @@ export function PlanEditor({
                       items={group.items.map((i) => i.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <motion.ul variants={stagger(0.02, 0.03)} className="flex flex-col gap-2">
+                      <motion.ul variants={LIST_GROUP_STAGGER} className="flex flex-col gap-2">
                         {group.items.map((row) => (
                             <PlanRow
                               key={row.id}
@@ -389,7 +386,7 @@ function DayHeading({ date, count }: { date: string; count: number }) {
 /** Board ↔ list, with the active pill sliding between the two. */
 function ViewToggle({ view, onChange }: { view: PlanView; onChange: (v: PlanView) => void }) {
   const options: { id: PlanView; label: string }[] = [
-    { id: "board", label: "Pano" },
+    { id: "calendar", label: "Takvim" },
     { id: "list", label: "Liste" },
   ];
   return (
@@ -488,7 +485,6 @@ const PlanRow = memo(function PlanRow({
     <motion.li
       ref={setNodeRef}
       id={`plan-item-${row.id}`}
-      layout
       variants={riseIn}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex flex-col gap-2 rounded-[10px] border px-3 py-2.5 ${

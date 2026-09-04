@@ -34,7 +34,8 @@ test("full workflow: create -> generate -> internal approve -> brand view -> rev
   await page.getByLabel("Plan promptu").fill("2 günde bir post, her gün story, haftada 1 reels");
   await page.getByRole("button", { name: "Takvimi üret" }).click();
   await page.getByRole("button", { name: /Kurala kadar uzat/ }).click();
-  await expect(page.getByText(/POST/).first()).toBeVisible();
+  // The chip is uppercased in CSS, so match the label, not its rendered casing.
+  await expect(page.getByText(/post/i).first()).toBeVisible();
 
   // --- send to internal ---
   await page.getByRole("button", { name: "İç onaya gönder" }).click();

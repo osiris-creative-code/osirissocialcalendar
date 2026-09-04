@@ -28,11 +28,6 @@ const pin: Annotation = {
 };
 
 describe("PlanEditor — shared", () => {
-  it("groups items under one heading per day, in both views", () => {
-    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
-    expect(screen.getByText("1 Eylül")).toBeInTheDocument();
-    expect(screen.getByText("2 Eylül")).toBeInTheDocument();
-  });
 
   it("gives each item a stable id and rings the highlighted one", () => {
     const { container } = render(
@@ -52,7 +47,7 @@ describe("PlanEditor — shared", () => {
 
   it("does not emit while typing a caption — only on blur", () => {
     const onChange = vi.fn();
-    render(<PlanEditor plan={plan} items={items} onChange={onChange} />);
+    render(<PlanEditor plan={plan} items={items} onChange={onChange} defaultView="list" />);
     const box = screen.getAllByLabelText("Post açıklaması")[0];
 
     fireEvent.change(box, { target: { value: "yeni metin" } });
@@ -70,11 +65,29 @@ describe("PlanEditor — shared", () => {
   });
 });
 
-describe("PlanEditor — board view", () => {
+describe("PlanEditor — calendar view", () => {
   it("is the default and offers a switch to the list", () => {
     render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Pano" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Takvim" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Liste" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("lays the range out as weeks with a cell for every day, empty ones included", () => {
+    // A fortnight with content on only two days — the gaps are the point.
+    const fortnight = { ...plan, rangeStart: "2026-09-01", rangeEnd: "2026-09-14" } as Plan;
+    const { container } = render(
+      <PlanEditor plan={fortnight} items={items} onChange={vi.fn()} />,
+    );
+    // 1 Sept 2026 is a Tuesday, so the grid squares off to whole Mon–Sun weeks.
+    expect(container.querySelectorAll("[data-date]")).toHaveLength(21);
+    expect(container.querySelector('[data-date="2026-09-01"]')).toBeInTheDocument();
+    // 14 days in range, 2 of them filled
+    expect(screen.getAllByText("boş")).toHaveLength(12);
+  });
+
+  it("does not scroll sideways — the whole plan is on screen", () => {
+    const { container } = render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
+    expect(container.querySelector(".overflow-x-auto")).not.toBeInTheDocument();
   });
 
   it("badges a card that has pin feedback and opens the image full size", () => {
@@ -95,6 +108,12 @@ describe("PlanEditor — board view", () => {
 });
 
 describe("PlanEditor — list view", () => {
+  it("groups rows under one heading per day", () => {
+    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} defaultView="list" />);
+    expect(screen.getByText("1 Eylül")).toBeInTheDocument();
+    expect(screen.getByText("2 Eylül")).toBeInTheDocument();
+  });
+
   it("shows a dash instead of a caption editor for story items", () => {
     render(
       <PlanEditor

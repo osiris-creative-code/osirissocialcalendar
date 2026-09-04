@@ -18,6 +18,8 @@ function Counter({ value }: { value: number }) {
 }
 
 /** Counts that tell you at a glance whether the calendar is balanced. */
+const SUMMARY_STAGGER = stagger();
+
 export function PlanSummary({
   items,
   rangeStart,
@@ -52,7 +54,7 @@ export function PlanSummary({
 
   return (
     <motion.dl
-      variants={stagger()}
+      variants={SUMMARY_STAGGER}
       initial="hidden"
       animate="visible"
       className="flex flex-wrap gap-2"
