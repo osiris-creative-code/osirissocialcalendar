@@ -186,6 +186,58 @@ export type ActivityEntry = {
   createdAt: string;
 };
 
+
+/* ------------------------------------------------------------------ *
+ * App-wide settings — the Geliştirici Ayarları screen writes these.
+ * ------------------------------------------------------------------ */
+
+export const LANGUAGES = ["tr", "en"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+/** An uploaded font face available to every brand. */
+export type FontAsset = {
+  id: string;
+  /** Shown in the picker, e.g. "Gilroy Bold". */
+  name: string;
+  /** Public URL of the .woff2/.ttf/.otf file. */
+  url: string;
+  /** The family name pages reference; derived from `name` unless overridden. */
+  family: string;
+  /** Characters the file actually contains, used for the Turkish fallback. */
+  supportsTurkish: boolean;
+  uploadedAt: string;
+};
+
+export type BackgroundSettings = {
+  /** null = no image, just the colour behind it. */
+  imageUrl: string | null;
+  /** 0-100 — how visible the image is over the colour. */
+  opacity: number;
+  /** 0-40 px of blur, so a busy photo does not fight the content. */
+  blur: number;
+  /** Shows through wherever the image is transparent or faded. */
+  color: string;
+};
+
+export type AppSettings = {
+  /** Replaces the "Osiris" wordmark; transparent PNG/SVG. */
+  logoUrl: string | null;
+  background: BackgroundSettings;
+  /** Fonts uploaded once, then assigned per brand. */
+  fonts: FontAsset[];
+  defaultLanguage: Language;
+  /** Days after a plan ends before its media is swept. */
+  mediaRetentionDays: number;
+};
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  logoUrl: null,
+  background: { imageUrl: null, opacity: 35, blur: 8, color: "#1b1714" },
+  fonts: [],
+  defaultLanguage: "tr",
+  mediaRetentionDays: 14,
+};
+
 /* ------------------------------------------------------------------ *
  * zod schemas (used by API route input validation)
  * ------------------------------------------------------------------ */

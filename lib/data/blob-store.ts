@@ -1,7 +1,9 @@
 import { newId } from "@/lib/ids";
 import { newToken } from "@/lib/tokens";
+import { DEFAULT_SETTINGS } from "@/lib/types";
 import type {
   ActivityEntry,
+  AppSettings,
   Annotation,
   Brand,
   BrandSource,
@@ -76,6 +78,7 @@ export abstract class BlobStore implements DataStore {
       comments: db.comments ?? [],
       annotations: db.annotations ?? [],
       activity: db.activity ?? [],
+      settings: db.settings,
     };
   }
 
@@ -264,6 +267,18 @@ export abstract class BlobStore implements DataStore {
       db.assets = db.assets.filter((a) => a.id !== id);
     });
   }
+  /* ---------- settings ---------- */
+  async getSettings(): Promise<AppSettings> {
+    const db = await this.load();
+    return { ...DEFAULT_SETTINGS, ...(db.settings ?? {}) };
+  }
+  async updateSettings(patch: Partial<AppSettings>): Promise<AppSettings> {
+    return this.mutate((db) => {
+      db.settings = { ...DEFAULT_SETTINGS, ...(db.settings ?? {}), ...patch };
+      return db.settings;
+    });
+  }
+
   async updateAssets(ids: string[], patch: Partial<PlanAsset>): Promise<PlanAsset[]> {
     const wanted = new Set(ids);
     return this.mutate((db) => {

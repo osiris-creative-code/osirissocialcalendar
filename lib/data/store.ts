@@ -6,6 +6,7 @@ import type {
   Comment,
   Plan,
   PlanAsset,
+  AppSettings,
   PlanItem,
   PlanTheme,
   PlanVersion,
@@ -24,6 +25,8 @@ export type DbShape = {
   comments: Comment[];
   annotations: Annotation[];
   activity: ActivityEntry[];
+  /** Absent on databases created before the settings screen existed. */
+  settings?: AppSettings;
 };
 
 export type CreateBrandInput = {
@@ -82,6 +85,9 @@ export interface DataStore {
   deleteAsset(id: string): Promise<void>;
   /** Patch several assets at once — used to merge a run into one carousel. */
   updateAssets(ids: string[], patch: Partial<PlanAsset>): Promise<PlanAsset[]>;
+
+  getSettings(): Promise<AppSettings>;
+  updateSettings(patch: Partial<AppSettings>): Promise<AppSettings>;
 
   listVersions(planId: string): Promise<PlanVersion[]>;
   snapshotPlan(planId: string, label: string, actorName: string): Promise<PlanVersion>;

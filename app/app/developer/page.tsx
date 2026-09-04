@@ -4,6 +4,7 @@ import { ROLE_LABELS } from "@/lib/access/roles";
 import { DevGate } from "@/components/team/DevGate";
 import { BrandArchiveList } from "@/components/team/BrandArchiveList";
 import { StorageCheck } from "@/components/team/StorageCheck";
+import { DeveloperSettings } from "@/components/team/DeveloperSettings";
 import type { ActivityEntry } from "@/lib/types";
 
 export default async function DeveloperPage() {
@@ -12,6 +13,7 @@ export default async function DeveloperPage() {
 
   const store = getStore();
   const brands = await store.listBrands({ includeArchived: true });
+  const settings = await store.getSettings();
   const plans = await store.listPlans();
   const activity: ActivityEntry[] = (
     await Promise.all(plans.map((p) => store.listActivity(p.id)))
@@ -23,6 +25,8 @@ export default async function DeveloperPage() {
   return (
     <div className="flex flex-col gap-8">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Geliştirici</h1>
+
+      <DeveloperSettings initial={settings} />
 
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">

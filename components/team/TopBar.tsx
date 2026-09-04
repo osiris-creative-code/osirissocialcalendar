@@ -22,17 +22,25 @@ export function TopBar({
   actor,
   isDeveloper,
   activeBrand,
+  logoUrl,
 }: {
   actor: { name: string; role: Role };
   isDeveloper: boolean;
   activeBrand?: { name: string; colorPrimary: string } | null;
+  /** Set in Geliştirici Ayarları; falls back to the wordmark. */
+  logoUrl?: string | null;
 }) {
   const showDeveloper = isDeveloper || actor.role === "developer";
 
   return (
     <header className="sticky top-0 z-40 flex flex-wrap items-center gap-4 border-b border-[var(--border)] bg-[var(--bg)]/85 px-5 py-3 backdrop-blur">
-      <Link href="/app/brands" className="font-[family-name:var(--font-display)] text-xl font-semibold">
-        Osiris
+      <Link href="/app/brands" className="flex items-center font-[family-name:var(--font-display)] text-xl font-semibold">
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="Osiris" className="h-7 w-auto max-w-[160px] object-contain" />
+        ) : (
+          "Osiris"
+        )}
       </Link>
 
       <nav className="flex items-center gap-1 text-[13px]">
