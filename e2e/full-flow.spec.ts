@@ -22,7 +22,7 @@ test("full workflow: create -> generate -> internal approve -> brand view -> rev
 
   // --- new plan ---
   await page.getByRole("button", { name: "Yeni plan" }).click();
-  await page.getByLabel("Başlık").fill("Eylül");
+  await page.getByLabel("Başlık", { exact: true }).fill("Eylül");
   await page.getByRole("button", { name: "Oluştur" }).click();
 
   // The range now lives in the editor, next to the prompt — you pick it after
@@ -73,7 +73,7 @@ test("publish flow: approve -> yayına al -> mark all -> tamamlandı", async ({ 
   await page.getByText("Yayın Kafe").click();
 
   await page.getByRole("button", { name: "Yeni plan" }).click();
-  await page.getByLabel("Başlık").fill("Eylül");
+  await page.getByLabel("Başlık", { exact: true }).fill("Eylül");
   await page.getByRole("button", { name: "Oluştur" }).click();
 
   await page.getByLabel("Başlangıç").fill("2026-09-01");

@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { captionLanguageRule } from "@/lib/caption-language";
+import { fetchImageBytes, fetchImageBytesMany } from "@/lib/ai/fetch-image";
 import type {
   AIClient,
   AnalyzeFeedRequest,
@@ -22,8 +23,11 @@ function isRemote(url?: string | null): url is string {
   return !!url && /^https?:\/\//.test(url);
 }
 
-function imageBlock(url: string): Anthropic.ImageBlockParam {
-  return { type: "image", source: { type: "url", url } };
+function imageBlockFromBytes(img: { mediaType: string; base64: string }): Anthropic.ImageBlockParam {
+  return {
+    type: "image",
+    source: { type: "base64", media_type: img.mediaType as "image/png" | "image/jpeg" | "image/webp" | "image/gif", data: img.base64 },
+  };
 }
 
 /** Pull the first JSON value out of a model response that may wrap it in prose/fences. */
@@ -68,10 +72,12 @@ export class AnthropicAI implements AIClient {
     ];
 
     if (req.vision) {
-      for (const it of needsCaption) {
-        if (isRemote(it.imageUrl)) {
-          content.push({ type: "text", text: `#${it.index} görseli:` }, imageBlock(it.imageUrl));
-        }
+      const withImages = needsCaption.filter((it) => isRemote(it.imageUrl));
+      const fetched = await fetchImageBytesMany(withImages.map((it) => it.imageUrl!));
+      const byUrl = new Map(fetched.map((f) => [f.url, f.image]));
+      for (const it of withImages) {
+        const img = byUrl.get(it.imageUrl!);
+        if (img) content.push({ type: "text", text: `#${it.index} görseli:` }, imageBlockFromBytes(img));
       }
     }
 
@@ -101,7 +107,10 @@ export class AnthropicAI implements AIClient {
           `\n\nMevcut: ${req.current}\n\nSadece yeni açıklamayı düz metin olarak döndür.`,
       },
     ];
-    if (req.vision && isRemote(req.imageUrl)) content.push(imageBlock(req.imageUrl));
+    if (req.vision && isRemote(req.imageUrl)) {
+      const img = await fetchImageBytes(req.imageUrl);
+      if (img) content.push(imageBlockFromBytes(img));
+    }
 
     const res = await this.client.messages.create({
       model: MODEL,
@@ -122,9 +131,8 @@ export class AnthropicAI implements AIClient {
           `\n\nSadece şu JSON'u döndür: {"insights":["<madde>", ...]}`,
       },
     ];
-    for (const url of req.imageUrls.slice(0, 9)) {
-      if (isRemote(url)) content.push(imageBlock(url));
-    }
+    const feedImages = await fetchImageBytesMany(req.imageUrls.filter(isRemote).slice(0, 9));
+    for (const f of feedImages) content.push(imageBlockFromBytes(f.image));
 
     const res = await this.client.messages.create({
       model: MODEL,
@@ -152,7 +160,8 @@ export class AnthropicAI implements AIClient {
           `\n\nSadece şu JSON'u döndür: {"prompt":"<tam Türkçe brief tek paragraf>","note":"<tek cümle: ne bulundu>"}`,
       },
     ];
-    for (const url of req.imageUrls.slice(0, 8)) if (isRemote(url)) content.push(imageBlock(url));
+    const suggestImages = await fetchImageBytesMany(req.imageUrls.filter(isRemote).slice(0, 8));
+    for (const f of suggestImages) content.push(imageBlockFromBytes(f.image));
 
     const res = await this.client.messages.create({
       model: MODEL,
@@ -192,7 +201,8 @@ export class AnthropicAI implements AIClient {
     ];
     for (const c of req.candidates) {
       content.push({ type: "text", text: `Grup ${c.id} (${c.type}) — ${c.names.join(", ")}:` });
-      for (const url of c.imageUrls) if (isRemote(url)) content.push(imageBlock(url));
+      const groupImages = await fetchImageBytesMany(c.imageUrls.filter(isRemote));
+      for (const f of groupImages) content.push(imageBlockFromBytes(f.image));
     }
 
     const res = await this.client.messages.create({

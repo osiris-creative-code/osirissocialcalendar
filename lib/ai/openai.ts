@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { captionLanguageRule } from "@/lib/caption-language";
+import { fetchImageBytes, fetchImageBytesMany } from "@/lib/ai/fetch-image";
 import type {
   AIClient,
   AnalyzeFeedRequest,
@@ -23,7 +24,11 @@ function isRemote(url?: string | null): url is string {
 }
 
 type Part = OpenAI.Chat.Completions.ChatCompletionContentPart;
-const img = (url: string): Part => ({ type: "image_url", image_url: { url } });
+/** OpenAI accepts a data: URL in the same image_url shape — no separate fetch on their end. */
+const imgFromBytes = (i: { mediaType: string; base64: string }): Part => ({
+  type: "image_url",
+  image_url: { url: `data:${i.mediaType};base64,${i.base64}` },
+});
 const txt = (text: string): Part => ({ type: "text", text });
 
 /** OpenAI-backed implementation. Selected when OPENAI_API_KEY is set. */
@@ -65,8 +70,12 @@ export class OpenAIAI implements AIClient {
       ),
     ];
     if (req.vision) {
-      for (const it of needsCaption) {
-        if (isRemote(it.imageUrl)) content.push(txt(`#${it.index} görseli:`), img(it.imageUrl));
+      const withImages = needsCaption.filter((it) => isRemote(it.imageUrl));
+      const fetched = await fetchImageBytesMany(withImages.map((it) => it.imageUrl!));
+      const byUrl = new Map(fetched.map((f) => [f.url, f.image]));
+      for (const it of withImages) {
+        const image = byUrl.get(it.imageUrl!);
+        if (image) content.push(txt(`#${it.index} görseli:`), imgFromBytes(image));
       }
     }
 
@@ -87,7 +96,10 @@ export class OpenAIAI implements AIClient {
           `\n\nMevcut: ${req.current}\n\nSadece yeni açıklamayı düz metin olarak döndür.`,
       ),
     ];
-    if (req.vision && isRemote(req.imageUrl)) content.push(img(req.imageUrl));
+    if (req.vision && isRemote(req.imageUrl)) {
+      const image = await fetchImageBytes(req.imageUrl);
+      if (image) content.push(imgFromBytes(image));
+    }
     const raw = await this.chat(content, { maxTokens: 400 });
     return { caption: raw.trim() || req.current };
   }
@@ -100,7 +112,8 @@ export class OpenAIAI implements AIClient {
           `\n\nSadece şu JSON'u döndür: {"insights":["<madde>", ...]}`,
       ),
     ];
-    for (const url of req.imageUrls.slice(0, 9)) if (isRemote(url)) content.push(img(url));
+    const feedImages = await fetchImageBytesMany(req.imageUrls.filter(isRemote).slice(0, 9));
+    for (const f of feedImages) content.push(imgFromBytes(f.image));
     const raw = await this.chat(content, { json: true, maxTokens: 600 });
     const parsed = JSON.parse(raw || "{}") as { insights?: string[] };
     return { insights: (parsed.insights ?? []).slice(0, 6) };
@@ -120,7 +133,8 @@ export class OpenAIAI implements AIClient {
           `\n\nSadece şu JSON'u döndür: {"prompt":"<tam Türkçe brief tek paragraf>","note":"<tek cümle: ne bulundu>"}`,
       ),
     ];
-    for (const url of req.imageUrls.slice(0, 8)) if (isRemote(url)) content.push(img(url));
+    const suggestImages = await fetchImageBytesMany(req.imageUrls.filter(isRemote).slice(0, 8));
+    for (const f of suggestImages) content.push(imgFromBytes(f.image));
     const raw = await this.chat(content, { json: true, maxTokens: 500 });
     const parsed = JSON.parse(raw || "{}") as { prompt?: string; note?: string };
     return {
@@ -145,7 +159,8 @@ export class OpenAIAI implements AIClient {
     ];
     for (const c of req.candidates) {
       content.push(txt(`Grup ${c.id} (${c.type}) — ${c.names.join(", ")}:`));
-      for (const url of c.imageUrls) if (isRemote(url)) content.push(img(url));
+      const groupImages = await fetchImageBytesMany(c.imageUrls.filter(isRemote));
+      for (const f of groupImages) content.push(imgFromBytes(f.image));
     }
     const raw = await this.chat(content, { json: true, maxTokens: 700 });
     const parsed = JSON.parse(raw || "{}") as GroupSimilarResult;

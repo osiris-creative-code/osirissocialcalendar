@@ -38,7 +38,7 @@ test("capture guide screenshots", async ({ page, context }) => {
   await page.screenshot({ path: shot("y3-marka-ayar") });
 
   await page.getByRole("button", { name: "Yeni plan" }).click();
-  await page.getByLabel("Başlık").fill("Eylül Takvimi");
+  await page.getByLabel("Başlık", { exact: true }).fill("Eylül Takvimi");
   await page.waitForTimeout(200);
   await page.screenshot({ path: shot("y4-yeni-plan") });
   await page.getByRole("button", { name: "Oluştur" }).click();
