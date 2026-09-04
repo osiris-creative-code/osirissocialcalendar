@@ -41,7 +41,9 @@ function FullscreenButton({ target }: { target: React.RefObject<HTMLElement | nu
 
 export function ReelPlayer({ media }: { media: Media }) {
   const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const poster = media.posterUrl || undefined;
   const driveEmbed =
     media.kind === "video" &&
@@ -98,17 +100,72 @@ export function ReelPlayer({ media }: { media: Media }) {
     );
   }
 
-  // Real uploaded video → a proper player (native controls include fullscreen).
+  // Real uploaded video → our own minimal controls. Android Chrome's native
+  // <video controls> bar is a full toolbar (skip ±10s, speed, captions,
+  // settings) that eats half a reel-height card — nothing like the tap-to-
+  // play, near-chromeless feel every other reel state here already has.
   if (isVideo) {
+    const toggle = () => {
+      const v = videoRef.current;
+      if (!v) return;
+      if (v.paused) {
+        v.play();
+        setPlaying(true);
+      } else {
+        v.pause();
+        setPlaying(false);
+      }
+    };
+
     return (
-      <video
-        src={media.url}
-        poster={poster}
-        controls
-        playsInline
-        preload="metadata"
-        className="h-full w-full bg-black object-contain"
-      />
+      <div ref={boxRef} className="relative h-full w-full bg-black">
+        <video
+          ref={videoRef}
+          src={media.url}
+          poster={poster}
+          muted={muted}
+          playsInline
+          preload="metadata"
+          onClick={toggle}
+          onEnded={() => setPlaying(false)}
+          className="h-full w-full object-contain"
+        />
+        {!playing && (
+          <button
+            type="button"
+            aria-label="Oynat"
+            onClick={toggle}
+            className="absolute inset-0 m-auto grid h-14 w-14 place-items-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:scale-105"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+        )}
+        <button
+          type="button"
+          aria-label={muted ? "Sesi aç" : "Sesi kapat"}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMuted((m) => !m);
+          }}
+          className="absolute bottom-2 left-2 z-10 grid h-8 w-8 place-items-center rounded-md bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/70"
+        >
+          {muted ? (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M11 5 6 9H2v6h4l5 4V5Z" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          ) : (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <path d="M11 5 6 9H2v6h4l5 4V5Z" />
+              <path d="M15.5 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13" />
+            </svg>
+          )}
+        </button>
+        <FullscreenButton target={boxRef} />
+      </div>
     );
   }
 
