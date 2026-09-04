@@ -103,6 +103,8 @@ export function ContentUploader({
   const [driveLink, setDriveLink] = useState(driveFolderUrl ?? "");
   const [reelText, setReelText] = useState(reelLinks.join("\n"));
   const [driveSaved, setDriveSaved] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [merging, setMerging] = useState(false);
 
   const persistDrive = async () => {
     setDriveSaved(false);
@@ -261,6 +263,37 @@ export function ContentUploader({
     }
   };
 
+  const toggleSelect = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  /** Instagram has no carousel for Story/Reels — a post is the only eligible type. */
+  const makeCarousel = async () => {
+    if (selected.size < 2 || working) return;
+    setMerging(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/plans/${planId}/merge-carousel`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ assetIds: [...selected] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "Kaydırmalı yapılamadı.");
+        return;
+      }
+      setAssets(data.assets as PlanAsset[]);
+      setSelected(new Set());
+    } finally {
+      setMerging(false);
+    }
+  };
+
   return (
     <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-4">
       <h2 className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--text-mute)]">
@@ -361,49 +394,115 @@ export function ContentUploader({
       </div>
 
       {assets.length > 0 && (
-        <ul className="mt-3 flex flex-wrap gap-2">
-          {assets.map((a) => (
-            <li
-              key={a.id}
-              className={`flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2 text-[11.5px] ${
-                a.placeholder
-                  ? "border-[color-mix(in_srgb,var(--gold)_45%,transparent)] bg-[var(--warn-soft)]"
-                  : "border-[var(--border)] bg-[var(--bg)]"
-              }`}
-            >
-              {a.placeholder ? (
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--warn)]">
-                  ▹
+        <>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {orderForDisplay(assets).map((a) => (
+              <li
+                key={a.id}
+                className={`flex items-center gap-1.5 rounded-full border py-1 pl-1 pr-2 text-[11.5px] ${
+                  a.placeholder
+                    ? "border-[color-mix(in_srgb,var(--gold)_45%,transparent)] bg-[var(--warn-soft)]"
+                    : selected.has(a.id)
+                      ? "border-[var(--brand)] bg-[var(--brand-soft)]"
+                      : "border-[var(--border)] bg-[var(--bg)]"
+                }`}
+              >
+                {a.type === "post" && !a.placeholder && (
+                  <input
+                    type="checkbox"
+                    aria-label={`${a.name} — kaydırmalı için seç`}
+                    checked={selected.has(a.id)}
+                    onChange={() => toggleSelect(a.id)}
+                    className="ml-0.5 h-3.5 w-3.5"
+                  />
+                )}
+                {a.placeholder ? (
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--warn)]">
+                    ▹
+                  </span>
+                ) : a.kind === "image" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={a.url} alt="" className="h-5 w-5 rounded-full object-cover" />
+                ) : (
+                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--surface-2)]">▶</span>
+                )}
+                <span className="max-w-[150px] truncate text-[var(--text-dim)]">
+                  {a.placeholder ? "Reels — video bekleniyor" : a.name}
                 </span>
-              ) : a.kind === "image" ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={a.url} alt="" className="h-5 w-5 rounded-full object-cover" />
-              ) : (
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[var(--surface-2)]">▶</span>
-              )}
-              <span className="max-w-[150px] truncate text-[var(--text-dim)]">
-                {a.placeholder ? "Reels — video bekleniyor" : a.name}
-              </span>
-              {a.kind === "video" && a.webPlayable === false && (
-                <span
-                  title="Tarayıcıda oynamayabilir — MP4 (H.264) yükleyin"
-                  className="rounded bg-[var(--warn-soft)] px-1 text-[10px] font-semibold text-[var(--warn)]"
+                {a.slideGroup && (
+                  <span
+                    title="Kaydırmalı gönderinin parçası"
+                    className="rounded bg-[var(--brand-soft)] px-1 text-[10px] font-semibold text-[var(--brand)]"
+                  >
+                    {a.slideOrder}/{assets.filter((x) => x.slideGroup === a.slideGroup).length}
+                  </span>
+                )}
+                {a.kind === "video" && a.webPlayable === false && (
+                  <span
+                    title="Tarayıcıda oynamayabilir — MP4 (H.264) yükleyin"
+                    className="rounded bg-[var(--warn-soft)] px-1 text-[10px] font-semibold text-[var(--warn)]"
+                  >
+                    MP4 değil
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => remove(a.id)}
+                  aria-label="Kaldır"
+                  className="text-[var(--text-mute)] hover:text-[var(--accent)]"
                 >
-                  MP4 değil
-                </span>
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+
+          {selected.size > 0 && (
+            <div className="mt-2 flex items-center gap-2 rounded-[10px] border border-[var(--brand)] bg-[var(--brand-soft)] px-3 py-2 text-[12px]">
+              <span className="text-[var(--brand)]">{selected.size} post seçildi</span>
+              <button
+                type="button"
+                onClick={makeCarousel}
+                disabled={selected.size < 2 || merging}
+                className="rounded-md bg-[var(--brand)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--brand-ink)] disabled:opacity-50"
+              >
+                {merging ? "…" : "Kaydırmalı yap"}
+              </button>
+              {selected.size < 2 && (
+                <span className="text-[var(--text-mute)]">en az 2 post gerekir</span>
               )}
               <button
                 type="button"
-                onClick={() => remove(a.id)}
-                aria-label="Kaldır"
-                className="text-[var(--text-mute)] hover:text-[var(--accent)]"
+                onClick={() => setSelected(new Set())}
+                className="ml-auto text-[var(--text-mute)]"
               >
-                ×
+                vazgeç
               </button>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
+}
+
+/** Groups already in a carousel sit together, in slide order; everything else keeps its
+ *  upload order. Purely visual — never changes what's persisted. */
+function orderForDisplay(assets: PlanAsset[]): PlanAsset[] {
+  const seen = new Set<string>();
+  const out: PlanAsset[] = [];
+  for (const a of assets) {
+    if (seen.has(a.id)) continue;
+    if (a.slideGroup) {
+      const group = assets
+        .filter((x) => x.slideGroup === a.slideGroup)
+        .sort((x, y) => x.slideOrder - y.slideOrder);
+      for (const g of group) seen.add(g.id);
+      out.push(...group);
+    } else {
+      seen.add(a.id);
+      out.push(a);
+    }
+  }
+  return out;
 }

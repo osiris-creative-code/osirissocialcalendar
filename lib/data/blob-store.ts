@@ -353,6 +353,12 @@ export abstract class BlobStore implements DataStore {
       db.annotations = db.annotations.filter((a) => a.id !== id);
     });
   }
+  async reassignItemFeedback(fromItemId: string, toItemId: string): Promise<void> {
+    await this.mutate((db) => {
+      for (const c of db.comments) if (c.planItemId === fromItemId) c.planItemId = toItemId;
+      for (const a of db.annotations) if (a.planItemId === fromItemId) a.planItemId = toItemId;
+    });
+  }
 
   /* ---------- activity ---------- */
   async listActivity(planId: string) {

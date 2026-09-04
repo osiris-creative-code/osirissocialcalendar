@@ -99,6 +99,10 @@ export interface DataStore {
   addAnnotation(input: AddAnnotationInput): Promise<Annotation>;
   deleteAnnotation(id: string): Promise<void>;
 
+  /** Repoints every comment/annotation on `fromItemId` to `toItemId` — used when
+   *  merging items into a carousel so existing feedback isn't orphaned. */
+  reassignItemFeedback(fromItemId: string, toItemId: string): Promise<void>;
+
   listActivity(planId: string): Promise<ActivityEntry[]>;
   logActivity(input: LogActivityInput): Promise<ActivityEntry>;
 }

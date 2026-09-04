@@ -23,12 +23,19 @@ export function CalendarGrid({
   highlightItemId,
   onOpenItem,
   onOpenPins,
+  selecting = false,
+  selectedIds,
+  onToggleSelect,
 }: {
   weeks: DayCell[][];
   pinsByItem: Map<string, Annotation[]>;
   highlightItemId?: string | null;
   onOpenItem: (id: string) => void;
   onOpenPins: (id: string, mediaIndex: number) => void;
+  /** "Kaydırmalı yap" mode — post cards grow a select checkbox instead of the edit hint. */
+  selecting?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-[var(--r-md)] border border-[var(--border)]">
@@ -52,6 +59,9 @@ export function CalendarGrid({
             highlightItemId={highlightItemId}
             onOpenItem={onOpenItem}
             onOpenPins={onOpenPins}
+            selecting={selecting}
+            selectedIds={selectedIds}
+            onToggleSelect={onToggleSelect}
           />
         ))}
       </div>
@@ -65,12 +75,18 @@ function DayCellView({
   highlightItemId,
   onOpenItem,
   onOpenPins,
+  selecting,
+  selectedIds,
+  onToggleSelect,
 }: {
   cell: DayCell;
   pinsByItem: Map<string, Annotation[]>;
   highlightItemId?: string | null;
   onOpenItem: (id: string) => void;
   onOpenPins: (id: string, mediaIndex: number) => void;
+  selecting?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `day:${cell.date}` });
 
@@ -105,6 +121,9 @@ function DayCellView({
               highlighted={item.id === highlightItemId}
               onOpenItem={onOpenItem}
               onOpenPins={onOpenPins}
+              selecting={selecting}
+              selected={selectedIds?.has(item.id) ?? false}
+              onToggleSelect={onToggleSelect}
             />
           ))}
         </div>
@@ -119,18 +138,27 @@ const DayItem = memo(function DayItem({
   highlighted,
   onOpenItem,
   onOpenPins,
+  selecting,
+  selected,
+  onToggleSelect,
 }: {
   item: PlanItem;
   pins: Annotation[];
   highlighted: boolean;
   onOpenItem: (id: string) => void;
   onOpenPins: (id: string, mediaIndex: number) => void;
+  selecting?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
+    disabled: selecting,
   });
   const media = item.media[0];
   const TypeIcon = ITEM_TYPE_ICONS[item.type];
+  // Only a real post can join a carousel — no Story/Reels, no empty gap slot.
+  const canSelect = selecting && item.type === "post" && !item.isGap;
 
   return (
     <motion.div
@@ -143,8 +171,27 @@ const DayItem = memo(function DayItem({
         item.isGap
           ? "border-[color-mix(in_srgb,var(--warn)_50%,transparent)]"
           : "border-[var(--border)]"
-      } ${highlighted ? "ring-2 ring-[var(--accent)]" : ""} ${isDragging ? "opacity-40" : ""}`}
+      } ${highlighted ? "ring-2 ring-[var(--accent)]" : ""} ${isDragging ? "opacity-40" : ""} ${
+        selected ? "ring-2 ring-[var(--brand)]" : ""
+      }`}
     >
+      {canSelect && (
+        <button
+          type="button"
+          aria-label={`${ITEM_TYPE_LABELS[item.type]} — kaydırmalı için seç`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.(item.id);
+          }}
+          className={`absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full border text-[9px] font-bold ${
+            selected
+              ? "border-[var(--brand)] bg-[var(--brand)] text-[var(--brand-ink)]"
+              : "border-white/70 bg-black/40 text-transparent"
+          }`}
+        >
+          ✓
+        </button>
+      )}
       <button
         type="button"
         aria-label={`${ITEM_TYPE_LABELS[item.type]} — sürükle`}

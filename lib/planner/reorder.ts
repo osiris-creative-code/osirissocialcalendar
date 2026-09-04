@@ -49,3 +49,33 @@ export function moveItem(items: PlanItem[], activeId: string, overId: string): P
 
   return normalize([...rest.slice(0, insertAt), moved, ...rest.slice(insertAt)]);
 }
+
+/**
+ * Merge already-generated post items into one carousel — the same shot type
+ * check as merge-carousel, just after generation instead of before it. The
+ * kept item is whichever selected item is earliest on the calendar; its date,
+ * caption and id survive, and every selected item's media is concatenated
+ * onto it in that same order with slideOrder renumbered. The rest are removed.
+ *
+ * Callers validate eligibility (type "post", not a gap) before calling this —
+ * it assumes `ids` is already a valid, mergeable set.
+ */
+export function mergePostItems(items: PlanItem[], ids: string[]): PlanItem[] {
+  const idSet = new Set(ids);
+  const chosen = items.filter((i) => idSet.has(i.id));
+  if (chosen.length < 2) return items;
+
+  const ordered = [...chosen].sort(
+    (a, b) => a.date.localeCompare(b.date) || a.sort - b.sort,
+  );
+  const keep = ordered[0];
+
+  const merged: PlanItem = {
+    ...keep,
+    media: ordered.flatMap((i) => i.media).map((m, idx) => ({ ...m, slideOrder: idx + 1 })),
+  };
+
+  const rest = items.filter((i) => !idSet.has(i.id));
+
+  return normalize([...rest, merged]);
+}

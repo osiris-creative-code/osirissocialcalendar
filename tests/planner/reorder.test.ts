@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupByDate, moveItem, normalize } from "@/lib/planner/reorder";
+import { groupByDate, mergePostItems, moveItem, normalize } from "@/lib/planner/reorder";
 import type { PlanItem } from "@/lib/types";
 
 function item(id: string, date: string, sort: number): PlanItem {
@@ -67,5 +67,60 @@ describe("moveItem", () => {
   it("is a no-op for an unknown id or a drop on itself", () => {
     expect(moveItem(items, "zzz", "a")).toBe(items);
     expect(moveItem(items, "a", "a")).toBe(items);
+  });
+});
+
+describe("mergePostItems", () => {
+  function post(id: string, date: string, sort: number, mediaCount = 1): PlanItem {
+    return {
+      id,
+      planId: "p",
+      date,
+      type: "post",
+      sort,
+      caption: `caption-${id}`,
+      specialLabel: null,
+      media: Array.from({ length: mediaCount }, (_, i) => ({
+        url: `/${id}-${i}.jpg`,
+        kind: "image" as const,
+        slideOrder: i + 1,
+      })),
+      isGap: false,
+      hidden: false,
+      publishedAt: null,
+    };
+  }
+
+  it("keeps the earliest item's id, date and caption", () => {
+    const items = [post("late", "2026-09-05", 1), post("early", "2026-09-02", 0)];
+    const out = mergePostItems(items, ["late", "early"]);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ id: "early", date: "2026-09-02", caption: "caption-early" });
+  });
+
+  it("concatenates every selected item's media, renumbering slideOrder", () => {
+    const items = [post("a", "2026-09-01", 0, 2), post("b", "2026-09-02", 1, 1)];
+    const out = mergePostItems(items, ["a", "b"]);
+    expect(out[0].media.map((m) => m.url)).toEqual(["/a-0.jpg", "/a-1.jpg", "/b-0.jpg"]);
+    expect(out[0].media.map((m) => m.slideOrder)).toEqual([1, 2, 3]);
+  });
+
+  it("removes the merged-away items and leaves untouched items alone", () => {
+    const items = [post("a", "2026-09-01", 0), post("b", "2026-09-02", 1), post("c", "2026-09-03", 2)];
+    const out = mergePostItems(items, ["a", "b"]);
+    expect(out.map((i) => i.id).sort()).toEqual(["a", "c"]);
+  });
+
+  it("is a no-op given fewer than two ids", () => {
+    const items = [post("a", "2026-09-01", 0)];
+    expect(mergePostItems(items, ["a"])).toBe(items);
+  });
+
+  it("renumbers sort to match the resulting calendar order", () => {
+    const items = [post("a", "2026-09-05", 0), post("b", "2026-09-01", 1), post("c", "2026-09-03", 2)];
+    const out = mergePostItems(items, ["a", "c"]);
+    // merged item takes "c"'s date (2026-09-03, earlier than "a"'s), so order is b, merged(a), 
+    expect(out.map((i) => i.date)).toEqual(["2026-09-01", "2026-09-03"]);
+    expect(out.map((i) => i.sort)).toEqual([0, 1]);
   });
 });

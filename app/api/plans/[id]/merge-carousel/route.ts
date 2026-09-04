@@ -19,6 +19,12 @@ export async function POST(req: Request, ctx: Ctx) {
   const assets = await store.listAssets(id);
   const wanted = assets.filter((a) => assetIds.includes(a.id));
   if (wanted.length !== assetIds.length) return json({ error: "asset not found" }, 404);
+  // Instagram has no carousel for Story or Reels — only a post can become one,
+  // whether the request came from a person picking checkboxes or from the AI
+  // shoot-analysis suggestion; enforced here so neither path can slip past it.
+  if (wanted.some((a) => a.type !== "post")) {
+    return json({ error: "sadece post görselleri kaydırmalı yapılabilir" }, 400);
+  }
 
   const group = `g_${newId()}`;
   // slideOrder follows the existing upload order so the carousel reads correctly.

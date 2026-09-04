@@ -82,6 +82,10 @@ export function PlanEditor({
   const [dragId, setDragId] = useState<string | null>(null);
   const [pinTarget, setPinTarget] = useState<PinTarget | null>(null);
   const [view, setView] = useState<PlanView>(defaultView);
+  const [merging, setMerging] = useState(false);
+  const [mergeSelection, setMergeSelection] = useState<Set<string>>(new Set());
+  const [mergeError, setMergeError] = useState("");
+  const [mergeBusy, setMergeBusy] = useState(false);
 
   // Keeping the latest values in refs lets every item callback stay referentially
   // stable, so typing in one caption no longer re-renders all the others.
@@ -213,11 +217,49 @@ export function PlanEditor({
 
   /** Calendar cells are for scanning; editing happens in the list. */
   const openItem = useCallback((itemId: string) => {
+    if (merging) return; // a card click means "select it", not "open it"
     setView("list");
     requestAnimationFrame(() =>
       document.getElementById(`plan-item-${itemId}`)?.scrollIntoView({ block: "center" }),
     );
+  }, [merging]);
+
+  const toggleMergeSelect = useCallback((id: string) => {
+    setMergeError("");
+    setMergeSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }, []);
+
+  const mergeSelected = useCallback(async () => {
+    if (mergeSelection.size < 2 || mergeBusy) return;
+    setMergeBusy(true);
+    setMergeError("");
+    try {
+      const res = await fetch(`/api/plans/${plan.id}/merge-items`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ itemIds: [...mergeSelection] }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMergeError(data.error || "Kaydırmalı yapılamadı.");
+        return;
+      }
+      rowsRef.current = data.items;
+      lastEmitted.current = data.items;
+      setRows(data.items);
+      onChangeRef.current(data.items);
+      setMergeSelection(new Set());
+    } catch (e) {
+      setMergeError(`Kaydırmalı yapılamadı: ${(e as Error).message}`);
+    } finally {
+      setMergeBusy(false);
+    }
+  }, [mergeSelection, mergeBusy, plan.id]);
   const dragging = dragId ? rows.find((r) => r.id === dragId) ?? null : null;
 
   return (
@@ -225,7 +267,46 @@ export function PlanEditor({
       {rows.length > 0 && (
         <div className="flex flex-wrap items-end justify-between gap-3">
           <PlanSummary items={rows} rangeStart={plan.rangeStart} rangeEnd={plan.rangeEnd} />
-          <ViewToggle view={view} onChange={setView} />
+          <div className="flex items-center gap-2">
+            {view === "calendar" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMerging((m) => !m);
+                  setMergeSelection(new Set());
+                  setMergeError("");
+                }}
+                aria-pressed={merging}
+                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold ${
+                  merging
+                    ? "border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]"
+                    : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-dim)]"
+                }`}
+              >
+                {merging ? "Seçimden vazgeç" : "Kaydırmalı yap"}
+              </button>
+            )}
+            <ViewToggle view={view} onChange={setView} />
+          </div>
+        </div>
+      )}
+
+      {merging && (
+        <div className="flex items-center gap-2 rounded-[10px] border border-[var(--brand)] bg-[var(--brand-soft)] px-3 py-2 text-[12px]">
+          <span className="text-[var(--brand)]">
+            {mergeSelection.size === 0
+              ? "Kaydırmalı yapmak istediğin post'ları seç"
+              : `${mergeSelection.size} post seçildi`}
+          </span>
+          <button
+            type="button"
+            onClick={mergeSelected}
+            disabled={mergeSelection.size < 2 || mergeBusy}
+            className="rounded-md bg-[var(--brand)] px-2.5 py-1 text-[11.5px] font-semibold text-[var(--brand-ink)] disabled:opacity-50"
+          >
+            {mergeBusy ? "…" : "Birleştir"}
+          </button>
+          {mergeError && <span className="text-[var(--accent)]">{mergeError}</span>}
         </div>
       )}
 
@@ -253,6 +334,9 @@ export function PlanEditor({
                 highlightItemId={highlightItemId}
                 onOpenItem={openItem}
                 onOpenPins={openPins}
+                selecting={merging}
+                selectedIds={mergeSelection}
+                onToggleSelect={toggleMergeSelect}
               />
             </motion.div>
             ) : (

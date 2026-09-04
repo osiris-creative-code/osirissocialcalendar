@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { PlanEditor } from "@/components/team/PlanEditor";
 import type { Annotation, Plan, PlanItem } from "@/lib/types";
@@ -145,5 +145,65 @@ describe("PlanEditor — list view", () => {
   it("gives every row a drag handle", () => {
     render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} defaultView="list" />);
     expect(screen.getAllByRole("button", { name: "Sürükle" })).toHaveLength(2);
+  });
+});
+
+describe("PlanEditor — manual carousel in the calendar", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("enters select mode and shows a checkbox only on post cards", () => {
+    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Kaydırmalı yap" }));
+    expect(screen.getByText("Kaydırmalı yapmak istediğin post'ları seç")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /kaydırmalı için seç/ })).toHaveLength(2);
+  });
+
+  it("enables Birleştir only once two are selected, and calls the merge API", async () => {
+    const merged = [{ ...items[0], media: [...items[0].media, { url: "/img2.jpg", kind: "image", slideOrder: 2 }] }];
+    const fetchSpy = vi.fn(async (url: string) => {
+      expect(url).toBe("/api/plans/p/merge-items");
+      return { ok: true, json: async () => ({ items: merged }) };
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const onChange = vi.fn();
+    render(<PlanEditor plan={plan} items={items} onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Kaydırmalı yap" }));
+
+    const boxes = screen.getAllByRole("button", { name: /kaydırmalı için seç/ });
+    fireEvent.click(boxes[0]);
+    expect(screen.getByRole("button", { name: "Birleştir" })).toBeDisabled();
+    fireEvent.click(boxes[1]);
+    expect(screen.getByRole("button", { name: "Birleştir" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Birleştir" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(merged));
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/plans/p/merge-items",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("shows the server's refusal instead of silently doing nothing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, json: async () => ({ error: "sadece post içerikleri kaydırmalı yapılabilir" }) })),
+    );
+    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Kaydırmalı yap" }));
+    const boxes = screen.getAllByRole("button", { name: /kaydırmalı için seç/ });
+    fireEvent.click(boxes[0]);
+    fireEvent.click(boxes[1]);
+    fireEvent.click(screen.getByRole("button", { name: "Birleştir" }));
+    await waitFor(() => expect(screen.getByText(/sadece post içerikleri/)).toBeInTheDocument());
+  });
+
+  it("leaving select mode clears the selection", () => {
+    render(<PlanEditor plan={plan} items={items} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Kaydırmalı yap" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /kaydırmalı için seç/ })[0]);
+    expect(screen.getByText("1 post seçildi")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Seçimden vazgeç" }));
+    expect(screen.queryByText(/post seçildi/)).not.toBeInTheDocument();
   });
 });
