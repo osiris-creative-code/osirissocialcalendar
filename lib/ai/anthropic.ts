@@ -144,7 +144,8 @@ export class AnthropicAI implements AIClient {
         text:
           `${req.brandName} markası için ${req.rangeStart} – ${req.rangeEnd} arası bir sosyal medya ` +
           `paylaşım planı önerisi hazırla. Elde bu içerik var: ${post} post, ${story} story, ${reel} reels. ` +
-          `Hesaplanan tempo: "${req.cadenceBrief}". Bu tempoyu koru; sadece Türkçe ton cümlesi ekle ` +
+          `${req.contentRules?.trim() ? `Markanın sabit kuralları (bunlar önceliklidir): ${req.contentRules.trim()}. ` : ""}` +
+          `Hesaplanan tempo: "${req.cadenceBrief}". Kural yoksa bu tempoyu koru; sadece Türkçe ton cümlesi ekle ` +
           `(ör. "postlarda sıcak, samimi bir dil ve hafif emoji; story'lere açıklama yazma"). ` +
           `Aşağıdaki görsellerde tarihli bir kampanya / özel gün grafiği görürsen ve tarih ` +
           `${req.rangeStart}–${req.rangeEnd} aralığındaysa "<gün> <ay>'e özel post" cümlesini ekle; yoksa ekleme.` +

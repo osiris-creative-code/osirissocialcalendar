@@ -23,6 +23,7 @@ export function BrandDetail({
   const [colorAccent, setColorAccent] = useState(brand.colorAccent);
   const [handle, setHandle] = useState(brand.instagramHandle ?? "");
   const [captionLanguage, setCaptionLanguage] = useState<CaptionLanguage>(captionLanguageOf(brand));
+  const [contentRules, setContentRules] = useState(brand.contentRules ?? "");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -38,6 +39,7 @@ export function BrandDetail({
         colorAccent,
         instagramHandle: handle,
         captionLanguage,
+        contentRules: contentRules.trim() || null,
       }),
     });
     setBusy(false);
@@ -95,6 +97,20 @@ export function BrandDetail({
             </select>
             <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
               Bu markanın tüm planlarında geçerli. Tek bir planda istisna istersen plan promptuna yaz.
+            </span>
+          </label>
+          <label className="text-[13px] text-[var(--text-dim)] sm:col-span-2">
+            Marka kuralları
+            <textarea
+              aria-label="Marka kuralları"
+              value={contentRules}
+              onChange={(e) => setContentRules(e.target.value)}
+              rows={3}
+              placeholder="Örn: her gün story, 3 günde bir post, haftada 1 reels. Pazar günleri paylaşım yok."
+              className="mt-1 w-full resize-y rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[13px] leading-6"
+            />
+            <span className="mt-1 block text-[11.5px] text-[var(--text-mute)]">
+              “Plan öner” bunu esas alır — her plan için tempoyu yeniden yazmana gerek kalmaz.
             </span>
           </label>
           <label className="flex items-center gap-2 text-[13px] text-[var(--text-dim)]">

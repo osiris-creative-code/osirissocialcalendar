@@ -64,6 +64,12 @@ export type Brand = {
   status: "active" | "archived";
   /** Caption language for this brand's plans. Absent on older records ⇒ "tr". */
   captionLanguage?: CaptionLanguage;
+  /**
+   * How this brand posts, in the team's own words — "her gün story, 3 günde bir
+   * post". Handed to the model as the authority when it proposes a plan, so the
+   * cadence does not have to be retyped into every prompt.
+   */
+  contentRules?: string | null;
   createdByName: string;
   createdAt: string;
 };
@@ -267,6 +273,7 @@ export const zBrand = z.object({
   feedFetchedAt: z.string().nullable(),
   status: z.enum(["active", "archived"]),
   captionLanguage: z.enum(CAPTION_LANGUAGES).optional(),
+  contentRules: z.string().nullable().optional(),
   createdByName: z.string(),
   createdAt: z.string(),
 });

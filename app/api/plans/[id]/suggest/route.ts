@@ -52,6 +52,7 @@ export async function POST(req: Request, ctx: Ctx) {
       counts,
       cadenceBrief: brief,
       imageUrls,
+      contentRules: brand.contentRules ?? null,
     });
     return json({ prompt: out.prompt || baseline, note: out.note || baseNote, counts });
   } catch (e) {

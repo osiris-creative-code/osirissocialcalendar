@@ -59,6 +59,8 @@ export type SuggestPlanRequest = {
   cadenceBrief: string;
   /** Sample image URLs for vision (special-day graphics, tone). */
   imageUrls: string[];
+  /** The brand's standing cadence rules, if the team wrote any. */
+  contentRules?: string | null;
 };
 
 export type SuggestPlanResult = {

@@ -97,6 +97,13 @@ export class MockAI implements AIClient {
   async suggestPlan(req: SuggestPlanRequest): Promise<SuggestPlanResult> {
     const { post, story, reel } = req.counts;
     const total = post + story + reel;
+    const rules = req.contentRules?.trim();
+    if (rules) {
+      return {
+        prompt: `${req.rangeStart} – ${req.rangeEnd} arası: ${rules}. Postlarda sıcak ve samimi bir dil, hafif emoji. Story'lere açıklama yazma.`,
+        note: `Marka kuralları uygulandı (${post} post, ${story} story, ${reel} reels elde).`,
+      };
+    }
     const prompt =
       total === 0
         ? `${req.brandName} için ${req.rangeStart} – ${req.rangeEnd} arası dengeli bir takvim: ` +
