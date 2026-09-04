@@ -1,7 +1,7 @@
 import { getStore } from "@/lib/db";
 import { json, requireEditor } from "@/lib/api/session";
 import { putUpload } from "@/lib/uploads";
-import { fetchWebProfile } from "@/lib/instagram";
+import { fetchFeed } from "@/lib/instagram";
 
 export const maxDuration = 60;
 
@@ -28,8 +28,19 @@ export async function POST(req: Request, ctx: Ctx) {
     return json({ ok: false, reason: "cache", thumbs: brand.feedThumbs ?? [] });
   }
 
-  const profile = await fetchWebProfile(brand.instagramHandle);
-  if (!profile) return json({ ok: false, reason: "fetch" });
+  const result = await fetchFeed(brand.instagramHandle);
+  if (!result.ok) {
+    // Say which wall we hit: on a serverless host Instagram blocks the IP, and
+    // the only fix is a provider key or the manual screenshot.
+    return json({
+      ok: false,
+      reason: result.reason,
+      hint: process.env.INSTAGRAM_API_URL
+        ? "Servis yanıt vermedi — anahtarı ve kotayı kontrol et."
+        : "Instagram sunucu IP'lerini engelliyor. Bir servis anahtarı tanımla (INSTAGRAM_API_URL + INSTAGRAM_API_KEY) ya da feed ekran görüntüsünü elle yükle.",
+    });
+  }
+  const profile = result.profile;
 
   // Re-host — Instagram CDN URLs expire quickly.
   const stored: string[] = [];

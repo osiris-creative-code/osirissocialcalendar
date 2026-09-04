@@ -65,14 +65,14 @@ describe("fetch-feed", () => {
     expect((await again.json())).toMatchObject({ ok: false, reason: "cache" });
   });
 
-  it("returns ok:false and leaves the brand alone on an IG rejection", async () => {
+  it("returns ok:false and leaves the brand alone on an IG block, saying which wall it hit", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({ ok: false, json: async () => ({ message: "useragent mismatch" }) }) as unknown as Response),
     );
     const id = (await (await listBrands(j("/api/brands", "GET"))).json())[1].id;
     const res = await fetchFeed(j(`/api/brands/${id}/fetch-feed`, "POST"), bctx(id));
-    expect(await res.json()).toMatchObject({ ok: false, reason: "fetch" });
+    expect(await res.json()).toMatchObject({ ok: false, reason: "blocked" });
     const brand = await getStore().getBrand(id);
     expect(brand!.feedThumbs).toBeNull();
   });
