@@ -63,12 +63,21 @@ export function EditorClient({
   const suggest = async () => {
     setSuggesting(true);
     setSuggestion(null);
-    await saveMeta();
     try {
+      await saveMeta();
       const res = await fetch(`/api/plans/${plan.id}/suggest`, { method: "POST" });
-      const data = await res.json();
-      if (res.ok) setSuggestion({ prompt: data.prompt, note: data.note });
-      else Toast.show(data.error || "Öneri alınamadı");
+      const text = await res.text();
+      let data: { prompt?: string; note?: string; error?: string } = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        Toast.show(`Öneri alınamadı (${res.status}): ${text.slice(0, 120)}`);
+        return;
+      }
+      if (res.ok && data.prompt) setSuggestion({ prompt: data.prompt, note: data.note ?? "" });
+      else Toast.show(data.error || `Öneri alınamadı (${res.status})`);
+    } catch (e) {
+      Toast.show(`Öneri alınamadı: ${(e as Error).message}`);
     } finally {
       setSuggesting(false);
     }

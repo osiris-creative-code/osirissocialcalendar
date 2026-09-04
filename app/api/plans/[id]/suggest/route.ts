@@ -26,17 +26,38 @@ export async function POST(req: Request, ctx: Ctx) {
 
   const imageUrls = assets
     .filter((a) => !a.placeholder && a.kind === "image" && /^https?:\/\//.test(a.url))
-    .slice(0, 8)
+    .slice(0, 6)
     .map((a) => a.url);
 
-  const { prompt, note } = await getAI().suggestPlan({
-    brandName: brand.name,
-    rangeStart: plan.rangeStart,
-    rangeEnd: plan.rangeEnd,
-    counts,
-    cadenceBrief: brief,
-    imageUrls,
-  });
+  // Local, always-works baseline from the counts + date range.
+  const total = counts.post + counts.story + counts.reel;
+  const baseline =
+    total === 0
+      ? `${plan.rangeStart} – ${plan.rangeEnd} arası: 2 günde bir post, her gün story, haftada 1 reels. ` +
+        `Postlarda sıcak, samimi bir dil, hafif emoji. Story'lere açıklama yazma.`
+      : `${plan.rangeStart} – ${plan.rangeEnd} arası: ${brief}. Postlarda sıcak, samimi bir dil, ` +
+        `hafif emoji. Story'lere açıklama yazma.`;
+  const baseNote =
+    total === 0
+      ? "İçerik yok — genel bir şablon önerildi."
+      : `${counts.post} post, ${counts.story} story, ${counts.reel} reels bulundu.`;
 
-  return json({ prompt, note, counts });
+  try {
+    const out = await getAI().suggestPlan({
+      brandName: brand.name,
+      rangeStart: plan.rangeStart,
+      rangeEnd: plan.rangeEnd,
+      counts,
+      cadenceBrief: brief,
+      imageUrls,
+    });
+    return json({ prompt: out.prompt || baseline, note: out.note || baseNote, counts });
+  } catch (e) {
+    // AI/vision failed — the deterministic baseline is still useful.
+    return json({
+      prompt: baseline,
+      note: `${baseNote} (AI önerisi alınamadı: ${(e as Error).message.slice(0, 120)})`,
+      counts,
+    });
+  }
 }
