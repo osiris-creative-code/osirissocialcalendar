@@ -121,10 +121,18 @@ function Popover({
   readOnly?: boolean;
 }) {
   const [value, setValue] = useState(initial);
+  // The parent frame clips overflow, so a pin dropped near an edge used to cut
+  // the popover in half instead of just showing it. clamp() keeps the box's
+  // own edges inside the frame — w-52 is 208px, so 104px is half its width —
+  // while still tracking the pin's x as closely as the frame width allows.
   return (
     <div
       className="absolute z-10 w-52 -translate-x-1/2 rounded-[10px] border border-[var(--border-strong)] bg-[var(--surface)] p-2.5"
-      style={{ left: `${x}%`, top: `calc(${y}% + 10px)`, boxShadow: "var(--shadow-lg)" }}
+      style={{
+        left: `clamp(104px, ${x}%, calc(100% - 104px))`,
+        top: `clamp(0px, calc(${y}% + 10px), calc(100% - 120px))`,
+        boxShadow: "var(--shadow-lg)",
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       <textarea

@@ -15,6 +15,7 @@ import { WhatsAppIcon } from "@/components/ui/icons";
 
 const CONFIRM_TEXT =
   "Revizeleriniz ekibe iletildi. En kısa sürede görülmesi için lütfen WhatsApp grubundan kısa bir not bırakın.";
+const APPROVE_CONFIRM_TEXT = "Paylaşım takvimi onaylandı — teşekkürler! Ekip yayına almaya başlayacak.";
 
 export function BrandViewClient({
   plan,
@@ -42,6 +43,7 @@ export function BrandViewClient({
   const [showSplash, setShowSplash] = useState(true);
   const [statuses, setStatuses] = useState<Record<string, ItemStatus>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submittedRound, setSubmittedRound] = useState<"onay" | "revize" | null>(null);
   const [sending, setSending] = useState(false);
   const [showChanges, setShowChanges] = useState(false);
 
@@ -59,10 +61,8 @@ export function BrandViewClient({
   const live = plan.stage === "yayinda" || plan.stage === "tamamlandi";
   const pub = publishStats(items);
 
-  const submit = async () => {
+  const submit = async (round: "onay" | "revize") => {
     setSending(true);
-    const allApproved =
-      visible.length > 0 && visible.every((i) => statuses[i.id] === "approved");
     let name = "Marka";
     try {
       name = localStorage.getItem("ritim-name") || "Marka";
@@ -72,9 +72,10 @@ export function BrandViewClient({
     await fetch(`/api/plans/${plan.id}/submit`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ round: allApproved ? "onay" : "revize", authorName: name }),
+      body: JSON.stringify({ round, authorName: name }),
     });
     setSending(false);
+    setSubmittedRound(round);
     setSubmitted(true);
   };
 
@@ -102,10 +103,15 @@ export function BrandViewClient({
             ✓
           </div>
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">Teşekkürler</h1>
-          <p className="mx-auto mt-2 max-w-sm text-[14px] text-[var(--text-dim)]">{CONFIRM_TEXT}</p>
+          <p className="mx-auto mt-2 max-w-sm text-[14px] text-[var(--text-dim)]">
+            {submittedRound === "onay" ? APPROVE_CONFIRM_TEXT : CONFIRM_TEXT}
+          </p>
           <a
             href={waLink({
-              text: `${brand.name} — takvim için revizelerimizi gönderdik, bakabilir misiniz?`,
+              text:
+                submittedRound === "onay"
+                  ? `${brand.name} — paylaşım takvimini onayladık!`
+                  : `${brand.name} — takvim için revizelerimizi gönderdik, bakabilir misiniz?`,
             })}
             target="_blank"
             rel="noopener noreferrer"
@@ -213,19 +219,29 @@ export function BrandViewClient({
       </div>
 
       <div className="fixed inset-x-0 bottom-0 border-t border-[var(--border)] bg-[var(--surface)]/95 px-5 py-3 backdrop-blur">
-        <div className="mx-auto flex max-w-[760px] items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-[760px] flex-col gap-2">
           <span className="text-[12px] text-[var(--text-mute)]">
             Yorumlarınız anlık kaydedilir. Bitirince gönderin.
           </span>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={sending}
-            className="rounded-[10px] px-5 py-2.5 text-[13.5px] font-semibold text-white disabled:opacity-60"
-            style={{ background: brand.colorPrimary }}
-          >
-            Revizeleri gönder
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => submit("onay")}
+              disabled={sending}
+              className="flex-1 rounded-[10px] bg-[var(--ok)] px-4 py-2.5 text-[13.5px] font-semibold text-white disabled:opacity-60"
+            >
+              ✓ Paylaşım Takvimini Onayla
+            </button>
+            <button
+              type="button"
+              onClick={() => submit("revize")}
+              disabled={sending}
+              className="flex-1 rounded-[10px] px-4 py-2.5 text-[13.5px] font-semibold text-white disabled:opacity-60"
+              style={{ background: brand.colorPrimary }}
+            >
+              Revizeleri gönder
+            </button>
+          </div>
         </div>
       </div>
     </main>

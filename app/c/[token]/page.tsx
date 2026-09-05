@@ -15,7 +15,7 @@ export default async function BrandCalendarPage({
   const plan = await store.getPlanByToken("public", token);
   if (!plan || plan.publicToken !== token) return <InvalidLink />;
 
-  const [brand, items, comments, annotations, versions] = await Promise.all([
+  const [brand, items, allComments, allAnnotations, versions] = await Promise.all([
     store.getBrand(plan.brandId),
     store.listItems(plan.id),
     store.listComments(plan.id),
@@ -23,6 +23,11 @@ export default async function BrandCalendarPage({
     store.listVersions(plan.id),
   ]);
   if (!brand) return <InvalidLink />;
+
+  // Internal review notes are for the team, never the brand — filtered here,
+  // server-side, so an internal comment never even reaches this page's payload.
+  const comments = allComments.filter((c) => c.stage === "brand");
+  const annotations = allAnnotations.filter((a) => a.stage === "brand");
 
   const settings = await store.getSettings();
   const { heading, body } = brandFonts(settings, brand);
