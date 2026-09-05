@@ -4,6 +4,7 @@ import { ROLE_LABELS } from "@/lib/access/roles";
 import { DevGate } from "@/components/team/DevGate";
 import { BrandArchiveList } from "@/components/team/BrandArchiveList";
 import { StorageCheck } from "@/components/team/StorageCheck";
+import { MigrateDriveVideos } from "@/components/team/MigrateDriveVideos";
 import { DeveloperSettings } from "@/components/team/DeveloperSettings";
 import type { ActivityEntry } from "@/lib/types";
 
@@ -66,6 +67,7 @@ export default async function DeveloperPage() {
           {process.env.CRON_SECRET ? "açık" : "kapalı — CRON_SECRET yok"}
         </p>
         <StorageCheck />
+        <MigrateDriveVideos />
       </section>
 
       <section className="rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--surface)] p-5">
