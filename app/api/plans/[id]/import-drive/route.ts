@@ -7,6 +7,7 @@ import {
   parseDriveFolderId,
   parseDriveFileId,
   driveDownloadUrl,
+  drivePreviewUrl,
   driveResizedImageUrl,
   driveThumbnailUrl,
 } from "@/lib/sources/drive-folder";
@@ -114,24 +115,24 @@ export async function POST(req: Request, ctx: Ctx) {
     // straight from Drive) and re-host to Storage. Never throws — failures are reported.
     const processOne = async (a: Asset): Promise<NewAsset | null> => {
       if (a.kind === "video") {
-        // Videos are big — don't copy them into Storage (50 MB cap). Stream the raw
-        // bytes straight from Drive's API instead (same as the reels-link path below)
-        // rather than Drive's own /preview iframe: that iframe is Google's own player
-        // page — its toolbar (skip ±10s, captions, speed, settings) and letterboxing
-        // are entirely Google's UI, unreachable from a cross-origin iframe, and it
-        // showed through no matter what we tried on our side. This URL is just a
-        // video file's bytes, so it plays in our own <video> with our own controls.
-        // `a.id` is the Drive file id; the poster still needs a real still since the
-        // download URL isn't an image every thumbnail spot could just decode.
+        // Tried streaming the raw bytes straight from Drive's API (driveDownloadUrl)
+        // to get away from Drive's own /preview iframe player and its toolbar. That
+        // broke playback outright: alt=media with only an API key (no OAuth) is
+        // fetched here from the *browser*, and Google frequently refuses that for a
+        // merely "anyone with the link" file — unlike the identical-looking call this
+        // route already makes for images, which runs server-side and works fine.
+        // Back to the iframe: worse UI, but it actually plays for everyone with the
+        // link, which the download URL turned out not to reliably do.
         return {
           type: a.type,
           kind: "video",
-          url: driveDownloadUrl(a.id, apiKey),
+          url: drivePreviewUrl(a.id),
           posterUrl: driveThumbnailUrl(a.id),
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,
           webPlayable: true,
+          driveEmbed: true,
         };
       }
 

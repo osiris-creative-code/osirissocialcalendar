@@ -19,6 +19,11 @@ export function driveDownloadUrl(id: string, apiKey: string): string {
   return `${API}/${id}?alt=media&key=${apiKey}`;
 }
 
+/** Google Drive's own in-browser player for a link-shared file — embeddable in an iframe. */
+export function drivePreviewUrl(id: string): string {
+  return `https://drive.google.com/file/d/${id}/preview`;
+}
+
 /** A Google-resized copy of a link-shared image — served as bytes, usable in <img>. */
 export function driveResizedImageUrl(id: string, width = 2000): string {
   return `https://lh3.googleusercontent.com/d/${id}=w${width}`;
