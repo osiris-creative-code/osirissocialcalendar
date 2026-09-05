@@ -28,11 +28,13 @@ export async function PATCH(req: Request) {
     patch.defaultLanguage = body.defaultLanguage;
   }
   if (body.background) {
+    const textTheme = body.background.textTheme;
     patch.background = {
       imageUrl: body.background.imageUrl?.trim() || null,
       opacity: clamp(body.background.opacity, 0, 100, current.background.opacity),
       blur: clamp(body.background.blur, 0, 40, current.background.blur),
       color: body.background.color || current.background.color,
+      textTheme: textTheme === "light" || textTheme === "dark" ? textTheme : "auto",
     };
   }
   if (Array.isArray(body.fonts)) patch.fonts = body.fonts;

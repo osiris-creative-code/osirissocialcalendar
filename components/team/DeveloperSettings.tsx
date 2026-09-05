@@ -112,6 +112,25 @@ export function DeveloperSettings({ initial }: { initial: AppSettings }) {
           Görünürlüğü kıstıkça arkadaki renk daha çok görünür — ikisini birlikte ayarla.
         </p>
 
+        <label className="mt-3 block text-[12.5px] text-[var(--text-dim)]">
+          Metin teması
+          <select
+            aria-label="Metin teması"
+            value={bg.textTheme ?? "auto"}
+            onChange={(e) => setBg({ textTheme: e.target.value as "auto" | "light" | "dark" })}
+            className="mt-1 w-full rounded border border-[var(--border-strong)] bg-[var(--surface)] px-2 py-1.5"
+          >
+            <option value="auto">Otomatik — ziyaretçinin kendi tercihine göre</option>
+            <option value="light">Koyu metin — açık renkli arkaplan için</option>
+            <option value="dark">Açık metin — koyu/siyah arkaplan için</option>
+          </select>
+        </label>
+        <p className="mt-1.5 text-[11.5px] text-[var(--text-mute)]">
+          Arka rengi koyulaştırdığında metinler ziyaretçinin cihaz tercihine göre koyu
+          kalıp okunmaz olabiliyor — burada sabitleyerek her yerde okunur kalmasını
+          sağlayabilirsin.
+        </p>
+
         <div className="relative mt-3 h-28 overflow-hidden rounded-[var(--r-md)] border border-[var(--border)]">
           <div className="absolute inset-0" style={{ background: bg.color }} />
           {bg.imageUrl && (

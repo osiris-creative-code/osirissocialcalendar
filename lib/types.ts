@@ -227,6 +227,12 @@ export type BackgroundSettings = {
   blur: number;
   /** Shows through wherever the image is transparent or faded. */
   color: string;
+  /** "auto" leaves text following the viewer's own light/dark preference —
+   *  which can go unreadable against a background colour picked without that
+   *  in mind (e.g. dark text on a background you just made black). "light" or
+   *  "dark" pins the whole app's text theme to match. Absent on records saved
+   *  before this existed ⇒ "auto". */
+  textTheme?: "auto" | "light" | "dark";
 };
 
 export type AppSettings = {
@@ -242,7 +248,7 @@ export type AppSettings = {
 
 export const DEFAULT_SETTINGS: AppSettings = {
   logoUrl: null,
-  background: { imageUrl: null, opacity: 35, blur: 8, color: "#1b1714" },
+  background: { imageUrl: null, opacity: 35, blur: 8, color: "#1b1714", textTheme: "auto" },
   fonts: [],
   defaultLanguage: "tr",
   mediaRetentionDays: 14,
