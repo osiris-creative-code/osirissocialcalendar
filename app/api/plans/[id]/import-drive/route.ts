@@ -7,7 +7,6 @@ import {
   parseDriveFolderId,
   parseDriveFileId,
   driveDownloadUrl,
-  drivePreviewUrl,
   driveResizedImageUrl,
   driveThumbnailUrl,
 } from "@/lib/sources/drive-folder";
@@ -115,21 +114,24 @@ export async function POST(req: Request, ctx: Ctx) {
     // straight from Drive) and re-host to Storage. Never throws — failures are reported.
     const processOne = async (a: Asset): Promise<NewAsset | null> => {
       if (a.kind === "video") {
-        // Videos are big — don't copy them into Storage (50 MB cap). Play them
-        // straight from Drive's own embed instead. `a.id` is the Drive file id.
-        // The embed url is an iframe page, not an image — every thumbnail spot
-        // (calendar, feedback, pins) needs a real still instead, so it gets one
-        // here rather than each caller having to know to special-case reels.
+        // Videos are big — don't copy them into Storage (50 MB cap). Stream the raw
+        // bytes straight from Drive's API instead (same as the reels-link path below)
+        // rather than Drive's own /preview iframe: that iframe is Google's own player
+        // page — its toolbar (skip ±10s, captions, speed, settings) and letterboxing
+        // are entirely Google's UI, unreachable from a cross-origin iframe, and it
+        // showed through no matter what we tried on our side. This URL is just a
+        // video file's bytes, so it plays in our own <video> with our own controls.
+        // `a.id` is the Drive file id; the poster still needs a real still since the
+        // download URL isn't an image every thumbnail spot could just decode.
         return {
           type: a.type,
           kind: "video",
-          url: drivePreviewUrl(a.id),
+          url: driveDownloadUrl(a.id, apiKey),
           posterUrl: driveThumbnailUrl(a.id),
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,
           webPlayable: true,
-          driveEmbed: true,
         };
       }
 
