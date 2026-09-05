@@ -24,6 +24,16 @@ export function drivePreviewUrl(id: string): string {
   return `https://drive.google.com/file/d/${id}/preview`;
 }
 
+/**
+ * Same-origin proxy for a Drive video's raw bytes — plays in our own <video>
+ * with our own controls, no Drive UI, and the API key never reaches the
+ * browser (unlike driveDownloadUrl, which handed it a googleapis.com url
+ * directly and got refused for most "anyone with the link" files).
+ */
+export function driveProxyUrl(id: string): string {
+  return `/api/drive-video/${id}`;
+}
+
 /** A Google-resized copy of a link-shared image — served as bytes, usable in <img>. */
 export function driveResizedImageUrl(id: string, width = 2000): string {
   return `https://lh3.googleusercontent.com/d/${id}=w${width}`;

@@ -5,11 +5,11 @@ import { useState } from "react";
 type Result = { plansScanned: number; plansFixed: number; assetsFixed: number; itemsFixed: number };
 
 /**
- * Fixes reel videos that ended up on the short-lived driveDownloadUrl shape,
- * which turned out not to reliably play (Google refuses API-key-only alt=media
- * requests from the browser for most "anyone with the link" files) — puts them
- * back on Drive's own /preview iframe, which does play. Safe to click more than
- * once — a second run always reports 0 fixed once nothing's left to revert.
+ * Puts every reel video still on an old shape — Drive's own /preview iframe,
+ * or the short-lived direct-download url that Google frequently refused —
+ * onto our own /api/drive-video proxy instead: no Drive UI, and it actually
+ * plays. Safe to click more than once — a second run always reports 0 fixed
+ * once nothing's left to migrate.
  */
 export function MigrateDriveVideos() {
   const [busy, setBusy] = useState(false);

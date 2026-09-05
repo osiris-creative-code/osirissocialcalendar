@@ -39,3 +39,14 @@ describe("ReelPlayer — a real uploaded video", () => {
     expect(screen.getByRole("button", { name: "Tam ekran" })).toBeInTheDocument();
   });
 });
+
+describe("ReelPlayer — a Drive video served through our own proxy", () => {
+  it("treats a /api/drive-video url as a plain playable video, not a Drive embed", () => {
+    const proxied: Media = { url: "/api/drive-video/abc123", kind: "video", slideOrder: 1 };
+    const { container } = render(<ReelPlayer media={proxied} />);
+    // Our own custom controls, not an iframe — Drive's own UI never enters the picture.
+    expect(container.querySelector("iframe")).not.toBeInTheDocument();
+    expect(container.querySelector("video")).toHaveAttribute("src", "/api/drive-video/abc123");
+    expect(screen.getByRole("button", { name: "Oynat" })).toBeInTheDocument();
+  });
+});

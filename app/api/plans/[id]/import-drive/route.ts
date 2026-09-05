@@ -6,8 +6,7 @@ import {
   DriveFolderSource,
   parseDriveFolderId,
   parseDriveFileId,
-  driveDownloadUrl,
-  drivePreviewUrl,
+  driveProxyUrl,
   driveResizedImageUrl,
   driveThumbnailUrl,
 } from "@/lib/sources/drive-folder";
@@ -96,7 +95,9 @@ export async function POST(req: Request, ctx: Ctx) {
         name: `reels-link-${reelIdx}.mp4`,
         type: "reel",
         kind: "video",
-        url: driveDownloadUrl(fileId, apiKey),
+        // Overwritten by processOne's video branch below — every video asset's
+        // final url is built from `id` there, regardless of what's set here.
+        url: driveProxyUrl(fileId),
         slideOrder: 1,
       });
     }
@@ -115,24 +116,24 @@ export async function POST(req: Request, ctx: Ctx) {
     // straight from Drive) and re-host to Storage. Never throws — failures are reported.
     const processOne = async (a: Asset): Promise<NewAsset | null> => {
       if (a.kind === "video") {
-        // Tried streaming the raw bytes straight from Drive's API (driveDownloadUrl)
-        // to get away from Drive's own /preview iframe player and its toolbar. That
-        // broke playback outright: alt=media with only an API key (no OAuth) is
-        // fetched here from the *browser*, and Google frequently refuses that for a
-        // merely "anyone with the link" file — unlike the identical-looking call this
-        // route already makes for images, which runs server-side and works fine.
-        // Back to the iframe: worse UI, but it actually plays for everyone with the
-        // link, which the download URL turned out not to reliably do.
+        // Videos are big — don't copy them into Storage (50 MB cap). Two things
+        // that didn't work here: Drive's own /preview iframe (its own uncontrollable
+        // player UI — the toolbar and letterboxing this went through several rounds
+        // over), and handing the browser a googleapis.com url with the API key baked
+        // in (Google refuses alt=media from an unauthenticated browser context for
+        // most "anyone with the link" files). This proxies through our own server —
+        // /api/drive-video/[fileId] makes the authenticated call itself (the same
+        // context that already works for images) and streams the bytes through, so
+        // it plays in our own <video> with our own controls and no Drive UI at all.
         return {
           type: a.type,
           kind: "video",
-          url: drivePreviewUrl(a.id),
+          url: driveProxyUrl(a.id),
           posterUrl: driveThumbnailUrl(a.id),
           name: a.name,
           slideGroup: a.slideGroup ?? null,
           slideOrder: a.slideOrder,
           webPlayable: true,
-          driveEmbed: true,
         };
       }
 

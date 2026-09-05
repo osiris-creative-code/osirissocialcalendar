@@ -94,10 +94,12 @@ describe("import-drive", () => {
 
     const mov = byName("reel-clip.mov");
     expect(mov.type).toBe("story"); // it's inside STORY/, folder wins over name
-    expect(mov.driveEmbed).toBe(true); // videos aren't re-hosted — played from Drive
-    expect(mov.url).toMatch(/drive\.google\.com\/file\/d\/s2\/preview/);
-    // the preview url is an iframe page, not an image — every thumbnail needs
-    // this poster instead, or it renders as a permanently broken <img>
+    // videos aren't re-hosted (50 MB cap) — played through our own proxy, which
+    // makes the authenticated Drive call server-side and streams the bytes
+    expect(mov.driveEmbed).toBeUndefined();
+    expect(mov.url).toBe("/api/drive-video/s2");
+    // the proxy url is bytes with no metadata — every thumbnail needs this
+    // poster instead, or it renders as a permanently broken <img>
     expect(mov.posterUrl).toMatch(/drive\.google\.com\/thumbnail\?id=s2/);
 
     const second = await importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id));
