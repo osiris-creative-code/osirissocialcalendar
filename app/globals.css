@@ -182,24 +182,37 @@ h3 {
  * The top highlight is what sells it — real glass catches light on its edge.
  * ------------------------------------------------------------------ */
 .glass {
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  /* Higher opacity + a lighter blur, no saturate: still reads as glass but the
+   * backdrop-filter cost (paid again on every scroll frame, and stacked when
+   * several of these are on screen at once) is roughly halved. */
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent), var(--shadow);
 }
 
-/* The cursor glow: a soft warm light that trails the pointer across the shell. */
+/* The cursor glow: a soft warm light that trails the pointer across the shell.
+ * A fixed-size disc moved with translate3d — a GPU-composited transform that
+ * repaints nothing — rather than a full-viewport gradient whose `at` position
+ * repainted the whole layer on every pointer frame. */
 .cursor-glow {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 620px;
+  height: 620px;
+  margin: -310px 0 0 -310px;
   z-index: 0;
   pointer-events: none;
+  border-radius: 50%;
   background: radial-gradient(
-    260px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    circle,
     color-mix(in srgb, var(--brand) 16%, transparent),
-    transparent 70%
+    transparent 62%
   );
+  transform: translate3d(var(--cursor-x, 50vw), var(--cursor-y, 50vh), 0);
+  will-change: transform;
   transition: opacity 0.3s ease;
 }
 

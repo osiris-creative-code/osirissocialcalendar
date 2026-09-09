@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
@@ -70,7 +70,7 @@ export function CalendarGrid({
   );
 }
 
-function DayCellView({
+const DayCellView = memo(function DayCellView({
   cell,
   pinsByItem,
   highlightItemId,
@@ -90,6 +90,7 @@ function DayCellView({
   onToggleSelect?: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `day:${cell.date}` });
+  const itemIds = useMemo(() => cell.items.map((i) => i.id), [cell.items]);
 
   return (
     <div
@@ -112,7 +113,7 @@ function DayCellView({
         )}
       </div>
 
-      <SortableContext items={cell.items.map((i) => i.id)} strategy={rectSortingStrategy}>
+      <SortableContext items={itemIds} strategy={rectSortingStrategy}>
         <div className="flex flex-col gap-1">
           {cell.items.map((item) => (
             <DayItem
@@ -131,7 +132,7 @@ function DayCellView({
       </SortableContext>
     </div>
   );
-}
+});
 
 const DayItem = memo(function DayItem({
   item,
