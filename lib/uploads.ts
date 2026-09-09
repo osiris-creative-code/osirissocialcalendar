@@ -5,6 +5,11 @@ import { newId } from "@/lib/ids";
 
 const BUCKET = process.env.SUPABASE_BUCKET ?? "osiris";
 
+// Per-file upload ceiling. The Supabase *project's* global storage limit
+// (Dashboard → Storage → Settings) must be at least this high too — the
+// bucket limit only ever clamps below the project one, never above it.
+const BUCKET_FILE_SIZE_LIMIT = "100MB";
+
 function supabase(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -27,15 +32,24 @@ export async function storageDiag(): Promise<{ ok: boolean; steps: string[] }> {
   const got = await sb.storage.getBucket(BUCKET);
   if (got.error) {
     steps.push(`getBucket hatası: ${got.error.message}`);
-    const created = await sb.storage.createBucket(BUCKET, { public: true });
+    const created = await sb.storage.createBucket(BUCKET, {
+      public: true,
+      fileSizeLimit: BUCKET_FILE_SIZE_LIMIT,
+    });
     steps.push(
       created.error
         ? `createBucket hatası: ${created.error.message}`
-        : "createBucket: bucket oluşturuldu (public).",
+        : `createBucket: bucket oluşturuldu (public, ${BUCKET_FILE_SIZE_LIMIT}).`,
     );
     if (created.error && !/exist/i.test(created.error.message)) return { ok: false, steps };
   } else {
-    steps.push(`getBucket: bucket var (public: ${got.data?.public}).`);
+    steps.push(`getBucket: bucket var (public: ${got.data?.public}, limit: ${got.data?.file_size_limit ?? "proje varsayılanı"}).`);
+    const bumped = await sb.storage.updateBucket(BUCKET, { public: true, fileSizeLimit: BUCKET_FILE_SIZE_LIMIT });
+    steps.push(
+      bumped.error
+        ? `updateBucket (dosya boyutu limiti) hatası: ${bumped.error.message}`
+        : `updateBucket: bucket dosya limiti ${BUCKET_FILE_SIZE_LIMIT} yapıldı (proje global limiti de en az bu kadar olmalı).`,
+    );
   }
 
   const testKey = `healthcheck/${newId()}.txt`;
@@ -62,8 +76,11 @@ function safeKey(name: string): string {
 /** Create the public bucket if it isn't there yet (so setup can't be forgotten). */
 async function ensureBucket(sb: SupabaseClient): Promise<void> {
   const { data } = await sb.storage.getBucket(BUCKET);
-  if (data) return;
-  const { error } = await sb.storage.createBucket(BUCKET, { public: true });
+  if (data) return; // stays off the hot path; an existing bucket's limit is bumped by storageDiag
+  const { error } = await sb.storage.createBucket(BUCKET, {
+    public: true,
+    fileSizeLimit: BUCKET_FILE_SIZE_LIMIT,
+  });
   // Ignore "already exists" races.
   if (error && !/exist/i.test(error.message)) throw new Error(`bucket: ${error.message}`);
 }

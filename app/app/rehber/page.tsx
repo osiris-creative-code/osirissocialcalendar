@@ -125,7 +125,7 @@ export default function RehberPage() {
           <p>• Elle: Post / Story / Reels kutularına dosya bırak. Reels hazır değilse <b>＋ Placeholder</b>.</p>
           <p>
             • Video: “Drive’dan çek” ile gelen videolar Drive’ın oynatıcısıyla oynar (boyut derdi
-            yok). <b>Elle</b> yüklerken sınır <b>50 MB</b> — büyük reels’i Drive linkiyle ekle.
+            yok). <b>Elle</b> yüklerken sınır <b>100 MB</b> — büyük reels’i Drive linkiyle ekle.
           </p>
           <p>
             • <b>Plan kuralları</b> kutusuna tempoyu yaz — ya da <b>Plan öner</b>’e bas: yüklü

@@ -15,7 +15,7 @@ import type { NewAsset } from "@/lib/data/store";
 
 export const maxDuration = 60;
 
-const MAX_REHOST_BYTES = 40 * 1024 * 1024; // stay well under Supabase's 50 MB cap
+const MAX_REHOST_BYTES = 90 * 1024 * 1024; // stay well under Supabase's 100 MB cap
 const CONCURRENCY = 5; // files downloaded+uploaded in parallel per chunk
 const MAX_PER_RUN = 60; // cap so one click stays well inside the 60s function limit
 
@@ -116,7 +116,7 @@ export async function POST(req: Request, ctx: Ctx) {
     // straight from Drive) and re-host to Storage. Never throws — failures are reported.
     const processOne = async (a: Asset): Promise<NewAsset | null> => {
       if (a.kind === "video") {
-        // Videos are big — don't copy them into Storage (50 MB cap). Two things
+        // Videos are big — don't copy them into Storage (100 MB cap). Two things
         // that didn't work here: Drive's own /preview iframe (its own uncontrollable
         // player UI — the toolbar and letterboxing this went through several rounds
         // over), and handing the browser a googleapis.com url with the API key baked

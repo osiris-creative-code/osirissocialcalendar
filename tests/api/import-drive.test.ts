@@ -29,7 +29,7 @@ const TREE: Record<string, unknown> = {
   P: {
     files: [
       { id: "p1", name: "ERÇİ 3-01.jpg", mimeType: "image/jpeg", size: "500000" },
-      { id: "big", name: "dev-poster.png", mimeType: "image/png", size: String(60 * 1024 * 1024) },
+      { id: "big", name: "dev-poster.png", mimeType: "image/png", size: String(120 * 1024 * 1024) },
     ],
   },
   S: { files: [{ id: "s1", name: "story-a.jpg", mimeType: "image/jpeg" }, { id: "s2", name: "reel-clip.mov", mimeType: "video/quicktime" }] },
@@ -94,7 +94,7 @@ describe("import-drive", () => {
 
     const mov = byName("reel-clip.mov");
     expect(mov.type).toBe("story"); // it's inside STORY/, folder wins over name
-    // videos aren't re-hosted (50 MB cap) — played through our own proxy, which
+    // videos aren't re-hosted (100 MB cap) — played through our own proxy, which
     // makes the authenticated Drive call server-side and streams the bytes
     expect(mov.driveEmbed).toBeUndefined();
     expect(mov.url).toBe("/api/drive-video/s2");
