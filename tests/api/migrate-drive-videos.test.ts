@@ -79,7 +79,7 @@ async function seedPlanWithOldShapeReels() {
 
   const genRes = await generate(j(`/api/plans/${plan.id}/generate`, "POST", { mode: "extend" }), planCtx(plan.id));
   const { items } = await genRes.json();
-  const target = items[0];
+  const target = items.find((i: { type: string }) => i.type === "reel");
   await attachAsset(
     j(`/api/plans/${plan.id}/items/${target.id}/attach-asset`, "POST", { assetId: previewAsset.id }),
     itemCtx(plan.id, target.id),

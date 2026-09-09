@@ -1,10 +1,10 @@
 import { parseCadence, type CadenceRule } from "./cadence";
-import { assignAssets, buildSlots, type DraftItem, type PlannerAsset } from "./distribute";
+import { assignAssets, buildSlots, topUpSlots, type DraftItem, type PlannerAsset } from "./distribute";
 
 export type { CadenceRule } from "./cadence";
 export type { PlannerAsset, DraftItem, Slot } from "./distribute";
 export { parseCadence } from "./cadence";
-export { buildSlots, assignAssets } from "./distribute";
+export { buildSlots, assignAssets, topUpSlots } from "./distribute";
 
 export type PlannerResult = {
   rules: CadenceRule[];
@@ -21,7 +21,10 @@ export function planFromPrompt(
 ): PlannerResult {
   const rangeYear = Number(rangeStart.slice(0, 4));
   const rules = parseCadence(prompt, rangeYear);
-  const slots = buildSlots(rules, rangeStart, rangeEnd);
+  const cadenceSlots = buildSlots(rules, rangeStart, rangeEnd);
+  // Make room for content the cadence didn't leave a slot for, so regenerating
+  // after an upload actually places the new images.
+  const slots = topUpSlots(cadenceSlots, assets, rangeStart, rangeEnd);
   const { extend, stopAtAssets, gap } = assignAssets(slots, assets);
   return { rules, extend, stopAtAssets, gap };
 }

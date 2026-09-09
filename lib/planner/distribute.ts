@@ -78,6 +78,55 @@ export function buildSlots(rules: CadenceRule[], rangeStart: string, rangeEnd: s
 
 type Unit = string[]; // ordered asset ids that fill one slot
 
+/**
+ * Cadence slots are built from the prompt + range alone, so a type can end up
+ * with more uploaded asset units than there are slots to hold them (someone
+ * uploads 15 posts for a range the prompt only spaces 10 into). Left as-is,
+ * "Yeniden üret" silently drops the extras. This tops the range up with extra
+ * evenly-spaced slots of that type until the units run out or every day in the
+ * range already has one — so regenerating actually uses newly added content.
+ */
+export function topUpSlots(
+  slots: Slot[],
+  assets: PlannerAsset[],
+  rangeStart: string,
+  rangeEnd: string,
+): Slot[] {
+  const queues = buildUnitQueues(assets);
+  const days: string[] = [];
+  for (let ms = toUtc(rangeStart); ms <= toUtc(rangeEnd); ms += DAY_MS) days.push(fromUtc(ms));
+  if (days.length === 0) return slots;
+
+  // `special` slots draw from the post pool, so they count against post capacity.
+  const used: Record<ItemType, number> = { post: 0, story: 0, reel: 0, special: 0 };
+  for (const s of slots) used[s.type === "special" ? "post" : s.type] += 1;
+
+  const out = [...slots];
+  for (const type of ["post", "story", "reel"] as const) {
+    let need = queues[type].length - used[type];
+    if (need <= 0) continue;
+    const taken = new Set(out.filter((s) => s.type === type).map((s) => s.date));
+    const step = days.length / (need + 1);
+    const spaced = Array.from({ length: need }, (_, k) => days[Math.min(days.length - 1, Math.round((k + 1) * step))]);
+    for (const date of [...spaced, ...days]) {
+      if (need === 0) break;
+      if (taken.has(date)) continue;
+      taken.add(date);
+      out.push({ date, type });
+      need -= 1;
+    }
+  }
+
+  out.sort((a, b) =>
+    a.date === b.date
+      ? TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type)
+      : a.date < b.date
+        ? -1
+        : 1,
+  );
+  return out;
+}
+
 function buildUnitQueues(assets: PlannerAsset[]): Record<ItemType, Unit[]> {
   const queues: Record<ItemType, Unit[]> = { post: [], story: [], reel: [], special: [] };
   const byType: Record<ItemType, PlannerAsset[]> = { post: [], story: [], reel: [], special: [] };

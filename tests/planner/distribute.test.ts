@@ -80,4 +80,29 @@ describe("planFromPrompt", () => {
     expect(res.extend.map((i) => i.date)).toEqual(["2026-09-01", "2026-09-02", "2026-09-03"]);
     expect(res.gap).toBe(true); // 3 slots, 2 assets
   });
+
+  it("tops the range up so extra uploaded content still gets a slot on regenerate", () => {
+    // "3 günde bir post" over 10 days = 4 cadence slots, but 7 posts uploaded.
+    const posts = Array.from({ length: 7 }, (_, i) => ({
+      id: `p${i}`,
+      type: "post" as const,
+      slideOrder: 0,
+    }));
+    const res = planFromPrompt("3 günde bir post", "2026-09-01", "2026-09-10", posts);
+
+    const placed = res.extend.filter((i) => !i.isGap);
+    expect(placed).toHaveLength(7); // every uploaded post landed somewhere
+    expect(new Set(res.extend.map((i) => i.date)).size).toBe(7); // spread, not piled on one day
+    expect(res.gap).toBe(false); // nothing left unplaced
+  });
+
+  it("does not add slots when content already fits the cadence", () => {
+    const res = planFromPrompt("3 günde bir post", "2026-09-01", "2026-09-10", [
+      { id: "p1", type: "post", slideOrder: 0 },
+      { id: "p2", type: "post", slideOrder: 0 },
+    ]);
+    // 4 cadence slots, 2 assets -> 2 placed, 2 gaps, no top-up
+    expect(res.extend).toHaveLength(4);
+    expect(res.extend.filter((i) => !i.isGap)).toHaveLength(2);
+  });
 });

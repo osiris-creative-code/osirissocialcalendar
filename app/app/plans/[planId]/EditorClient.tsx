@@ -153,7 +153,11 @@ export function EditorClient({
         return;
       }
       setGap(null);
-      if (data.items) setItems(data.items);
+      if (data.items) {
+        setItems(data.items);
+        const withMedia = data.items.filter((i: { media: unknown[] }) => i.media.length > 0).length;
+        Toast.show(`Takvim üretildi — ${withMedia} içerik yerleştirildi.`);
+      }
     } catch (e) {
       Toast.show(`Üretilemedi: ${(e as Error).message}. Tekrar dene.`);
     } finally {
