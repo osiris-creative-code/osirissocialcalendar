@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ItemType, PlanAsset } from "@/lib/types";
 import { isWebPlayableVideo } from "@/lib/media-format";
 
@@ -117,6 +117,39 @@ export function ContentUploader({
       }),
     });
     if (res.ok) setDriveSaved(true);
+  };
+
+  // Duplicate assets a double-run import left behind (same slideGroup+name twice).
+  const dupCount = useMemo(() => {
+    const seen = new Set<string>();
+    let n = 0;
+    for (const a of assets) {
+      const k = `${a.slideGroup ?? ""}::${a.name}`;
+      if (seen.has(k)) n += 1;
+      else seen.add(k);
+    }
+    return n;
+  }, [assets]);
+
+  const dedupe = async () => {
+    if (working) return;
+    setWorking(true);
+    setError("");
+    setDriveMsg("Yinelenenler temizleniyor…");
+    try {
+      const res = await fetch(`/api/plans/${planId}/assets/dedupe`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || `Temizlenemedi (${res.status}).`);
+        setDriveMsg("");
+        return;
+      }
+      const fresh = await fetch(`/api/plans/${planId}/assets`).then((r) => r.json());
+      setAssets(fresh as PlanAsset[]);
+      setDriveMsg(`${data.removed} yinelenen silindi`);
+    } finally {
+      setWorking(false);
+    }
   };
 
   const pullDrive = async () => {
@@ -323,8 +356,18 @@ export function ContentUploader({
               disabled={working || (!driveLink.trim() && !reelText.trim())}
               className="rounded-md border border-[var(--brand)] px-3 py-1.5 text-[12px] font-semibold text-[var(--brand)] disabled:opacity-50"
             >
-              Drive&apos;dan çek
+              {working && driveMsg.startsWith("Drive") ? "Çekiliyor…" : "Drive'dan çek"}
             </button>
+            {dupCount > 0 && (
+              <button
+                type="button"
+                onClick={dedupe}
+                disabled={working}
+                className="rounded-md border border-[var(--warn)] px-3 py-1.5 text-[12px] font-semibold text-[var(--warn)] disabled:opacity-50"
+              >
+                {dupCount} yinelenen içeriği temizle
+              </button>
+            )}
           </div>
           <textarea
             aria-label="Reels linkleri"

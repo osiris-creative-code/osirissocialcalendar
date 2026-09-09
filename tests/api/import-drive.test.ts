@@ -154,4 +154,19 @@ describe("import-drive", () => {
     // they need a poster too, not just the drive-folder-listed reels above
     expect(assets.every((a: { posterUrl?: string }) => !!a.posterUrl)).toBe(true);
   });
+
+  it("two imports fired at once don't double the assets", async () => {
+    const plan = await planWithDrive("https://drive.google.com/drive/folders/ROOT");
+    // Both start before either has written — the per-chunk re-check has to catch it.
+    const [a, b] = await Promise.all([
+      importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id)),
+      importDrive(j(`/api/plans/${plan.id}/import-drive`, "POST"), ctx(plan.id)),
+    ]);
+    const [ra, rb] = [await a.json(), await b.json()];
+    // one may be rejected outright (409) or just import 0 — either way, no dupes
+    expect([ra.imported, rb.imported].filter((n) => typeof n === "number").reduce((x, y) => x + y, 0)).toBe(4);
+
+    const assets = await (await listAssets(j(`/api/plans/${plan.id}/assets`, "GET"), ctx(plan.id))).json();
+    expect(assets).toHaveLength(4);
+  });
 });

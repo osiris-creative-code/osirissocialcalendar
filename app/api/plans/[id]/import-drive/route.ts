@@ -19,6 +19,17 @@ const MAX_REHOST_BYTES = 90 * 1024 * 1024; // stay well under Supabase's 100 MB 
 const CONCURRENCY = 5; // files downloaded+uploaded in parallel per chunk
 const MAX_PER_RUN = 60; // cap so one click stays well inside the 60s function limit
 
+/**
+ * Best-effort in-flight guard. A slow import (dozens of files re-hosted to
+ * Storage) gives no per-file feedback, so people reload and click again, or a
+ * >60s timeout makes the client retry — and two concurrent runs both read the
+ * "already have" set before either writes, so both import everything. This
+ * rejects an obviously-concurrent second call. Per-chunk dedup below is the
+ * real backstop (survives across serverless instances); this just fails fast.
+ */
+const inFlight = new Map<string, number>();
+const IN_FLIGHT_MS = 90_000;
+
 type Ctx = { params: Promise<{ id: string }> };
 
 /** Pull media from this plan's shoot Drive folder + separate reels links into the plan's assets. */
@@ -26,11 +37,17 @@ export async function POST(req: Request, ctx: Ctx) {
   const actor = requireEditor(req);
   if (actor instanceof Response) return actor;
 
+  const { id } = await ctx.params;
+  const startedAt = inFlight.get(id);
+  if (startedAt && Date.now() - startedAt < IN_FLIGHT_MS) {
+    return json({ error: "Bu plan için bir Drive çekme işlemi zaten sürüyor — bitmesini bekle." }, 409);
+  }
+  inFlight.set(id, Date.now());
+
   try {
     const apiKey = process.env.GOOGLE_API_KEY;
     if (!apiKey) return json({ error: "GOOGLE_API_KEY tanımlı değil (Vercel ortam değişkeni)" }, 400);
 
-    const { id } = await ctx.params;
     const store = getStore();
     const plan = await store.getPlan(id);
     if (!plan) return json({ error: "plan not found" }, 404);
@@ -102,8 +119,16 @@ export async function POST(req: Request, ctx: Ctx) {
       });
     }
 
-    const all = [...listed, ...reelAssets];
     const key = (a: { name: string; slideGroup?: string | null }) => `${a.slideGroup ?? ""}::${a.name}`;
+    // Collapse any dupes within the listing itself (a folder walked twice, the
+    // same file in the shoot folder and a reels link) before anything else.
+    const seenInList = new Set<string>();
+    const all = [...listed, ...reelAssets].filter((a) => {
+      const k = key(a);
+      if (seenInList.has(k)) return false;
+      seenInList.add(k);
+      return true;
+    });
     const have = new Set((await store.listAssets(id)).map(key));
     const allFresh = all.filter((a) => !have.has(key(a)));
     const fresh = allFresh.slice(0, MAX_PER_RUN);
@@ -181,8 +206,16 @@ export async function POST(req: Request, ctx: Ctx) {
         }
       });
       if (chunkStaged.length) {
-        await store.addAssets(id, chunkStaged);
-        imported += chunkStaged.length;
+        // Re-read right before writing: a concurrent run (or an earlier chunk of
+        // this one) may already have added some of these names. Whoever writes a
+        // name first wins it; everyone else skips — so duplication can't survive
+        // even across serverless instances where the in-flight guard doesn't.
+        const seen = new Set((await store.listAssets(id)).map(key));
+        const toAdd = chunkStaged.filter((s) => !seen.has(key(s)));
+        if (toAdd.length) {
+          await store.addAssets(id, toAdd);
+          imported += toAdd.length;
+        }
       }
     });
 
@@ -204,5 +237,7 @@ export async function POST(req: Request, ctx: Ctx) {
     });
   } catch (e) {
     return json({ error: `beklenmeyen hata: ${(e as Error).message}` }, 500);
+  } finally {
+    inFlight.delete(id);
   }
 }

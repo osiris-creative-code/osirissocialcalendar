@@ -1,6 +1,6 @@
 import { getStore } from "@/lib/db";
 import { json } from "@/lib/api/session";
-import { getAI } from "@/lib/ai";
+import { getAI, aiIsLive } from "@/lib/ai";
 import { visionSafeUrl } from "@/lib/ai/vision-safe";
 import { findSimilarCandidates } from "@/lib/analyze/cluster";
 
@@ -23,6 +23,13 @@ export type AssetSuggestion = {
  * to a handful of candidate runs, then the model looks at just those.
  */
 export async function POST(_req: Request, ctx: Ctx) {
+  if (!aiIsLive()) {
+    return json({
+      suggestions: [],
+      note: "AI anahtarı tanımlı değil — analiz devre dışı. Vercel ortam değişkenlerine ANTHROPIC_API_KEY ya da OPENAI_API_KEY ekle.",
+    });
+  }
+
   const { id } = await ctx.params;
   const store = getStore();
   const [plan, assets] = await Promise.all([store.getPlan(id), store.listAssets(id)]);

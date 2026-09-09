@@ -11,6 +11,7 @@ vi.mock("@/lib/ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/ai")>();
   return {
     ...actual,
+    aiIsLive: () => true, // this suite supplies a working getAI stub
     getAI: () => ({
       captions: vi.fn(),
       rewriteCaption: vi.fn(),

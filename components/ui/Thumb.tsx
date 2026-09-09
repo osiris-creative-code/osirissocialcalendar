@@ -55,6 +55,12 @@ export function Thumb({
       src={src}
       alt={alt}
       className={className}
+      // Thumbnails are tiny but the source is a full-res shoot photo. Lazy so
+      // off-screen ones (most of a long calendar / the whole asset picker)
+      // never download or decode until scrolled near; async decode so the ones
+      // that do load never block the main thread.
+      loading="lazy"
+      decoding="async"
       onError={() => {
         if (attempt < 1) setAttempt((a) => a + 1);
         else setFailed(true);
